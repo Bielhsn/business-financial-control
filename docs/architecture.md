@@ -24,6 +24,22 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 2 (autenticação):** camada de domínio com `User`/`RefreshToken` (dataclasses) e
+interfaces `UserRepository`, `RefreshTokenRepository`, `PasswordHasher`, `TokenService`;
+casos de uso em `application/auth` (registro, login, refresh, logout) dependem apenas
+dessas interfaces — testados com fakes em memória, sem precisar de banco real. Infra:
+`Argon2PasswordHasher` (argon2-cffi) e `JWTTokenService` (PyJWT) implementam os ports;
+`BeanieUserRepository`/`BeanieRefreshTokenRepository` persistem em Mongo. Access token JWT
+de curta duração; refresh token é uma string opaca de alta entropia, com apenas o hash
+(SHA-256) armazenado — permite revogação real (JWT sozinho não seria revogável) e é
+rotacionado a cada uso. Rate limiting (slowapi) nos endpoints de auth, armazenamento em
+memória por padrão (suficiente para uma instância; pronto para migrar para Redis via
+`storage_uri=settings.redis_url` em deploys com múltiplas instâncias). Também corrigido:
+`register_exception_handlers` passou a tratar `HTTPException`/`StarletteHTTPException`
+genericamente (cobre `RateLimitExceeded` do slowapi e qualquer 404/405 nativo do
+Starlette), fechando uma lacuna da Etapa 1 em que essas exceções escapavam do formato de
+erro padronizado.
+
 **Etapa 1 (core):** `core/config.py` centraliza toda configuração tipada (falha ao subir
 em produção com `SECRET_KEY` padrão); `core/logging.py` configura `structlog` (JSON em
 produção, console legível em desenvolvimento); `core/exceptions.py` define `AppError` e

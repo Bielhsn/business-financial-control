@@ -199,17 +199,28 @@ Nunca commite o arquivo `.env` — ele está no `.gitignore`.
 
 ## Estratégia de segurança
 
-- Autenticação via JWT de curta duração + refresh token rotativo.
-- Senhas com hash Argon2id.
-- RBAC (papéis) e permissões por módulo em todas as rotas.
+Implementado até a Etapa 2:
+
+- Autenticação via JWT de curta duração (access token) + refresh token opaco, de alta
+  entropia, com apenas o hash armazenado no banco — revogável e rotacionado a cada uso.
+- Senhas com hash Argon2id (`argon2-cffi`), nunca expostas em nenhuma resposta da API.
+- Rate limiting nos endpoints de autenticação (`slowapi`), mitigando força bruta.
+- Validação de entrada com Pydantic em todas as rotas (`EmailStr`, tamanho mínimo/máximo
+  de senha) e tratamento centralizado de exceções (erros de domínio, validação e HTTP
+  nativas convertidos em um formato de resposta consistente, sem vazar detalhes internos).
+- Índices únicos no MongoDB (e-mail, hash de refresh token) como defesa em profundidade
+  contra condições de corrida, além da checagem em nível de aplicação.
+
+Planejado nas próximas etapas:
+
+- RBAC (papéis) e permissões por módulo, atrelados à Etapa 3 (multi-tenant/empresas).
 - Isolamento multi-tenant garantido na camada de repositório (não apenas na API).
-- Rate limiting, validação de entrada (Pydantic), sanitização de texto livre.
 - Headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), CORS restrito.
 - Auditoria de ações sensíveis e criptografia de campos sensíveis em repouso.
 - Upload de arquivos validado por conteúdo real, não apenas extensão.
 
-Detalhes de implementação de cada mecanismo serão documentados conforme cada etapa do
-roadmap for concluída.
+Detalhes de implementação de cada mecanismo são documentados em
+[`docs/architecture.md`](docs/architecture.md) conforme cada etapa do roadmap é concluída.
 
 ## Roadmap
 
@@ -217,8 +228,8 @@ roadmap for concluída.
 |---|---|---|
 | 0 | Fundação do monorepo (estrutura, tooling, Docker Compose, CI) | ✅ Concluída |
 | 1 | Backend core (config, logging, exceções, conexão com o banco, health check) | ✅ Concluída |
-| 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | ⏳ Próxima |
-| 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | Planejada |
+| 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | ✅ Concluída |
+| 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | ⏳ Próxima |
 | 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | Planejada |
 | 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | Planejada |
 | 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | Planejada |
@@ -242,6 +253,11 @@ roadmap for concluída.
 - Conexão assíncrona com MongoDB via `pymongo` (driver assíncrono nativo) + Beanie, com
   inicialização/encerramento no ciclo de vida da aplicação e `GET /api/v1/health` reportando
   o status do banco.
+- Autenticação completa: cadastro (`POST /api/v1/auth/register`), login com emissão de
+  access token JWT + refresh token opaco e revogável (`POST /api/v1/auth/login`), rotação
+  de refresh token (`POST /api/v1/auth/refresh`), logout com revogação (`POST
+  /api/v1/auth/logout`) e usuário autenticado (`GET /api/v1/auth/me`). Senhas com Argon2id;
+  rate limiting nos endpoints de autenticação.
 
 ## Funcionalidades futuras
 

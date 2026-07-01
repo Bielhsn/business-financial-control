@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.logging import get_logger
 from app.schemas.error import ErrorResponse
@@ -86,6 +87,21 @@ def register_exception_handlers(app: FastAPI) -> None:
             content=ErrorResponse(
                 error="ValidationError", message="Dados inválidos", details={"errors": errors}
             ).model_dump(),
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def handle_http_exception(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+        # Cobre exceções HTTP nativas do Starlette/FastAPI (ex.: 404 de rota inexistente,
+        # RateLimitExceeded do slowapi), mantendo o mesmo formato de resposta.
+        logger.warning(
+            "http_exception",
+            status_code=exc.status_code,
+            detail=str(exc.detail),
+            path=request.url.path,
+        )
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=ErrorResponse(error="HTTPException", message=str(exc.detail)).model_dump(),
         )
 
     @app.exception_handler(Exception)

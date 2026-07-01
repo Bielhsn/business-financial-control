@@ -5,6 +5,8 @@ from pymongo import AsyncMongoClient
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.infrastructure.database.models.refresh_token import RefreshTokenDocument
+from app.infrastructure.database.models.user import UserDocument
 
 logger = get_logger(__name__)
 
@@ -18,6 +20,9 @@ def get_client() -> AsyncMongoClient[dict[str, Any]]:
         _client = AsyncMongoClient(
             settings.mongodb_uri,
             serverSelectionTimeoutMS=settings.mongodb_server_selection_timeout_ms,
+            # datetimes lidos do Mongo vêm com tzinfo (UTC), evitando comparações
+            # entre naive e aware que causariam bugs em validações de expiração.
+            tz_aware=True,
         )
     return _client
 
@@ -25,8 +30,10 @@ def get_client() -> AsyncMongoClient[dict[str, Any]]:
 async def connect_to_mongo() -> None:
     settings = get_settings()
     client = get_client()
-    # document_models começa vazio: os primeiros Documents (Company, User) chegam na Etapa 3.
-    await init_beanie(database=client[settings.mongodb_db_name], document_models=[])
+    await init_beanie(
+        database=client[settings.mongodb_db_name],
+        document_models=[UserDocument, RefreshTokenDocument],
+    )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)
 
 
