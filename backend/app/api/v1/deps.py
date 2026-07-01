@@ -16,8 +16,11 @@ from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
 from app.domain.blueprint.ports import AIProviderPort
 from app.domain.blueprint.repository import CompanyBlueprintRepository
+from app.domain.catalog.repository import CatalogItemRepository, StockMovementRepository
+from app.domain.client.repository import ClientRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
+from app.domain.employee.repository import EmployeeRepository
 from app.domain.financial.repository import (
     FinancialCategoryRepository,
     FinancialTransactionRepository,
@@ -25,6 +28,8 @@ from app.domain.financial.repository import (
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
+from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
+from app.infrastructure.repositories.client_repository import BeanieClientRepository
 from app.infrastructure.repositories.company_blueprint_repository import (
     BeanieCompanyBlueprintRepository,
 )
@@ -32,6 +37,7 @@ from app.infrastructure.repositories.company_membership_repository import (
     BeanieCompanyMembershipRepository,
 )
 from app.infrastructure.repositories.company_repository import BeanieCompanyRepository
+from app.infrastructure.repositories.employee_repository import BeanieEmployeeRepository
 from app.infrastructure.repositories.financial_category_repository import (
     BeanieFinancialCategoryRepository,
 )
@@ -40,6 +46,9 @@ from app.infrastructure.repositories.financial_transaction_repository import (
 )
 from app.infrastructure.repositories.refresh_token_repository import (
     BeanieRefreshTokenRepository,
+)
+from app.infrastructure.repositories.stock_movement_repository import (
+    BeanieStockMovementRepository,
 )
 from app.infrastructure.repositories.user_repository import BeanieUserRepository
 from app.infrastructure.security.password import Argon2PasswordHasher
@@ -85,6 +94,22 @@ def get_financial_category_repository() -> FinancialCategoryRepository:
 
 def get_financial_transaction_repository() -> FinancialTransactionRepository:
     return BeanieFinancialTransactionRepository()
+
+
+def get_client_repository() -> ClientRepository:
+    return BeanieClientRepository()
+
+
+def get_catalog_item_repository() -> CatalogItemRepository:
+    return BeanieCatalogItemRepository()
+
+
+def get_stock_movement_repository() -> StockMovementRepository:
+    return BeanieStockMovementRepository()
+
+
+def get_employee_repository() -> EmployeeRepository:
+    return BeanieEmployeeRepository()
 
 
 def get_ai_provider(settings: Annotated[Settings, Depends(get_settings)]) -> AIProviderPort:

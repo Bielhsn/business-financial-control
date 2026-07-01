@@ -5,14 +5,18 @@ from pymongo import AsyncMongoClient
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.infrastructure.database.models.catalog_item import CatalogItemDocument
+from app.infrastructure.database.models.client import ClientDocument
 from app.infrastructure.database.models.company import CompanyDocument
 from app.infrastructure.database.models.company_blueprint import CompanyBlueprintDocument
 from app.infrastructure.database.models.company_membership import CompanyMembershipDocument
+from app.infrastructure.database.models.employee import EmployeeDocument
 from app.infrastructure.database.models.financial_category import FinancialCategoryDocument
 from app.infrastructure.database.models.financial_transaction import (
     FinancialTransactionDocument,
 )
 from app.infrastructure.database.models.refresh_token import RefreshTokenDocument
+from app.infrastructure.database.models.stock_movement import StockMovementDocument
 from app.infrastructure.database.models.user import UserDocument
 
 logger = get_logger(__name__)
@@ -47,6 +51,10 @@ async def connect_to_mongo() -> None:
             CompanyBlueprintDocument,
             FinancialCategoryDocument,
             FinancialTransactionDocument,
+            ClientDocument,
+            CatalogItemDocument,
+            StockMovementDocument,
+            EmployeeDocument,
         ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)

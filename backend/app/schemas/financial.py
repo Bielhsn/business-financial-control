@@ -32,6 +32,7 @@ class CreateTransactionRequest(BaseModel):
     due_date: datetime | None = None
     paid_at: datetime | None = None
     notes: str | None = Field(default=None, max_length=2000)
+    client_id: str | None = None
 
 
 class UpdateTransactionRequest(BaseModel):
@@ -56,6 +57,7 @@ class FinancialTransactionResponse(BaseModel):
     due_date: datetime | None
     paid_at: datetime | None
     notes: str | None
+    client_id: str | None
     created_by: str
     created_at: datetime
     updated_at: datetime

@@ -40,6 +40,7 @@ class FinancialTransaction:
     due_date: datetime | None
     paid_at: datetime | None
     notes: str | None
+    client_id: str | None
     created_by: str
     created_at: datetime
     updated_at: datetime

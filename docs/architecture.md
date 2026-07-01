@@ -24,6 +24,37 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 6 (módulos dinâmicos):** `Client` ganha `custom_fields: dict[str, str]`, validados
+em `CreateClientUseCase`/`UpdateClientUseCase` contra as chaves definidas em
+`blueprint.client_custom_fields` (Etapa 4) — sem blueprint gerado, nenhum campo
+personalizado é aceito; chaves fora da lista são rejeitadas com `ValidationError`. Essa é a
+"metadata-driven UI" prometida desde a Etapa 0 chegando ao backend: o frontend (Etapa 8+)
+poderá renderizar o formulário de cliente dinamicamente a partir do mesmo blueprint que
+valida essas chaves aqui.
+
+`FinancialTransaction` ganhou `client_id` opcional, conectando o módulo financeiro ao de
+clientes sem precisar de um novo "módulo de vendas": `GetClientSummaryUseCase` deriva valor
+total gasto, quantidade de compras e última compra a partir dos lançamentos `PAID`
+vinculados ao cliente — em vez de armazenar esses agregados de forma denormalizada (o que
+exigiria mantê-los sincronizados a cada novo lançamento).
+
+Produtos e serviços foram unificados em uma única entidade (`CatalogItem`, campo `kind`)
+em vez de dois modelos quase idênticos — evita duplicar CRUD para "coisas vendáveis com
+preço", um padrão comum em sistemas de ponto de venda. Ajuste de estoque
+(`AdjustStockUseCase` + `CatalogItemRepository.adjust_stock`) usa `$inc`/`$set` atômicos do
+MongoDB (via `beanie.operators.Inc/Set`) para evitar a condição de corrida clássica de
+leitura-then-escrita em ajustes concorrentes; a validação de "não pode ficar negativo",
+porém, ainda lê o valor antes de ajustar — uma janela de corrida residual aceitável no
+volume de uma única empresa, documentada no código (`AdjustStockUseCase`). Toda mudança de
+estoque gera um `StockMovement` (auditoria), e atualizações de item comuns
+(`UpdateCatalogItemUseCase`) não têm permissão de tocar `stock_quantity` diretamente — só o
+fluxo de ajuste, para não furar essa trilha de auditoria.
+
+RBAC introduz uma distinção nova: operação do dia a dia (registrar cliente, vender/ajustar
+estoque) liberada também a `EMPLOYEE`, mas gestão estrutural (catálogo, funcionários)
+restrita a `OWNER`/`ADMIN`/`MANAGER` — o mesmo padrão já usado para lançamentos financeiros
+na Etapa 5.
+
 **Etapa 5 (financeiro core):** primeiro consumidor real do contexto de tenant descrito na
 Etapa 3 — `core/tenant.get_current_company_id()` deixa de ser só infraestrutura pronta e
 passa a ser usado por `BeanieFinancialCategoryRepository`/`BeanieFinancialTransactionRepository`

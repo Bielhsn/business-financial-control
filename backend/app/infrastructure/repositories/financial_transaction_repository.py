@@ -23,6 +23,7 @@ def _to_entity(document: FinancialTransactionDocument) -> FinancialTransaction:
         due_date=document.due_date,
         paid_at=document.paid_at,
         notes=document.notes,
+        client_id=document.client_id,
         created_by=document.created_by,
         created_at=document.created_at,
         updated_at=document.updated_at,
@@ -43,6 +44,7 @@ class BeanieFinancialTransactionRepository:
         due_date: datetime | None,
         paid_at: datetime | None,
         notes: str | None,
+        client_id: str | None,
         created_by: str,
     ) -> FinancialTransaction:
         now = datetime.now(UTC)
@@ -56,6 +58,7 @@ class BeanieFinancialTransactionRepository:
             due_date=due_date,
             paid_at=paid_at,
             notes=notes,
+            client_id=client_id,
             created_by=created_by,
             created_at=now,
             updated_at=now,
@@ -84,6 +87,16 @@ class BeanieFinancialTransactionRepository:
         if status is not None:
             query["status"] = status.value
         documents = await FinancialTransactionDocument.find(query).to_list()
+        return [_to_entity(document) for document in documents]
+
+    async def list_paid_for_client(self, client_id: str) -> list[FinancialTransaction]:
+        documents = await FinancialTransactionDocument.find(
+            {
+                "company_id": get_current_company_id(),
+                "client_id": client_id,
+                "status": TransactionStatus.PAID.value,
+            }
+        ).to_list()
         return [_to_entity(document) for document in documents]
 
     async def update(self, transaction_id: str, **fields: object) -> FinancialTransaction | None:

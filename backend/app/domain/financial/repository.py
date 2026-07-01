@@ -41,6 +41,7 @@ class FinancialTransactionRepository(Protocol):
         due_date: datetime | None,
         paid_at: datetime | None,
         notes: str | None,
+        client_id: str | None,
         created_by: str,
     ) -> FinancialTransaction: ...
 
@@ -52,6 +53,8 @@ class FinancialTransactionRepository(Protocol):
         type: FinancialCategoryType | None = None,
         status: TransactionStatus | None = None,
     ) -> list[FinancialTransaction]: ...
+
+    async def list_paid_for_client(self, client_id: str) -> list[FinancialTransaction]: ...
 
     async def update(
         self, transaction_id: str, **fields: object

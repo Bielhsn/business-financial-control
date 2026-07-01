@@ -10,8 +10,11 @@ from app.domain.blueprint.entities import (
     SuggestedFinancialCategory,
 )
 from app.domain.blueprint.ports import CompanyBlueprintDraft
+from app.domain.catalog.entities import CatalogItem, CatalogItemKind, StockMovement
+from app.domain.client.entities import Client
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
+from app.domain.employee.entities import Employee
 from app.domain.financial.entities import (
     FinancialCategory,
     FinancialCategoryType,
@@ -328,6 +331,7 @@ class FakeFinancialTransactionRepository:
         due_date: datetime | None,
         paid_at: datetime | None,
         notes: str | None,
+        client_id: str | None = None,
         created_by: str,
     ) -> FinancialTransaction:
         transaction_id = str(self._next_id)
@@ -344,6 +348,7 @@ class FakeFinancialTransactionRepository:
             due_date=due_date,
             paid_at=paid_at,
             notes=notes,
+            client_id=client_id,
             created_by=created_by,
             created_at=now,
             updated_at=now,
@@ -353,6 +358,13 @@ class FakeFinancialTransactionRepository:
 
     async def get_by_id(self, transaction_id: str) -> FinancialTransaction | None:
         return self._transactions.get(transaction_id)
+
+    async def list_paid_for_client(self, client_id: str) -> list[FinancialTransaction]:
+        return [
+            t
+            for t in self._transactions.values()
+            if t.client_id == client_id and t.status == TransactionStatus.PAID
+        ]
 
     async def list_all(
         self,
@@ -386,3 +398,172 @@ class FakeFinancialTransactionRepository:
             and t.paid_at is not None
             and start <= t.paid_at <= end
         )
+
+
+class FakeClientRepository:
+    def __init__(self) -> None:
+        self._clients: dict[str, Client] = {}
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        name: str,
+        email: str | None,
+        phone: str | None,
+        notes: str | None,
+        custom_fields: dict[str, str],
+    ) -> Client:
+        client_id = str(self._next_id)
+        self._next_id += 1
+        now = datetime.now(UTC)
+        client = Client(
+            id=client_id,
+            company_id="company-1",
+            name=name,
+            email=email,
+            phone=phone,
+            notes=notes,
+            custom_fields=custom_fields,
+            is_active=True,
+            created_at=now,
+            updated_at=now,
+        )
+        self._clients[client_id] = client
+        return client
+
+    async def get_by_id(self, client_id: str) -> Client | None:
+        return self._clients.get(client_id)
+
+    async def list_all(self, *, only_active: bool = True) -> list[Client]:
+        return [c for c in self._clients.values() if not only_active or c.is_active]
+
+    async def update(self, client_id: str, **fields: object) -> Client | None:
+        client = self._clients.get(client_id)
+        if client is None:
+            return None
+        for key, value in fields.items():
+            setattr(client, key, value)
+        return client
+
+
+class FakeCatalogItemRepository:
+    def __init__(self) -> None:
+        self._items: dict[str, CatalogItem] = {}
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        name: str,
+        description: str | None,
+        price_cents: int,
+        kind: CatalogItemKind,
+        tracks_inventory: bool,
+        stock_quantity: int | None,
+    ) -> CatalogItem:
+        item_id = str(self._next_id)
+        self._next_id += 1
+        now = datetime.now(UTC)
+        item = CatalogItem(
+            id=item_id,
+            company_id="company-1",
+            name=name,
+            description=description,
+            price_cents=price_cents,
+            kind=kind,
+            tracks_inventory=tracks_inventory,
+            stock_quantity=stock_quantity,
+            is_active=True,
+            created_at=now,
+            updated_at=now,
+        )
+        self._items[item_id] = item
+        return item
+
+    async def get_by_id(self, item_id: str) -> CatalogItem | None:
+        return self._items.get(item_id)
+
+    async def list_all(self, *, only_active: bool = True) -> list[CatalogItem]:
+        return [i for i in self._items.values() if not only_active or i.is_active]
+
+    async def update(self, item_id: str, **fields: object) -> CatalogItem | None:
+        item = self._items.get(item_id)
+        if item is None:
+            return None
+        for key, value in fields.items():
+            setattr(item, key, value)
+        return item
+
+    async def adjust_stock(self, item_id: str, *, delta: int) -> CatalogItem | None:
+        item = self._items.get(item_id)
+        if item is None:
+            return None
+        item.stock_quantity = (item.stock_quantity or 0) + delta
+        return item
+
+
+class FakeStockMovementRepository:
+    def __init__(self) -> None:
+        self._movements: dict[str, StockMovement] = {}
+        self._next_id = 1
+
+    async def create(
+        self, *, item_id: str, delta: int, reason: str, created_by: str
+    ) -> StockMovement:
+        movement_id = str(self._next_id)
+        self._next_id += 1
+        movement = StockMovement(
+            id=movement_id,
+            company_id="company-1",
+            item_id=item_id,
+            delta=delta,
+            reason=reason,
+            created_by=created_by,
+            created_at=datetime.now(UTC),
+        )
+        self._movements[movement_id] = movement
+        return movement
+
+    async def list_for_item(self, item_id: str) -> list[StockMovement]:
+        return [m for m in self._movements.values() if m.item_id == item_id]
+
+
+class FakeEmployeeRepository:
+    def __init__(self) -> None:
+        self._employees: dict[str, Employee] = {}
+        self._next_id = 1
+
+    async def create(
+        self, *, name: str, email: str | None, phone: str | None, role_title: str | None
+    ) -> Employee:
+        employee_id = str(self._next_id)
+        self._next_id += 1
+        now = datetime.now(UTC)
+        employee = Employee(
+            id=employee_id,
+            company_id="company-1",
+            name=name,
+            email=email,
+            phone=phone,
+            role_title=role_title,
+            is_active=True,
+            created_at=now,
+            updated_at=now,
+        )
+        self._employees[employee_id] = employee
+        return employee
+
+    async def get_by_id(self, employee_id: str) -> Employee | None:
+        return self._employees.get(employee_id)
+
+    async def list_all(self, *, only_active: bool = True) -> list[Employee]:
+        return [e for e in self._employees.values() if not only_active or e.is_active]
+
+    async def update(self, employee_id: str, **fields: object) -> Employee | None:
+        employee = self._employees.get(employee_id)
+        if employee is None:
+            return None
+        for key, value in fields.items():
+            setattr(employee, key, value)
+        return employee

@@ -239,8 +239,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | ✅ Concluída |
 | 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | ✅ Concluída |
 | 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | ✅ Concluída |
-| 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | ⏳ Próxima |
-| 7 | Dashboard e indicadores financeiros | Planejada |
+| 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | ✅ Concluída |
+| 7 | Dashboard e indicadores financeiros | ⏳ Próxima |
 | 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | Planejada |
 | 9 | Frontend — onboarding com IA (wizard) | Planejada |
 | 10 | Frontend — dashboard e telas dos módulos | Planejada |
@@ -290,6 +290,18 @@ Detalhes de implementação de cada mecanismo são documentados em
   liberados a EMPLOYEE; leitura liberada a qualquer membro. Todo dado financeiro é
   automaticamente filtrado/carimbado pela empresa do contexto de tenant atual na camada de
   repositório — o código de aplicação nunca precisa (nem consegue) esquecer o filtro.
+- Módulos dinâmicos: clientes (`.../clients`) com campos personalizados validados contra
+  os sugeridos pelo Company Blueprint (chaves fora da lista são rejeitadas), incluindo um
+  resumo de relacionamento (`.../clients/{id}/summary`) com valor total gasto, quantidade
+  de compras e última compra — calculado a partir dos lançamentos financeiros pagos
+  vinculados ao cliente. Catálogo unificado de produtos e serviços (`.../catalog-items`,
+  campo `kind`: `product` ou `service`) — produtos podem controlar estoque, serviços não;
+  ajuste de estoque (`.../catalog-items/{id}/adjust-stock`) é atômico no banco (`$inc`) e
+  gera um registro de auditoria (`StockMovement`) a cada ajuste. Funcionários
+  (`.../employees`) com cadastro simples. RBAC: cadastro de clientes e lançamento de
+  vendas/ajuste de estoque liberados também a EMPLOYEE (operação do dia a dia); gestão de
+  catálogo e funcionários restrita a OWNER/ADMIN/MANAGER; leitura liberada a qualquer
+  membro.
 
 ## Funcionalidades futuras
 

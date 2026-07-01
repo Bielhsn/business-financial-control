@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.v1.deps import (
+    get_client_repository,
     get_company_blueprint_repository,
     get_company_context,
     get_current_user,
@@ -23,6 +24,7 @@ from app.application.financial.update_category import UpdateFinancialCategoryUse
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
 from app.domain.blueprint.repository import CompanyBlueprintRepository
+from app.domain.client.repository import ClientRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.financial.entities import (
     CashFlowSummary,
@@ -82,6 +84,7 @@ def _transaction_to_response(transaction: FinancialTransaction) -> FinancialTran
         due_date=transaction.due_date,
         paid_at=transaction.paid_at,
         notes=transaction.notes,
+        client_id=transaction.client_id,
         created_by=transaction.created_by,
         created_at=transaction.created_at,
         updated_at=transaction.updated_at,
@@ -179,8 +182,11 @@ async def create_transaction(
     transaction_repository: Annotated[
         FinancialTransactionRepository, Depends(get_financial_transaction_repository)
     ],
+    client_repository: Annotated[ClientRepository, Depends(get_client_repository)],
 ) -> FinancialTransactionResponse:
-    use_case = CreateFinancialTransactionUseCase(category_repository, transaction_repository)
+    use_case = CreateFinancialTransactionUseCase(
+        category_repository, transaction_repository, client_repository
+    )
     transaction = await use_case.execute(
         category_id=payload.category_id,
         type=payload.type,
@@ -189,6 +195,7 @@ async def create_transaction(
         due_date=payload.due_date,
         paid_at=payload.paid_at,
         notes=payload.notes,
+        client_id=payload.client_id,
         created_by=current_user.id,
     )
     return _transaction_to_response(transaction)

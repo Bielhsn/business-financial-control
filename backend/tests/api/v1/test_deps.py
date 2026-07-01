@@ -2,17 +2,25 @@ import pytest
 
 from app.api.v1.deps import (
     get_ai_provider,
+    get_catalog_item_repository,
+    get_client_repository,
     get_company_blueprint_repository,
     get_company_membership_repository,
     get_company_repository,
+    get_employee_repository,
+    get_financial_category_repository,
+    get_financial_transaction_repository,
     get_password_hasher,
     get_refresh_token_repository,
+    get_stock_movement_repository,
     get_token_service,
     get_user_repository,
 )
 from app.core.config import Settings
 from app.core.exceptions import AIProviderNotConfiguredError
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
+from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
+from app.infrastructure.repositories.client_repository import BeanieClientRepository
 from app.infrastructure.repositories.company_blueprint_repository import (
     BeanieCompanyBlueprintRepository,
 )
@@ -20,8 +28,18 @@ from app.infrastructure.repositories.company_membership_repository import (
     BeanieCompanyMembershipRepository,
 )
 from app.infrastructure.repositories.company_repository import BeanieCompanyRepository
+from app.infrastructure.repositories.employee_repository import BeanieEmployeeRepository
+from app.infrastructure.repositories.financial_category_repository import (
+    BeanieFinancialCategoryRepository,
+)
+from app.infrastructure.repositories.financial_transaction_repository import (
+    BeanieFinancialTransactionRepository,
+)
 from app.infrastructure.repositories.refresh_token_repository import (
     BeanieRefreshTokenRepository,
+)
+from app.infrastructure.repositories.stock_movement_repository import (
+    BeanieStockMovementRepository,
 )
 from app.infrastructure.repositories.user_repository import BeanieUserRepository
 from app.infrastructure.security.password import Argon2PasswordHasher
@@ -54,6 +72,30 @@ def test_get_company_membership_repository_returns_the_beanie_implementation() -
 
 def test_get_company_blueprint_repository_returns_the_beanie_implementation() -> None:
     assert isinstance(get_company_blueprint_repository(), BeanieCompanyBlueprintRepository)
+
+
+def test_get_financial_category_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_financial_category_repository(), BeanieFinancialCategoryRepository)
+
+
+def test_get_financial_transaction_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_financial_transaction_repository(), BeanieFinancialTransactionRepository)
+
+
+def test_get_client_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_client_repository(), BeanieClientRepository)
+
+
+def test_get_catalog_item_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_catalog_item_repository(), BeanieCatalogItemRepository)
+
+
+def test_get_stock_movement_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_stock_movement_repository(), BeanieStockMovementRepository)
+
+
+def test_get_employee_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_employee_repository(), BeanieEmployeeRepository)
 
 
 def test_get_ai_provider_returns_the_anthropic_implementation_when_configured() -> None:
