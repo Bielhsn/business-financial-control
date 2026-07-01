@@ -1,0 +1,250 @@
+# Business Financial Control
+
+SaaS de Controle Financeiro Empresarial com onboarding assistido por IA: a plataforma
+interpreta o segmento de qualquer empresa (existente ou informado livremente pelo
+usuário) e monta automaticamente os módulos, categorias financeiras e indicadores
+adequados àquele negócio.
+
+> **Status:** em desenvolvimento incremental. Veja [Roadmap](#roadmap) para o que já
+> existe e o que vem a seguir.
+
+## Sumário
+
+- [Visão geral](#visão-geral)
+- [Objetivo](#objetivo)
+- [Tecnologias utilizadas](#tecnologias-utilizadas)
+- [Arquitetura](#arquitetura)
+- [Estrutura de pastas](#estrutura-de-pastas)
+- [Como executar o projeto](#como-executar-o-projeto)
+- [Como executar o backend](#como-executar-o-backend)
+- [Como executar o frontend](#como-executar-o-frontend)
+- [Variáveis de ambiente](#variáveis-de-ambiente)
+- [Configurando o MongoDB](#configurando-o-mongodb)
+- [Guia de contribuição](#guia-de-contribuição)
+- [Convenções de código](#convenções-de-código)
+- [Estratégia de segurança](#estratégia-de-segurança)
+- [Roadmap](#roadmap)
+- [Funcionalidades atuais](#funcionalidades-atuais)
+- [Funcionalidades futuras](#funcionalidades-futuras)
+- [Licença](#licença)
+
+## Visão geral
+
+Hoje existem muitos dashboards financeiros para pessoas físicas, mas praticamente nenhuma
+plataforma gera automaticamente um dashboard financeiro personalizado para qualquer
+segmento empresarial (tecnologia, barbearia, restaurante, clínica, academia, oficina,
+indústria, prestadores de serviço, etc.).
+
+O diferencial deste projeto é o onboarding inteligente: ao cadastrar a empresa, o usuário
+responde perguntas simples (segmento, porte, número de funcionários, localização, regime
+tributário...) e a IA monta automaticamente a estrutura do dashboard — módulos, telas de
+clientes, categorias financeiras e indicadores — adequada àquele tipo de negócio.
+
+## Objetivo
+
+Entregar um sistema multi-tenant, seguro e escalável que:
+
+- Elimina a necessidade de configurar manualmente um dashboard financeiro por segmento.
+- Usa IA para interpretar segmentos novos (texto livre) e sugerir a estrutura adequada.
+- Mantém isolamento total de dados entre empresas (multi-tenant).
+- Nasce pronto para produção: segurança, auditoria, testes e observabilidade desde o início.
+
+## Tecnologias utilizadas
+
+### Frontend
+React · TypeScript · Tailwind CSS · React Router · TanStack Query · React Hook Form ·
+Zod · Axios · Framer Motion · Recharts · Lucide Icons · shadcn/ui · Zustand
+
+### Backend
+Python · FastAPI · Beanie (MongoDB ODM sobre Motor) · Pydantic v2 · JWT · Argon2
+
+### Infraestrutura
+MongoDB · Redis · Docker / Docker Compose · GitHub Actions (CI)
+
+### IA
+Anthropic Claude API, integrada via uma interface plugável (`AIProviderPort`) que permite
+trocar de provedor sem alterar regras de negócio.
+
+## Arquitetura
+
+O backend segue **Clean Architecture** (Ports & Adapters): o domínio (entidades e regras
+de negócio) não depende de framework, banco ou provedor de IA — apenas de interfaces.
+Infraestrutura (Mongo, IA, cache, segurança) implementa essas interfaces. Isso garante
+testabilidade, baixo acoplamento e facilidade para trocar peças (ex.: provedor de IA,
+banco) sem reescrever regra de negócio.
+
+O frontend segue organização **feature-based**: cada funcionalidade (auth, onboarding,
+dashboard, clientes, financeiro...) é autocontida, com seus próprios componentes, hooks,
+chamadas de API e schemas de validação.
+
+O diferencial do produto — dashboard adaptado por segmento — é resolvido sem geração de
+código em runtime: a IA produz um **Company Blueprint** (JSON estruturado e validado)
+descrevendo quais módulos pré-construídos ativar, categorias financeiras e KPIs; a UI
+renderiza isso dinamicamente (metadata-driven UI). Detalhes completos das decisões de
+arquitetura, incluindo multi-tenancy e segurança, estão em
+[`docs/architecture.md`](docs/architecture.md).
+
+## Estrutura de pastas
+
+```
+business-financial-control/
+├── backend/
+│   ├── app/
+│   │   ├── core/            # config, logging, exceções, segurança transversal
+│   │   ├── api/v1/          # routers HTTP
+│   │   ├── domain/          # entidades, value objects, interfaces (ports)
+│   │   ├── application/     # casos de uso
+│   │   ├── infrastructure/  # Mongo, IA, cache, JWT (adapters concretos)
+│   │   └── schemas/         # DTOs Pydantic
+│   ├── tests/
+│   ├── requirements.txt
+│   ├── requirements-dev.txt
+│   └── Dockerfile
+├── frontend/                # React + TypeScript (Etapa 8 do roadmap)
+├── infra/
+│   └── docker-compose.yml   # MongoDB + Redis + backend
+├── docs/
+│   └── architecture.md      # decisões de arquitetura detalhadas
+└── .github/workflows/ci.yml
+```
+
+## Como executar o projeto
+
+Pré-requisitos: Docker e Docker Compose.
+
+```bash
+cp backend/.env.example backend/.env
+cd infra
+docker compose up --build
+```
+
+A API sobe em `http://localhost:8000` (docs interativas em `/docs`). MongoDB fica
+disponível em `localhost:27017` e Redis em `localhost:6379`.
+
+## Como executar o backend
+
+Sem Docker, localmente:
+
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements-dev.txt
+cp .env.example .env
+uvicorn app.main:app --reload
+```
+
+Rodar testes e verificações de qualidade:
+
+```bash
+pytest --cov=app
+ruff check .
+black --check .
+mypy app
+```
+
+## Como executar o frontend
+
+O frontend ainda será criado (Etapa 8 do roadmap). Esta seção será preenchida com os
+comandos de instalação e execução assim que o projeto Vite for adicionado.
+
+## Variáveis de ambiente
+
+Backend (`backend/.env`, veja `backend/.env.example`):
+
+| Variável | Descrição |
+|---|---|
+| `ENVIRONMENT` | `development`, `staging` ou `production` |
+| `API_V1_PREFIX` | Prefixo das rotas da API (`/api/v1`) |
+| `SECRET_KEY` | Chave usada na assinatura de tokens — gere um valor forte e único por ambiente |
+| `MONGODB_URI` | String de conexão do MongoDB |
+| `MONGODB_DB_NAME` | Nome do banco de dados |
+| `REDIS_URL` | String de conexão do Redis (cache, rate limiting) |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Duração do access token JWT |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | Duração do refresh token |
+| `CORS_ALLOWED_ORIGINS` | Origens permitidas, separadas por vírgula |
+| `AI_PROVIDER` | Provedor de IA ativo (`anthropic`) |
+| `ANTHROPIC_API_KEY` | Chave de API da Anthropic |
+
+Nunca commite o arquivo `.env` — ele está no `.gitignore`.
+
+## Configurando o MongoDB
+
+- **Via Docker Compose** (recomendado para desenvolvimento): já incluso em
+  `infra/docker-compose.yml`, sem configuração adicional.
+- **MongoDB local**: instale a versão 7.x e ajuste `MONGODB_URI` em `backend/.env` para
+  `mongodb://localhost:27017`.
+- **MongoDB Atlas** (produção): crie um cluster, configure IP allowlist/usuário e use a
+  connection string fornecida em `MONGODB_URI`.
+
+## Guia de contribuição
+
+1. Crie uma branch a partir de `main`: `feature/<nome-curto>` ou `fix/<nome-curto>`.
+2. Siga as [convenções de código](#convenções-de-código).
+3. Garanta que `ruff`, `black`, `mypy` e `pytest` passam antes de abrir o PR.
+4. Escreva mensagens de commit descritivas (o repositório segue o padrão
+   [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`,
+   `refactor:`, `docs:`, `test:`, `chore:`).
+5. Abra o Pull Request descrevendo o que mudou e por quê.
+
+## Convenções de código
+
+- **Backend:** tipagem estrita (mypy `strict`), formatação com Black, lint com Ruff,
+  Clean Architecture (domínio não importa infraestrutura), DTOs Pydantic em todas as
+  fronteiras de entrada/saída.
+- **Frontend:** TypeScript estrito, componentização por feature, hooks para lógica
+  reutilizável, formulários validados com React Hook Form + Zod.
+- **Geral:** Clean Code, SOLID, DRY, KISS. Comentários apenas quando o "porquê" não é
+  óbvio pelo código.
+
+## Estratégia de segurança
+
+- Autenticação via JWT de curta duração + refresh token rotativo.
+- Senhas com hash Argon2id.
+- RBAC (papéis) e permissões por módulo em todas as rotas.
+- Isolamento multi-tenant garantido na camada de repositório (não apenas na API).
+- Rate limiting, validação de entrada (Pydantic), sanitização de texto livre.
+- Headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), CORS restrito.
+- Auditoria de ações sensíveis e criptografia de campos sensíveis em repouso.
+- Upload de arquivos validado por conteúdo real, não apenas extensão.
+
+Detalhes de implementação de cada mecanismo serão documentados conforme cada etapa do
+roadmap for concluída.
+
+## Roadmap
+
+| # | Etapa | Status |
+|---|---|---|
+| 0 | Fundação do monorepo (estrutura, tooling, Docker Compose, CI) | ✅ Concluída |
+| 1 | Backend core (config, logging, exceções, conexão com o banco, health check) | ⏳ Próxima |
+| 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | Planejada |
+| 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | Planejada |
+| 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | Planejada |
+| 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | Planejada |
+| 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | Planejada |
+| 7 | Dashboard e indicadores financeiros | Planejada |
+| 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | Planejada |
+| 9 | Frontend — onboarding com IA (wizard) | Planejada |
+| 10 | Frontend — dashboard e telas dos módulos | Planejada |
+| 11 | IA avançada (insights automáticos, sazonalidade, base para previsões) | Planejada |
+| 12 | Hardening final (testes completos, auditoria, revisão de segurança, i18n) | Planejada |
+
+## Funcionalidades atuais
+
+- Estrutura do monorepo, tooling de qualidade (Ruff, Black, mypy) e CI configurados.
+- Esqueleto do backend em Clean Architecture com endpoint inicial e testes automatizados.
+- Ambiente de desenvolvimento via Docker Compose (MongoDB + Redis + API).
+
+## Funcionalidades futuras
+
+- Cadastro de conta e onboarding de empresa assistido por IA.
+- Geração automática de módulos, categorias financeiras e KPIs por segmento.
+- Telas de clientes, produtos, serviços, estoque e funcionários adaptáveis por segmento.
+- Fluxo de caixa, contas a pagar/receber, indicadores e dashboards interativos.
+- Insights financeiros gerados por IA, detecção de sazonalidade e previsões.
+- Internacionalização, múltiplas moedas, temas, API pública e aplicativo mobile.
+
+## Licença
+
+Todos os direitos reservados. Licenciamento definitivo a ser definido pelo mantenedor do
+projeto.
