@@ -24,11 +24,24 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 1 (core):** `core/config.py` centraliza toda configuração tipada (falha ao subir
+em produção com `SECRET_KEY` padrão); `core/logging.py` configura `structlog` (JSON em
+produção, console legível em desenvolvimento); `core/exceptions.py` define `AppError` e
+subclasses semânticas (`NotFoundError`, `ValidationError`, `UnauthorizedError`,
+`ForbiddenError`, `ConflictError`) convertidas em respostas HTTP consistentes por
+`register_exception_handlers`; `infrastructure/database/mongodb.py` gerencia o ciclo de
+vida da conexão (conectar no startup, fechar no shutdown) e expõe `ping_database()`,
+consumido por `GET /api/v1/health`. A aplicação falha ao subir se o MongoDB estiver
+inacessível no startup — fail-fast deliberado para não rodar com uma dependência crítica
+quebrada.
+
 **Framework:** FastAPI — async nativo, Pydantic v2 para validação de entrada (segurança),
 OpenAPI automático (base para a futura API pública), maturidade e adoção.
 
-**Banco:** MongoDB via Beanie (Motor + Pydantic) — documentos tipados e validados,
-queries parametrizadas por construção (mitiga NoSQL injection).
+**Banco:** MongoDB via Beanie sobre o driver assíncrono nativo do `pymongo` (Motor está em
+processo de descontinuação pela MongoDB em favor dessa API nativa, e a versão atual do
+Beanie já assume `pymongo.AsyncMongoClient`) — documentos tipados e validados, queries
+parametrizadas por construção (mitiga NoSQL injection).
 
 ## 3. Multi-tenancy
 

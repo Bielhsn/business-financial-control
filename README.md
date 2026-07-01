@@ -216,8 +216,8 @@ roadmap for concluída.
 | # | Etapa | Status |
 |---|---|---|
 | 0 | Fundação do monorepo (estrutura, tooling, Docker Compose, CI) | ✅ Concluída |
-| 1 | Backend core (config, logging, exceções, conexão com o banco, health check) | ⏳ Próxima |
-| 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | Planejada |
+| 1 | Backend core (config, logging, exceções, conexão com o banco, health check) | ✅ Concluída |
+| 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | ⏳ Próxima |
 | 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | Planejada |
 | 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | Planejada |
 | 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | Planejada |
@@ -234,6 +234,14 @@ roadmap for concluída.
 - Estrutura do monorepo, tooling de qualidade (Ruff, Black, mypy) e CI configurados.
 - Esqueleto do backend em Clean Architecture com endpoint inicial e testes automatizados.
 - Ambiente de desenvolvimento via Docker Compose (MongoDB + Redis + API).
+- Configuração tipada via `pydantic-settings`, com validação que impede rodar em produção
+  com segredo padrão.
+- Logging estruturado (`structlog`): JSON em produção, formato legível em desenvolvimento.
+- Tratamento centralizado de exceções (`AppError` e subclasses semânticas), convertendo
+  erros de domínio, de validação e não tratados em respostas HTTP consistentes.
+- Conexão assíncrona com MongoDB via `pymongo` (driver assíncrono nativo) + Beanie, com
+  inicialização/encerramento no ciclo de vida da aplicação e `GET /api/v1/health` reportando
+  o status do banco.
 
 ## Funcionalidades futuras
 

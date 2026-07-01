@@ -1,0 +1,48 @@
+from typing import Any
+
+from beanie import init_beanie
+from pymongo import AsyncMongoClient
+
+from app.core.config import get_settings
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
+_client: AsyncMongoClient[dict[str, Any]] | None = None
+
+
+def get_client() -> AsyncMongoClient[dict[str, Any]]:
+    global _client
+    if _client is None:
+        settings = get_settings()
+        _client = AsyncMongoClient(
+            settings.mongodb_uri,
+            serverSelectionTimeoutMS=settings.mongodb_server_selection_timeout_ms,
+        )
+    return _client
+
+
+async def connect_to_mongo() -> None:
+    settings = get_settings()
+    client = get_client()
+    # document_models começa vazio: os primeiros Documents (Company, User) chegam na Etapa 3.
+    await init_beanie(database=client[settings.mongodb_db_name], document_models=[])
+    logger.info("mongodb_connected", database=settings.mongodb_db_name)
+
+
+async def close_mongo_connection() -> None:
+    global _client
+    if _client is not None:
+        await _client.close()
+        _client = None
+        logger.info("mongodb_connection_closed")
+
+
+async def ping_database() -> bool:
+    client = get_client()
+    try:
+        await client.admin.command("ping")
+        return True
+    except Exception:
+        logger.warning("mongodb_ping_failed")
+        return False
