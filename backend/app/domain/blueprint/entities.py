@@ -2,10 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
-
-class FinancialCategoryType(StrEnum):
-    INCOME = "income"
-    EXPENSE = "expense"
+from app.domain.financial.entities import FinancialCategoryType
 
 
 class CustomFieldType(StrEnum):
@@ -17,7 +14,9 @@ class CustomFieldType(StrEnum):
 
 
 @dataclass
-class FinancialCategory:
+class SuggestedFinancialCategory:
+    """Sugestão da IA — vira uma `FinancialCategory` real ao ser importada (Etapa 5)."""
+
     name: str
     type: FinancialCategoryType
 
@@ -41,7 +40,7 @@ class CompanyBlueprint:
     id: str
     company_id: str
     modules: list[str]
-    financial_categories: list[FinancialCategory]
+    financial_categories: list[SuggestedFinancialCategory]
     kpis: list[KPIDefinition]
     client_custom_fields: list[CustomFieldDefinition]
     ai_provider: str

@@ -2,7 +2,8 @@ import pytest
 
 from app.application.blueprint.get_blueprint import GetCompanyBlueprintUseCase
 from app.core.exceptions import NotFoundError
-from app.domain.blueprint.entities import FinancialCategory, FinancialCategoryType, KPIDefinition
+from app.domain.blueprint.entities import KPIDefinition, SuggestedFinancialCategory
+from app.domain.financial.entities import FinancialCategoryType
 from tests.fakes import FakeCompanyBlueprintRepository
 
 pytestmark = pytest.mark.anyio
@@ -13,7 +14,9 @@ async def test_returns_the_existing_blueprint() -> None:
     await repository.upsert(
         company_id="company-1",
         modules=["financial_core"],
-        financial_categories=[FinancialCategory(name="Vendas", type=FinancialCategoryType.INCOME)],
+        financial_categories=[
+            SuggestedFinancialCategory(name="Vendas", type=FinancialCategoryType.INCOME)
+        ],
         kpis=[KPIDefinition(key="x", name="X", description="Y")],
         client_custom_fields=[],
         ai_provider="anthropic",

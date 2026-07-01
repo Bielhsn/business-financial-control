@@ -8,13 +8,13 @@ from app.core.exceptions import AIProviderError
 from app.domain.blueprint.entities import (
     CustomFieldDefinition,
     CustomFieldType,
-    FinancialCategory,
-    FinancialCategoryType,
     KPIDefinition,
+    SuggestedFinancialCategory,
 )
 from app.domain.blueprint.module_registry import MODULE_IDS, MODULE_REGISTRY
 from app.domain.blueprint.ports import CompanyBlueprintDraft
 from app.domain.company.entities import Company
+from app.domain.financial.entities import FinancialCategoryType
 
 _TOOL_NAME = "submit_company_blueprint"
 _MAX_TOKENS = 2048
@@ -120,7 +120,7 @@ def _parse_blueprint(data: dict[str, Any]) -> CompanyBlueprintDraft:
     try:
         modules = [module_id for module_id in data["modules"] if module_id in MODULE_IDS]
         financial_categories = [
-            FinancialCategory(name=item["name"], type=FinancialCategoryType(item["type"]))
+            SuggestedFinancialCategory(name=item["name"], type=FinancialCategoryType(item["type"]))
             for item in data["financial_categories"]
         ]
         kpis = [

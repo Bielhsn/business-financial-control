@@ -2,7 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field
 
-from app.domain.blueprint.entities import CustomFieldType, FinancialCategoryType
+from app.domain.blueprint.entities import CustomFieldType
+from app.domain.financial.entities import FinancialCategoryType
 
 
 class GenerateBlueprintRequest(BaseModel):

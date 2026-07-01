@@ -212,11 +212,13 @@ Implementado até a Etapa 3:
   defesa em profundidade contra condições de corrida, além da checagem em nível de aplicação.
 - Isolamento multi-tenant: toda rota de empresa exige um vínculo (`CompanyMembership`)
   validado a cada requisição; usuários sem vínculo recebem 404 (não 403), para não revelar
-  a existência de empresas às quais não têm acesso. Um contexto de tenant (contextvar) é
-  resolvido nessa validação e ficará disponível para os repositórios de dados financeiros
-  das próximas etapas filtrarem automaticamente por empresa.
-- RBAC básico por papel (`owner`, `admin`, `manager`, `employee`, `viewer`) via dependência
-  reutilizável (`require_role`), já usada para restringir edição de empresa a OWNER/ADMIN.
+  a existência de empresas às quais não têm acesso. Um contexto de tenant (contextvar),
+  resolvido nessa validação, é consumido automaticamente pelos repositórios de categorias e
+  lançamentos financeiros para filtrar/carimbar toda leitura e escrita pela empresa
+  correta — impossível de esquecer em um novo endpoint, por construção.
+- RBAC por papel (`owner`, `admin`, `manager`, `employee`, `viewer`) via dependência
+  reutilizável (`require_role`), usada para restringir edição de empresa e gestão de
+  categorias financeiras a papéis de gestão, e lançamentos também à operação (employee).
 
 Planejado nas próximas etapas:
 
@@ -236,8 +238,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | ✅ Concluída |
 | 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | ✅ Concluída |
 | 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | ✅ Concluída |
-| 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | ⏳ Próxima |
-| 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | Planejada |
+| 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | ✅ Concluída |
+| 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | ⏳ Próxima |
 | 7 | Dashboard e indicadores financeiros | Planejada |
 | 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | Planejada |
 | 9 | Frontend — onboarding com IA (wizard) | Planejada |
@@ -276,6 +278,18 @@ Detalhes de implementação de cada mecanismo são documentados em
   KPIs relevantes e campos personalizados para o cadastro de clientes. `GET
   .../blueprint` consulta o blueprint já gerado. Sem `ANTHROPIC_API_KEY` configurada, o
   endpoint responde 503 de forma explícita em vez de falhar de forma confusa.
+- Módulo financeiro core: categorias financeiras (`POST/GET/PATCH .../financial-categories`,
+  com importação idempotente das sugestões do blueprint via
+  `POST .../financial-categories/seed-from-blueprint`), lançamentos financeiros
+  (`POST/GET/PATCH .../transactions`) que servem tanto de contas a pagar/receber
+  (pendentes, com vencimento) quanto de fluxo de caixa realizado (uma vez marcados como
+  pagos via `POST .../transactions/{id}/mark-paid`; cancelamento apenas de pendentes via
+  `.../cancel`), e um resumo de fluxo de caixa por período (`GET .../cash-flow`). Valores
+  em centavos (inteiro), como na API do Stripe — evita erros de arredondamento de ponto
+  flutuante. RBAC: gestão de categorias restrita a OWNER/ADMIN/MANAGER; lançamentos também
+  liberados a EMPLOYEE; leitura liberada a qualquer membro. Todo dado financeiro é
+  automaticamente filtrado/carimbado pela empresa do contexto de tenant atual na camada de
+  repositório — o código de aplicação nunca precisa (nem consegue) esquecer o filtro.
 
 ## Funcionalidades futuras
 

@@ -6,13 +6,18 @@ from app.domain.auth.entities import RefreshToken
 from app.domain.blueprint.entities import (
     CompanyBlueprint,
     CustomFieldDefinition,
-    FinancialCategory,
-    FinancialCategoryType,
     KPIDefinition,
+    SuggestedFinancialCategory,
 )
 from app.domain.blueprint.ports import CompanyBlueprintDraft
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
+from app.domain.financial.entities import (
+    FinancialCategory,
+    FinancialCategoryType,
+    FinancialTransaction,
+    TransactionStatus,
+)
 from app.domain.user.entities import User
 
 
@@ -214,7 +219,7 @@ class FakeCompanyBlueprintRepository:
         *,
         company_id: str,
         modules: list[str],
-        financial_categories: list[FinancialCategory],
+        financial_categories: list[SuggestedFinancialCategory],
         kpis: list[KPIDefinition],
         client_custom_fields: list[CustomFieldDefinition],
         ai_provider: str,
@@ -248,7 +253,7 @@ class FakeAIProvider:
         self._draft = draft or CompanyBlueprintDraft(
             modules=["financial_core", "clients"],
             financial_categories=[
-                FinancialCategory(name="Vendas", type=FinancialCategoryType.INCOME)
+                SuggestedFinancialCategory(name="Vendas", type=FinancialCategoryType.INCOME)
             ],
             kpis=[
                 KPIDefinition(
@@ -264,3 +269,120 @@ class FakeAIProvider:
     ) -> CompanyBlueprintDraft:
         self.calls.append((company, additional_context))
         return self._draft
+
+
+class FakeFinancialCategoryRepository:
+    def __init__(self) -> None:
+        self._categories: dict[str, FinancialCategory] = {}
+        self._next_id = 1
+
+    async def create(self, *, name: str, type: FinancialCategoryType) -> FinancialCategory:
+        category_id = str(self._next_id)
+        self._next_id += 1
+        category = FinancialCategory(
+            id=category_id,
+            company_id="company-1",
+            name=name,
+            type=type,
+            is_active=True,
+            created_at=datetime.now(UTC),
+        )
+        self._categories[category_id] = category
+        return category
+
+    async def get_by_id(self, category_id: str) -> FinancialCategory | None:
+        return self._categories.get(category_id)
+
+    async def get_by_name_and_type(
+        self, name: str, type: FinancialCategoryType
+    ) -> FinancialCategory | None:
+        return next(
+            (c for c in self._categories.values() if c.name == name and c.type == type), None
+        )
+
+    async def list_all(self, *, only_active: bool = True) -> list[FinancialCategory]:
+        return [c for c in self._categories.values() if not only_active or c.is_active]
+
+    async def update(self, category_id: str, **fields: object) -> FinancialCategory | None:
+        category = self._categories.get(category_id)
+        if category is None:
+            return None
+        for key, value in fields.items():
+            setattr(category, key, value)
+        return category
+
+
+class FakeFinancialTransactionRepository:
+    def __init__(self) -> None:
+        self._transactions: dict[str, FinancialTransaction] = {}
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        category_id: str,
+        type: FinancialCategoryType,
+        amount_cents: int,
+        description: str,
+        status: TransactionStatus,
+        due_date: datetime | None,
+        paid_at: datetime | None,
+        notes: str | None,
+        created_by: str,
+    ) -> FinancialTransaction:
+        transaction_id = str(self._next_id)
+        self._next_id += 1
+        now = datetime.now(UTC)
+        transaction = FinancialTransaction(
+            id=transaction_id,
+            company_id="company-1",
+            category_id=category_id,
+            type=type,
+            amount_cents=amount_cents,
+            description=description,
+            status=status,
+            due_date=due_date,
+            paid_at=paid_at,
+            notes=notes,
+            created_by=created_by,
+            created_at=now,
+            updated_at=now,
+        )
+        self._transactions[transaction_id] = transaction
+        return transaction
+
+    async def get_by_id(self, transaction_id: str) -> FinancialTransaction | None:
+        return self._transactions.get(transaction_id)
+
+    async def list_all(
+        self,
+        *,
+        type: FinancialCategoryType | None = None,
+        status: TransactionStatus | None = None,
+    ) -> list[FinancialTransaction]:
+        results = list(self._transactions.values())
+        if type is not None:
+            results = [t for t in results if t.type == type]
+        if status is not None:
+            results = [t for t in results if t.status == status]
+        return results
+
+    async def update(self, transaction_id: str, **fields: object) -> FinancialTransaction | None:
+        transaction = self._transactions.get(transaction_id)
+        if transaction is None:
+            return None
+        for key, value in fields.items():
+            setattr(transaction, key, value)
+        return transaction
+
+    async def sum_paid_between(
+        self, *, type: FinancialCategoryType, start: datetime, end: datetime
+    ) -> int:
+        return sum(
+            t.amount_cents
+            for t in self._transactions.values()
+            if t.type == type
+            and t.status == TransactionStatus.PAID
+            and t.paid_at is not None
+            and start <= t.paid_at <= end
+        )

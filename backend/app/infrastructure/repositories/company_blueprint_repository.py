@@ -4,10 +4,10 @@ from app.domain.blueprint.entities import (
     CompanyBlueprint,
     CustomFieldDefinition,
     CustomFieldType,
-    FinancialCategory,
-    FinancialCategoryType,
     KPIDefinition,
+    SuggestedFinancialCategory,
 )
+from app.domain.financial.entities import FinancialCategoryType
 from app.infrastructure.database.models.company_blueprint import (
     CompanyBlueprintDocument,
     CustomFieldEmbedded,
@@ -22,7 +22,7 @@ def _to_entity(document: CompanyBlueprintDocument) -> CompanyBlueprint:
         company_id=document.company_id,
         modules=list(document.modules),
         financial_categories=[
-            FinancialCategory(name=item.name, type=FinancialCategoryType(item.type))
+            SuggestedFinancialCategory(name=item.name, type=FinancialCategoryType(item.type))
             for item in document.financial_categories
         ],
         kpis=[
@@ -44,7 +44,7 @@ class BeanieCompanyBlueprintRepository:
         *,
         company_id: str,
         modules: list[str],
-        financial_categories: list[FinancialCategory],
+        financial_categories: list[SuggestedFinancialCategory],
         kpis: list[KPIDefinition],
         client_custom_fields: list[CustomFieldDefinition],
         ai_provider: str,

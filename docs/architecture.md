@@ -24,6 +24,38 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 5 (financeiro core):** primeiro consumidor real do contexto de tenant descrito na
+Etapa 3 — `core/tenant.get_current_company_id()` deixa de ser só infraestrutura pronta e
+passa a ser usado por `BeanieFinancialCategoryRepository`/`BeanieFinancialTransactionRepository`
+em toda operação (carimba `company_id` ao criar, filtra por ele em toda leitura/atualização),
+sem que a camada de aplicação precise passar `company_id` explicitamente — se uma
+dependência de contexto de empresa não foi resolvida antes, `get_current_company_id()`
+levanta `RuntimeError` em vez de silenciosamente devolver dados de todas as empresas.
+
+Modelo único de lançamento (`FinancialTransaction`) para contas a pagar/receber e fluxo de
+caixa, em vez de dois modelos separados: um lançamento nasce `PENDING` (com `due_date`) ou
+já `PAID` (com `paid_at`, para registrar algo que já aconteceu); contas a pagar/receber são
+uma visão filtrada por `status=PENDING`, fluxo de caixa realizado é uma visão filtrada por
+`status=PAID`. Cancelamento (`CancelTransactionUseCase`) só é permitido em lançamentos
+`PENDING` — reverter um lançamento já pago exigiria um estorno/ajuste próprio para não
+corromper o histórico de caixa, fora do escopo desta etapa.
+
+Valores monetários são armazenados como inteiro na menor unidade da moeda (`amount_cents`,
+como a API do Stripe) em vez de `Decimal`: o driver `pymongo`/Beanie não serializa
+`decimal.Decimal` para BSON automaticamente, e `float` teria erros de arredondamento —
+inteiro evita as duas classes de problema com zero ambiguidade, ao custo de expor
+"centavos" em vez de "reais" na API (decisão registrada para quem for construir o
+frontend).
+
+Categorias financeiras (`FinancialCategory`) agora existem como registros reais e
+gerenciáveis (diferente da sugestão da IA, que é só um `SuggestedFinancialCategory`
+embutido no blueprint) — `SeedFinancialCategoriesFromBlueprintUseCase` importa as sugestões
+como categorias reais, comparando por nome+tipo para ser idempotente (rodar de novo não
+duplica). RBAC: gestão de categorias e o próprio seed exigem papel de gestão (OWNER/ADMIN/
+MANAGER, seed restrito a OWNER/ADMIN por ser uma ação estrutural); lançamentos do dia a dia
+também liberados a EMPLOYEE; leitura (categorias, lançamentos, fluxo de caixa) liberada a
+qualquer membro.
+
 **Etapa 4 (onboarding com IA):** `domain/blueprint/module_registry.py` define um catálogo
 fixo de módulos (`financial_core`, `clients`, `products`, `inventory`, `employees`,
 `appointments`, `projects`, `contracts`, `recurring_revenue`, `dashboard`...) — a IA nunca
@@ -101,9 +133,10 @@ Banco compartilhado, `company_id` em todo documento tenant-scoped. Como um usuá
 pertencer a várias empresas, o `company_id` ativo não vem do JWT (que só identifica o
 usuário) — é resolvido a partir do path da requisição e validado contra o vínculo
 (`CompanyMembership`) do usuário logado (ver Etapa 3 abaixo). Essa validação popula um
-contextvar (`core/tenant.py`) que será consumido automaticamente pela camada de
-repositório em toda leitura/escrita de dados por empresa a partir da Etapa 5/6 — não
-depende de cada endpoint lembrar de filtrar. Evolução futura (cliente enterprise com banco
+contextvar (`core/tenant.py`), consumido automaticamente pela camada de repositório em toda
+leitura/escrita de dados por empresa (categorias e lançamentos financeiros desde a Etapa 5,
+demais módulos de negócio seguirão o mesmo padrão) — não depende de cada endpoint lembrar
+de filtrar. Evolução futura (cliente enterprise com banco
 isolado) fica possível sem reescrever regra de negócio, pois o acesso a dados já passa por
 uma abstração.
 

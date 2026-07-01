@@ -8,6 +8,10 @@ from app.core.logging import get_logger
 from app.infrastructure.database.models.company import CompanyDocument
 from app.infrastructure.database.models.company_blueprint import CompanyBlueprintDocument
 from app.infrastructure.database.models.company_membership import CompanyMembershipDocument
+from app.infrastructure.database.models.financial_category import FinancialCategoryDocument
+from app.infrastructure.database.models.financial_transaction import (
+    FinancialTransactionDocument,
+)
 from app.infrastructure.database.models.refresh_token import RefreshTokenDocument
 from app.infrastructure.database.models.user import UserDocument
 
@@ -41,6 +45,8 @@ async def connect_to_mongo() -> None:
             CompanyDocument,
             CompanyMembershipDocument,
             CompanyBlueprintDocument,
+            FinancialCategoryDocument,
+            FinancialTransactionDocument,
         ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)

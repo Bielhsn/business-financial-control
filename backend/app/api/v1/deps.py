@@ -18,6 +18,10 @@ from app.domain.blueprint.ports import AIProviderPort
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
+from app.domain.financial.repository import (
+    FinancialCategoryRepository,
+    FinancialTransactionRepository,
+)
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
@@ -28,6 +32,12 @@ from app.infrastructure.repositories.company_membership_repository import (
     BeanieCompanyMembershipRepository,
 )
 from app.infrastructure.repositories.company_repository import BeanieCompanyRepository
+from app.infrastructure.repositories.financial_category_repository import (
+    BeanieFinancialCategoryRepository,
+)
+from app.infrastructure.repositories.financial_transaction_repository import (
+    BeanieFinancialTransactionRepository,
+)
 from app.infrastructure.repositories.refresh_token_repository import (
     BeanieRefreshTokenRepository,
 )
@@ -67,6 +77,14 @@ def get_company_membership_repository() -> CompanyMembershipRepository:
 
 def get_company_blueprint_repository() -> CompanyBlueprintRepository:
     return BeanieCompanyBlueprintRepository()
+
+
+def get_financial_category_repository() -> FinancialCategoryRepository:
+    return BeanieFinancialCategoryRepository()
+
+
+def get_financial_transaction_repository() -> FinancialTransactionRepository:
+    return BeanieFinancialTransactionRepository()
 
 
 def get_ai_provider(settings: Annotated[Settings, Depends(get_settings)]) -> AIProviderPort:
