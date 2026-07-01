@@ -24,6 +24,24 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 3 (multi-tenant e empresas):** `Company` é o tenant raiz; um usuário pode
+pertencer a várias empresas, cada uma com um papel (`CompanyRole`: owner, admin, manager,
+employee, viewer) via `CompanyMembership` — por isso o papel não fica no JWT (o usuário
+pode trocar de empresa sem refazer login) nem embutido em `User`. Rotas com `{company_id}`
+no path resolvem e validam o vínculo a cada requisição via `get_company_context`
+(`api/v1/deps.py`): sem vínculo, 404 (não 403 — evita revelar a existência da empresa a
+quem não tem acesso). Essa validação também popula `core/tenant.py` (`ContextVar`), que
+`get_current_company_id()` expõe para os repositórios de dados por empresa das próximas
+etapas — chamando essa função sem contexto resolvido levanta `RuntimeError`
+propositalmente (falha visível de programação, nunca retorno silencioso de dados de todas
+as empresas). `require_role(*roles)` é uma dependência-fábrica que compõe
+`get_company_context` para restringir ações por papel (hoje usada em `PATCH
+/companies/{id}`, restrito a OWNER/ADMIN). `CreateCompanyUseCase` cria a empresa e o
+vínculo OWNER em duas escritas sequenciais com ação compensatória (excluir a empresa) se o
+vínculo falhar — não é uma transação multi-documento real, o que exigiria um MongoDB em
+modo replica set (Atlas sempre é; um único `mongod` de desenvolvimento não é por padrão);
+avaliar transações reais quando a Etapa 5 (financeiro) precisar de atomicidade mais forte.
+
 **Etapa 2 (autenticação):** camada de domínio com `User`/`RefreshToken` (dataclasses) e
 interfaces `UserRepository`, `RefreshTokenRepository`, `PasswordHasher`, `TokenService`;
 casos de uso em `application/auth` (registro, login, refresh, logout) dependem apenas
@@ -61,11 +79,15 @@ parametrizadas por construção (mitiga NoSQL injection).
 
 ## 3. Multi-tenancy
 
-Banco compartilhado, `company_id` em todo documento tenant-scoped. Um `TenantContext`
-(contextvar), populado a partir do JWT após autenticação, é injetado automaticamente
-pela camada de repositório em toda leitura/escrita — não depende de cada endpoint lembrar
-de filtrar. Evolução futura (cliente enterprise com banco isolado) fica possível sem
-reescrever regra de negócio, pois o acesso a dados já passa por uma abstração.
+Banco compartilhado, `company_id` em todo documento tenant-scoped. Como um usuário pode
+pertencer a várias empresas, o `company_id` ativo não vem do JWT (que só identifica o
+usuário) — é resolvido a partir do path da requisição e validado contra o vínculo
+(`CompanyMembership`) do usuário logado (ver Etapa 3 abaixo). Essa validação popula um
+contextvar (`core/tenant.py`) que será consumido automaticamente pela camada de
+repositório em toda leitura/escrita de dados por empresa a partir da Etapa 5/6 — não
+depende de cada endpoint lembrar de filtrar. Evolução futura (cliente enterprise com banco
+isolado) fica possível sem reescrever regra de negócio, pois o acesso a dados já passa por
+uma abstração.
 
 ## 4. Dashboard adaptado por segmento — sem geração de código em runtime
 

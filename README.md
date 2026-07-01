@@ -199,7 +199,7 @@ Nunca commite o arquivo `.env` — ele está no `.gitignore`.
 
 ## Estratégia de segurança
 
-Implementado até a Etapa 2:
+Implementado até a Etapa 3:
 
 - Autenticação via JWT de curta duração (access token) + refresh token opaco, de alta
   entropia, com apenas o hash armazenado no banco — revogável e rotacionado a cada uso.
@@ -208,13 +208,18 @@ Implementado até a Etapa 2:
 - Validação de entrada com Pydantic em todas as rotas (`EmailStr`, tamanho mínimo/máximo
   de senha) e tratamento centralizado de exceções (erros de domínio, validação e HTTP
   nativas convertidos em um formato de resposta consistente, sem vazar detalhes internos).
-- Índices únicos no MongoDB (e-mail, hash de refresh token) como defesa em profundidade
-  contra condições de corrida, além da checagem em nível de aplicação.
+- Índices únicos no MongoDB (e-mail, hash de refresh token, vínculo usuário-empresa) como
+  defesa em profundidade contra condições de corrida, além da checagem em nível de aplicação.
+- Isolamento multi-tenant: toda rota de empresa exige um vínculo (`CompanyMembership`)
+  validado a cada requisição; usuários sem vínculo recebem 404 (não 403), para não revelar
+  a existência de empresas às quais não têm acesso. Um contexto de tenant (contextvar) é
+  resolvido nessa validação e ficará disponível para os repositórios de dados financeiros
+  das próximas etapas filtrarem automaticamente por empresa.
+- RBAC básico por papel (`owner`, `admin`, `manager`, `employee`, `viewer`) via dependência
+  reutilizável (`require_role`), já usada para restringir edição de empresa a OWNER/ADMIN.
 
 Planejado nas próximas etapas:
 
-- RBAC (papéis) e permissões por módulo, atrelados à Etapa 3 (multi-tenant/empresas).
-- Isolamento multi-tenant garantido na camada de repositório (não apenas na API).
 - Headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), CORS restrito.
 - Auditoria de ações sensíveis e criptografia de campos sensíveis em repouso.
 - Upload de arquivos validado por conteúdo real, não apenas extensão.
@@ -229,8 +234,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 0 | Fundação do monorepo (estrutura, tooling, Docker Compose, CI) | ✅ Concluída |
 | 1 | Backend core (config, logging, exceções, conexão com o banco, health check) | ✅ Concluída |
 | 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | ✅ Concluída |
-| 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | ⏳ Próxima |
-| 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | Planejada |
+| 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | ✅ Concluída |
+| 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | ⏳ Próxima |
 | 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | Planejada |
 | 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | Planejada |
 | 7 | Dashboard e indicadores financeiros | Planejada |
@@ -258,6 +263,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   de refresh token (`POST /api/v1/auth/refresh`), logout com revogação (`POST
   /api/v1/auth/logout`) e usuário autenticado (`GET /api/v1/auth/me`). Senhas com Argon2id;
   rate limiting nos endpoints de autenticação.
+- Multi-tenant: cadastro de empresas (`POST /api/v1/companies`, com os campos do
+  onboarding: segmento, porte, número de funcionários, localização, regime tributário
+  etc.), listagem das empresas do usuário com seu papel (`GET /api/v1/companies`), consulta
+  (`GET /api/v1/companies/{id}`) e atualização restrita a OWNER/ADMIN
+  (`PATCH /api/v1/companies/{id}`). Isolamento por empresa garantido por um contexto de
+  tenant resolvido e validado a cada requisição (usuário precisa ter vínculo com a empresa
+  do path); RBAC básico por papel (owner, admin, manager, employee, viewer).
 
 ## Funcionalidades futuras
 

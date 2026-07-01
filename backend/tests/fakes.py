@@ -3,6 +3,8 @@ from typing import Any
 
 from app.core.exceptions import UnauthorizedError
 from app.domain.auth.entities import RefreshToken
+from app.domain.company.entities import Company, CompanyMembership
+from app.domain.company.roles import CompanyRole
 from app.domain.user.entities import User
 
 
@@ -93,3 +95,102 @@ class FakeTokenService:
 
     def hash_refresh_token(self, raw_token: str) -> str:
         return f"hash:{raw_token}"
+
+
+class FakeCompanyRepository:
+    def __init__(self) -> None:
+        self._companies: dict[str, Company] = {}
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        name: str,
+        segment: str,
+        employee_count: int,
+        average_customer_count: int,
+        city: str,
+        state: str,
+        country: str,
+        size: str,
+        tax_regime: str | None,
+        additional_info: str | None,
+    ) -> Company:
+        company_id = str(self._next_id)
+        self._next_id += 1
+        now = datetime.now(UTC)
+        company = Company(
+            id=company_id,
+            name=name,
+            segment=segment,
+            employee_count=employee_count,
+            average_customer_count=average_customer_count,
+            city=city,
+            state=state,
+            country=country,
+            size=size,
+            tax_regime=tax_regime,
+            additional_info=additional_info,
+            is_active=True,
+            created_at=now,
+            updated_at=now,
+        )
+        self._companies[company_id] = company
+        return company
+
+    async def get_by_id(self, company_id: str) -> Company | None:
+        return self._companies.get(company_id)
+
+    async def update(self, company_id: str, **fields: object) -> Company | None:
+        company = self._companies.get(company_id)
+        if company is None:
+            return None
+        for key, value in fields.items():
+            setattr(company, key, value)
+        company.updated_at = datetime.now(UTC)
+        return company
+
+    async def delete(self, company_id: str) -> None:
+        self._companies.pop(company_id, None)
+
+
+class FakeCompanyMembershipRepository:
+    def __init__(self) -> None:
+        self._memberships: dict[str, CompanyMembership] = {}
+        self._next_id = 1
+        self.fail_on_create = False
+
+    async def create(
+        self, *, company_id: str, user_id: str, role: CompanyRole
+    ) -> CompanyMembership:
+        if self.fail_on_create:
+            raise RuntimeError("Falha simulada ao criar vínculo.")
+        membership_id = str(self._next_id)
+        self._next_id += 1
+        membership = CompanyMembership(
+            id=membership_id,
+            company_id=company_id,
+            user_id=user_id,
+            role=role,
+            created_at=datetime.now(UTC),
+        )
+        self._memberships[membership_id] = membership
+        return membership
+
+    async def get_by_user_and_company(
+        self, user_id: str, company_id: str
+    ) -> CompanyMembership | None:
+        return next(
+            (
+                m
+                for m in self._memberships.values()
+                if m.user_id == user_id and m.company_id == company_id
+            ),
+            None,
+        )
+
+    async def list_for_user(self, user_id: str) -> list[CompanyMembership]:
+        return [m for m in self._memberships.values() if m.user_id == user_id]
+
+    async def delete(self, membership_id: str) -> None:
+        self._memberships.pop(membership_id, None)

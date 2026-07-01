@@ -5,6 +5,8 @@ from pymongo import AsyncMongoClient
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.infrastructure.database.models.company import CompanyDocument
+from app.infrastructure.database.models.company_membership import CompanyMembershipDocument
 from app.infrastructure.database.models.refresh_token import RefreshTokenDocument
 from app.infrastructure.database.models.user import UserDocument
 
@@ -32,7 +34,12 @@ async def connect_to_mongo() -> None:
     client = get_client()
     await init_beanie(
         database=client[settings.mongodb_db_name],
-        document_models=[UserDocument, RefreshTokenDocument],
+        document_models=[
+            UserDocument,
+            RefreshTokenDocument,
+            CompanyDocument,
+            CompanyMembershipDocument,
+        ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)
 

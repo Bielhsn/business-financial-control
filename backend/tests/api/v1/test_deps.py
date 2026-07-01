@@ -1,10 +1,16 @@
 from app.api.v1.deps import (
+    get_company_membership_repository,
+    get_company_repository,
     get_password_hasher,
     get_refresh_token_repository,
     get_token_service,
     get_user_repository,
 )
 from app.core.config import Settings
+from app.infrastructure.repositories.company_membership_repository import (
+    BeanieCompanyMembershipRepository,
+)
+from app.infrastructure.repositories.company_repository import BeanieCompanyRepository
 from app.infrastructure.repositories.refresh_token_repository import (
     BeanieRefreshTokenRepository,
 )
@@ -27,3 +33,11 @@ def test_get_password_hasher_returns_the_argon2_implementation() -> None:
 
 def test_get_token_service_returns_the_jwt_implementation() -> None:
     assert isinstance(get_token_service(Settings(_env_file=None)), JWTTokenService)
+
+
+def test_get_company_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_company_repository(), BeanieCompanyRepository)
+
+
+def test_get_company_membership_repository_returns_the_beanie_implementation() -> None:
+    assert isinstance(get_company_membership_repository(), BeanieCompanyMembershipRepository)
