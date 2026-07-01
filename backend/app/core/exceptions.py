@@ -57,6 +57,24 @@ class ConflictError(AppError):
         super().__init__(message, status_code=409, details=details)
 
 
+class AIProviderNotConfiguredError(AppError):
+    def __init__(
+        self,
+        message: str = "Provedor de IA não configurado.",
+        details: dict[str, object] | None = None,
+    ) -> None:
+        super().__init__(message, status_code=503, details=details)
+
+
+class AIProviderError(AppError):
+    def __init__(
+        self,
+        message: str = "Falha ao gerar sugestões com IA.",
+        details: dict[str, object] | None = None,
+    ) -> None:
+        super().__init__(message, status_code=502, details=details)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Centraliza a conversão de exceções em respostas HTTP e logs estruturados."""
 

@@ -7,6 +7,8 @@ from app.api.v1 import deps
 from app.core.rate_limit import limiter
 from app.main import app
 from tests.fakes import (
+    FakeAIProvider,
+    FakeCompanyBlueprintRepository,
     FakeCompanyMembershipRepository,
     FakeCompanyRepository,
     FakePasswordHasher,
@@ -47,6 +49,16 @@ def fake_company_membership_repository() -> FakeCompanyMembershipRepository:
 
 
 @pytest.fixture
+def fake_company_blueprint_repository() -> FakeCompanyBlueprintRepository:
+    return FakeCompanyBlueprintRepository()
+
+
+@pytest.fixture
+def fake_ai_provider() -> FakeAIProvider:
+    return FakeAIProvider()
+
+
+@pytest.fixture
 def client(
     fake_user_repository: FakeUserRepository,
     fake_refresh_token_repository: FakeRefreshTokenRepository,
@@ -54,6 +66,8 @@ def client(
     fake_token_service: FakeTokenService,
     fake_company_repository: FakeCompanyRepository,
     fake_company_membership_repository: FakeCompanyMembershipRepository,
+    fake_company_blueprint_repository: FakeCompanyBlueprintRepository,
+    fake_ai_provider: FakeAIProvider,
 ) -> Iterator[TestClient]:
     app.dependency_overrides[deps.get_user_repository] = lambda: fake_user_repository
     app.dependency_overrides[deps.get_refresh_token_repository] = (
@@ -65,6 +79,10 @@ def client(
     app.dependency_overrides[deps.get_company_membership_repository] = (
         lambda: fake_company_membership_repository
     )
+    app.dependency_overrides[deps.get_company_blueprint_repository] = (
+        lambda: fake_company_blueprint_repository
+    )
+    app.dependency_overrides[deps.get_ai_provider] = lambda: fake_ai_provider
     limiter.reset()
 
     # Sem "with": não dispara o lifespan (que exigiria um MongoDB real).

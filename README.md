@@ -235,8 +235,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 1 | Backend core (config, logging, exceções, conexão com o banco, health check) | ✅ Concluída |
 | 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | ✅ Concluída |
 | 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | ✅ Concluída |
-| 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | ⏳ Próxima |
-| 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | Planejada |
+| 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | ✅ Concluída |
+| 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | ⏳ Próxima |
 | 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | Planejada |
 | 7 | Dashboard e indicadores financeiros | Planejada |
 | 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | Planejada |
@@ -270,13 +270,19 @@ Detalhes de implementação de cada mecanismo são documentados em
   (`PATCH /api/v1/companies/{id}`). Isolamento por empresa garantido por um contexto de
   tenant resolvido e validado a cada requisição (usuário precisa ter vínculo com a empresa
   do path); RBAC básico por papel (owner, admin, manager, employee, viewer).
+- Onboarding com IA: `POST /api/v1/companies/{id}/blueprint` (restrito a OWNER/ADMIN) usa a
+  Anthropic API para interpretar o segmento e os dados da empresa e gerar um **Company
+  Blueprint** — módulos a ativar (de um catálogo pré-construído), categorias financeiras,
+  KPIs relevantes e campos personalizados para o cadastro de clientes. `GET
+  .../blueprint` consulta o blueprint já gerado. Sem `ANTHROPIC_API_KEY` configurada, o
+  endpoint responde 503 de forma explícita em vez de falhar de forma confusa.
 
 ## Funcionalidades futuras
 
-- Cadastro de conta e onboarding de empresa assistido por IA.
-- Geração automática de módulos, categorias financeiras e KPIs por segmento.
-- Telas de clientes, produtos, serviços, estoque e funcionários adaptáveis por segmento.
-- Fluxo de caixa, contas a pagar/receber, indicadores e dashboards interativos.
+- Telas de clientes, produtos, serviços, estoque e funcionários, adaptadas conforme os
+  módulos e campos personalizados do Company Blueprint de cada empresa.
+- Fluxo de caixa, contas a pagar/receber e dashboards interativos usando as categorias e
+  KPIs já sugeridos pela IA no onboarding.
 - Insights financeiros gerados por IA, detecção de sazonalidade e previsões.
 - Internacionalização, múltiplas moedas, temas, API pública e aplicativo mobile.
 

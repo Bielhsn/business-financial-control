@@ -3,6 +3,14 @@ from typing import Any
 
 from app.core.exceptions import UnauthorizedError
 from app.domain.auth.entities import RefreshToken
+from app.domain.blueprint.entities import (
+    CompanyBlueprint,
+    CustomFieldDefinition,
+    FinancialCategory,
+    FinancialCategoryType,
+    KPIDefinition,
+)
+from app.domain.blueprint.ports import CompanyBlueprintDraft
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
 from app.domain.user.entities import User
@@ -194,3 +202,65 @@ class FakeCompanyMembershipRepository:
 
     async def delete(self, membership_id: str) -> None:
         self._memberships.pop(membership_id, None)
+
+
+class FakeCompanyBlueprintRepository:
+    def __init__(self) -> None:
+        self._blueprints: dict[str, CompanyBlueprint] = {}
+        self._next_id = 1
+
+    async def upsert(
+        self,
+        *,
+        company_id: str,
+        modules: list[str],
+        financial_categories: list[FinancialCategory],
+        kpis: list[KPIDefinition],
+        client_custom_fields: list[CustomFieldDefinition],
+        ai_provider: str,
+    ) -> CompanyBlueprint:
+        existing = self._blueprints.get(company_id)
+        if existing is not None:
+            blueprint_id = existing.id
+        else:
+            blueprint_id = str(self._next_id)
+            self._next_id += 1
+
+        blueprint = CompanyBlueprint(
+            id=blueprint_id,
+            company_id=company_id,
+            modules=modules,
+            financial_categories=financial_categories,
+            kpis=kpis,
+            client_custom_fields=client_custom_fields,
+            ai_provider=ai_provider,
+            generated_at=datetime.now(UTC),
+        )
+        self._blueprints[company_id] = blueprint
+        return blueprint
+
+    async def get_by_company_id(self, company_id: str) -> CompanyBlueprint | None:
+        return self._blueprints.get(company_id)
+
+
+class FakeAIProvider:
+    def __init__(self, draft: CompanyBlueprintDraft | None = None) -> None:
+        self._draft = draft or CompanyBlueprintDraft(
+            modules=["financial_core", "clients"],
+            financial_categories=[
+                FinancialCategory(name="Vendas", type=FinancialCategoryType.INCOME)
+            ],
+            kpis=[
+                KPIDefinition(
+                    key="average_ticket", name="Ticket médio", description="Valor médio por venda."
+                )
+            ],
+            client_custom_fields=[],
+        )
+        self.calls: list[tuple[Company, str | None]] = []
+
+    async def generate_company_blueprint(
+        self, *, company: Company, additional_context: str | None
+    ) -> CompanyBlueprintDraft:
+        self.calls.append((company, additional_context))
+        return self._draft

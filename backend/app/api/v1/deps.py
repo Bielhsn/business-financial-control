@@ -5,14 +5,25 @@ from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import Settings, get_settings
-from app.core.exceptions import ForbiddenError, NotFoundError, UnauthorizedError
+from app.core.exceptions import (
+    AIProviderNotConfiguredError,
+    ForbiddenError,
+    NotFoundError,
+    UnauthorizedError,
+)
 from app.core.tenant import CompanyContext, set_current_company_id
 from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
+from app.domain.blueprint.ports import AIProviderPort
+from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
+from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
+from app.infrastructure.repositories.company_blueprint_repository import (
+    BeanieCompanyBlueprintRepository,
+)
 from app.infrastructure.repositories.company_membership_repository import (
     BeanieCompanyMembershipRepository,
 )
@@ -52,6 +63,22 @@ def get_company_repository() -> CompanyRepository:
 
 def get_company_membership_repository() -> CompanyMembershipRepository:
     return BeanieCompanyMembershipRepository()
+
+
+def get_company_blueprint_repository() -> CompanyBlueprintRepository:
+    return BeanieCompanyBlueprintRepository()
+
+
+def get_ai_provider(settings: Annotated[Settings, Depends(get_settings)]) -> AIProviderPort:
+    if settings.ai_provider != "anthropic":
+        raise AIProviderNotConfiguredError(
+            f"Provedor de IA '{settings.ai_provider}' não é suportado."
+        )
+    if not settings.anthropic_api_key:
+        raise AIProviderNotConfiguredError(
+            "Defina ANTHROPIC_API_KEY para habilitar a geração de blueprint por IA."
+        )
+    return AnthropicAIProvider(settings)
 
 
 async def get_current_user(

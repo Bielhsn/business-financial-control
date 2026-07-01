@@ -24,6 +24,24 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 4 (onboarding com IA):** `domain/blueprint/module_registry.py` define um catálogo
+fixo de módulos (`financial_core`, `clients`, `products`, `inventory`, `employees`,
+`appointments`, `projects`, `contracts`, `recurring_revenue`, `dashboard`...) — a IA nunca
+inventa módulos fora dessa lista, apenas escolhe entre eles (reforçado tecnicamente: o
+schema da tool call usada na Anthropic API restringe `modules` a um `enum` com esses ids;
+e `_parse_blueprint` filtra qualquer id fora do catálogo como defesa em profundidade
+adicional). `AIProviderPort` (domínio) define o contrato; `AnthropicAIProvider`
+(infraestrutura) implementa usando a Anthropic API com **tool use forçado**
+(`tool_choice={"type": "tool", ...}`), garantindo que a resposta seja sempre um JSON
+estruturado e validável, nunca texto livre a ser interpretado (elimina uma classe inteira
+de bugs de parsing e reduz superfície de prompt injection, já que a saída não é
+executada como código). O resultado (`CompanyBlueprintDraft`) é persistido em
+`company_blueprints` (1:1 com a empresa, upsert a cada regeneração). Sem
+`ANTHROPIC_API_KEY` configurada, `get_ai_provider` (dependência) recusa a requisição com
+503 explícito — sem fallback heurístico "de mentirinha", para não criar uma segunda
+implementação a manter. Geração restrita a OWNER/ADMIN via `require_role`, reaproveitando
+a infraestrutura de RBAC da Etapa 3; consulta (`GET`) liberada a qualquer membro.
+
 **Etapa 3 (multi-tenant e empresas):** `Company` é o tenant raiz; um usuário pode
 pertencer a várias empresas, cada uma com um papel (`CompanyRole`: owner, admin, manager,
 employee, viewer) via `CompanyMembership` — por isso o papel não fica no JWT (o usuário

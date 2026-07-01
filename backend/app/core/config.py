@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     ai_provider: str = "anthropic"
     anthropic_api_key: str | None = None
+    ai_model: str = "claude-sonnet-5"
 
     log_level: str = "INFO"
 

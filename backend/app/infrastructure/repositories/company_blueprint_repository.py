@@ -1,0 +1,94 @@
+from datetime import UTC, datetime
+
+from app.domain.blueprint.entities import (
+    CompanyBlueprint,
+    CustomFieldDefinition,
+    CustomFieldType,
+    FinancialCategory,
+    FinancialCategoryType,
+    KPIDefinition,
+)
+from app.infrastructure.database.models.company_blueprint import (
+    CompanyBlueprintDocument,
+    CustomFieldEmbedded,
+    FinancialCategoryEmbedded,
+    KPIEmbedded,
+)
+
+
+def _to_entity(document: CompanyBlueprintDocument) -> CompanyBlueprint:
+    return CompanyBlueprint(
+        id=str(document.id),
+        company_id=document.company_id,
+        modules=list(document.modules),
+        financial_categories=[
+            FinancialCategory(name=item.name, type=FinancialCategoryType(item.type))
+            for item in document.financial_categories
+        ],
+        kpis=[
+            KPIDefinition(key=item.key, name=item.name, description=item.description)
+            for item in document.kpis
+        ],
+        client_custom_fields=[
+            CustomFieldDefinition(key=item.key, label=item.label, type=CustomFieldType(item.type))
+            for item in document.client_custom_fields
+        ],
+        ai_provider=document.ai_provider,
+        generated_at=document.generated_at,
+    )
+
+
+class BeanieCompanyBlueprintRepository:
+    async def upsert(
+        self,
+        *,
+        company_id: str,
+        modules: list[str],
+        financial_categories: list[FinancialCategory],
+        kpis: list[KPIDefinition],
+        client_custom_fields: list[CustomFieldDefinition],
+        ai_provider: str,
+    ) -> CompanyBlueprint:
+        now = datetime.now(UTC)
+        financial_categories_embedded = [
+            FinancialCategoryEmbedded(name=item.name, type=item.type.value)
+            for item in financial_categories
+        ]
+        kpis_embedded = [
+            KPIEmbedded(key=item.key, name=item.name, description=item.description) for item in kpis
+        ]
+        custom_fields_embedded = [
+            CustomFieldEmbedded(key=item.key, label=item.label, type=item.type.value)
+            for item in client_custom_fields
+        ]
+
+        existing = await CompanyBlueprintDocument.find_one(
+            CompanyBlueprintDocument.company_id == company_id
+        )
+        if existing is not None:
+            existing.modules = modules
+            existing.financial_categories = financial_categories_embedded
+            existing.kpis = kpis_embedded
+            existing.client_custom_fields = custom_fields_embedded
+            existing.ai_provider = ai_provider
+            existing.generated_at = now
+            await existing.save()
+            return _to_entity(existing)
+
+        document = CompanyBlueprintDocument(
+            company_id=company_id,
+            modules=modules,
+            financial_categories=financial_categories_embedded,
+            kpis=kpis_embedded,
+            client_custom_fields=custom_fields_embedded,
+            ai_provider=ai_provider,
+            generated_at=now,
+        )
+        await document.insert()
+        return _to_entity(document)
+
+    async def get_by_company_id(self, company_id: str) -> CompanyBlueprint | None:
+        document = await CompanyBlueprintDocument.find_one(
+            CompanyBlueprintDocument.company_id == company_id
+        )
+        return _to_entity(document) if document else None
