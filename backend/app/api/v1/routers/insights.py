@@ -12,6 +12,7 @@ from app.api.v1.deps import (
 )
 from app.application.dashboard.get_dashboard import GetDashboardUseCase
 from app.application.insights.generate_insights import GenerateFinancialInsightsUseCase
+from app.core.audit import audit_event
 from app.core.tenant import CompanyContext
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.company.repository import CompanyRepository
@@ -53,6 +54,11 @@ async def generate_insights(
     use_case = GenerateFinancialInsightsUseCase(company_repository, dashboard_use_case, ai_provider)
     result = await use_case.execute(
         company_id=company_context.company_id, start=payload.start, end=payload.end
+    )
+    audit_event(
+        "insights_generated",
+        company_id=company_context.company_id,
+        insight_count=len(result.insights),
     )
     return InsightsResponse(
         start=result.summary.start,

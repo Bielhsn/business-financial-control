@@ -13,7 +13,9 @@ from app.application.auth.authenticate_user import AuthenticateUserUseCase
 from app.application.auth.logout_user import LogoutUseCase
 from app.application.auth.refresh_access_token import RefreshAccessTokenUseCase
 from app.application.auth.register_user import RegisterUserUseCase
+from app.core.audit import audit_event
 from app.core.config import Settings, get_settings
+from app.core.exceptions import UnauthorizedError
 from app.core.rate_limit import limiter
 from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
@@ -34,9 +36,11 @@ async def register(
     password_hasher: Annotated[PasswordHasher, Depends(get_password_hasher)],
 ) -> User:
     use_case = RegisterUserUseCase(user_repository, password_hasher)
-    return await use_case.execute(
+    user = await use_case.execute(
         email=payload.email, password=payload.password, full_name=payload.full_name
     )
+    audit_event("user_registered", user_id=user.id)
+    return user
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -55,7 +59,15 @@ async def login(
     use_case = AuthenticateUserUseCase(
         user_repository, refresh_token_repository, password_hasher, token_service, settings
     )
-    token_pair = await use_case.execute(email=payload.email, password=payload.password)
+    try:
+        token_pair = await use_case.execute(email=payload.email, password=payload.password)
+    except UnauthorizedError:
+        # Auditar falhas de login permite detectar tentativas de força bruta.
+        # Não registra a senha nem revela se o e-mail existe.
+        audit_event("login_failed", email=payload.email)
+        raise
+    user = await user_repository.get_by_email(payload.email)
+    audit_event("login_succeeded", user_id=user.id if user else None)
     return TokenResponse(
         access_token=token_pair.access_token,
         refresh_token=token_pair.refresh_token,

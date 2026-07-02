@@ -12,6 +12,7 @@ from app.api.v1.deps import (
 from app.application.catalog.adjust_stock import AdjustStockUseCase
 from app.application.catalog.create_item import CreateCatalogItemUseCase
 from app.application.catalog.update_item import UpdateCatalogItemUseCase
+from app.core.audit import audit_event
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
 from app.domain.catalog.entities import CatalogItem
@@ -119,5 +120,12 @@ async def adjust_stock(
         delta=payload.delta,
         reason=payload.reason,
         created_by=current_user.id,
+    )
+    audit_event(
+        "stock_adjusted",
+        user_id=current_user.id,
+        company_id=company_context.company_id,
+        item_id=item_id,
+        delta=payload.delta,
     )
     return _to_response(item)

@@ -12,6 +12,7 @@ from app.api.v1.deps import (
 from app.application.company.create_company import CreateCompanyUseCase
 from app.application.company.list_my_companies import ListMyCompaniesUseCase
 from app.application.company.update_company import UpdateCompanyUseCase
+from app.core.audit import audit_event
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
 from app.domain.company.entities import Company
@@ -76,9 +77,17 @@ async def update_company(
     company_context: Annotated[
         CompanyContext, Depends(require_role(CompanyRole.OWNER, CompanyRole.ADMIN))
     ],
+    current_user: Annotated[User, Depends(get_current_user)],
     company_repository: Annotated[CompanyRepository, Depends(get_company_repository)],
 ) -> Company:
     use_case = UpdateCompanyUseCase(company_repository)
-    return await use_case.execute(
+    company = await use_case.execute(
         company_id=company_context.company_id, **payload.model_dump(exclude_unset=True)
     )
+    audit_event(
+        "company_updated",
+        user_id=current_user.id,
+        company_id=company_context.company_id,
+        fields=sorted(payload.model_dump(exclude_unset=True).keys()),
+    )
+    return company

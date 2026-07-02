@@ -5,8 +5,8 @@ interpreta o segmento de qualquer empresa (existente ou informado livremente pel
 usuário) e monta automaticamente os módulos, categorias financeiras e indicadores
 adequados àquele negócio.
 
-> **Status:** em desenvolvimento incremental. Veja [Roadmap](#roadmap) para o que já
-> existe e o que vem a seguir.
+> **Status:** MVP completo — todas as 12 etapas do roadmap concluídas. Próximos passos
+> em [Funcionalidades futuras](#funcionalidades-futuras).
 
 ## Sumário
 
@@ -246,11 +246,26 @@ Implementado até a Etapa 3:
   reutilizável (`require_role`), usada para restringir edição de empresa e gestão de
   categorias financeiras a papéis de gestão, e lançamentos também à operação (employee).
 
-Planejado nas próximas etapas:
+Concluído no hardening final (Etapa 12):
 
-- Headers de segurança (CSP, HSTS, X-Frame-Options, X-Content-Type-Options), CORS restrito.
-- Auditoria de ações sensíveis e criptografia de campos sensíveis em repouso.
-- Upload de arquivos validado por conteúdo real, não apenas extensão.
+- Headers de segurança em toda resposta da API: CSP restritiva (`default-src 'none';
+  frame-ancestors 'none'` — a API nunca serve HTML), X-Frame-Options DENY (clickjacking),
+  X-Content-Type-Options nosniff, Referrer-Policy e Permissions-Policy; HSTS emitido
+  apenas em produção.
+- CORS efetivamente restrito às origens configuradas (`CORS_ALLOWED_ORIGINS`), com
+  métodos e headers explícitos e `allow_credentials=False` (a autenticação usa o header
+  Authorization, nunca cookies).
+- Trilha de auditoria estruturada (`audit_event` via structlog, JSON em produção) para
+  ações sensíveis: registro/login (sucesso e falha — detecção de força bruta), edição de
+  empresa, geração de blueprint e de insights por IA, criação/pagamento/cancelamento de
+  lançamentos e ajustes de estoque.
+- No frontend: access token só em memória, refresh token rotacionado a cada uso e
+  revogado no logout.
+
+Planejado como evolução futura:
+
+- Criptografia de campos sensíveis em repouso e upload de arquivos validado por conteúdo.
+- Internacionalização (i18n) — as mensagens já são centralizadas, facilitando extração.
 
 Detalhes de implementação de cada mecanismo são documentados em
 [`docs/architecture.md`](docs/architecture.md) conforme cada etapa do roadmap é concluída.
@@ -271,7 +286,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 9   | Frontend — onboarding com IA (wizard)                                                    | ✅ Concluída |
 | 10  | Frontend — dashboard e telas dos módulos                                                 | ✅ Concluída |
 | 11  | IA avançada (insights automáticos, sazonalidade, base para previsões)                    | ✅ Concluída |
-| 12  | Hardening final (testes completos, auditoria, revisão de segurança, i18n)                | ⏳ Próxima   |
+| 12  | Hardening final (testes completos, auditoria, revisão de segurança, i18n)                | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -370,6 +385,12 @@ Detalhes de implementação de cada mecanismo são documentados em
   POST deliberadamente: consome tokens e não deve disparar por refetch automático. No
   dashboard, card "Insights da IA" com geração sob demanda e degradação graciosa quando
   o provedor não está configurado.
+
+- Hardening final: security headers em todas as respostas (CSP, X-Frame-Options,
+  nosniff, Referrer-Policy, Permissions-Policy, HSTS em produção), CORS restrito às
+  origens configuradas e trilha de auditoria estruturada para ações sensíveis (logins com
+  sucesso/falha, edição de empresa, geração de blueprint/insights, lançamentos e ajustes
+  de estoque). Suíte final: 227 testes no backend (90% de cobertura) + 15 no frontend.
 
 ## Funcionalidades futuras
 

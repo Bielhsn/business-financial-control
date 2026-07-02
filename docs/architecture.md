@@ -24,6 +24,24 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 12 (hardening final):** `SecurityHeadersMiddleware` (ASGI puro, sem dependência de
+`BaseHTTPMiddleware`) injeta em toda resposta: CSP `default-src 'none'; frame-ancestors
+'none'` — adequada porque a API nunca serve HTML —, X-Frame-Options DENY,
+X-Content-Type-Options nosniff, Referrer-Policy e Permissions-Policy; HSTS só em produção
+(em `http://localhost` seria ignorado ou atrapalharia). Corrigida uma lacuna real: a
+configuração `CORS_ALLOWED_ORIGINS` existia desde a Etapa 1, mas o `CORSMiddleware` nunca
+tinha sido registrado — agora está, com origens restritas, métodos/headers explícitos e
+`allow_credentials=False` (autenticação via header Authorization, nunca cookies — CSRF
+clássico não se aplica). Auditoria: `audit_event` (structlog, canal "audit") em vez de
+coleção no Mongo — a trilha estruturada vai para o destino de logs (imutável no coletor),
+não acopla auditoria à disponibilidade do banco e cobre login com sucesso/falha (detecção
+de força bruta sem registrar senha nem revelar existência de e-mail), edição de empresa,
+geração de blueprint/insights, criação/pagamento/cancelamento de lançamento e ajuste de
+estoque; persistência em banco dedicado é evolução natural se houver requisito de
+consulta na própria aplicação. i18n ficou como preparação, não implementação: mensagens
+de erro centralizadas em exceções semânticas no backend e strings de UI concentradas nos
+componentes — extração para catálogos é mecânica quando o requisito chegar.
+
 **Etapa 11 (IA avançada — insights):** separação estrita entre calcular e interpretar. Os
 números vêm do `GetDashboardUseCase` (Etapa 7, já testado); a IA recebe **somente
 agregados** — receita, despesa, lucro, margem, comparativos, evolução mensal e top

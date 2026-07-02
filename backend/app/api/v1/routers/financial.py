@@ -21,6 +21,7 @@ from app.application.financial.seed_categories_from_blueprint import (
     SeedFinancialCategoriesFromBlueprintUseCase,
 )
 from app.application.financial.update_category import UpdateFinancialCategoryUseCase
+from app.core.audit import audit_event
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
 from app.domain.blueprint.repository import CompanyBlueprintRepository
@@ -198,6 +199,14 @@ async def create_transaction(
         client_id=payload.client_id,
         created_by=current_user.id,
     )
+    audit_event(
+        "transaction_created",
+        user_id=current_user.id,
+        company_id=company_context.company_id,
+        transaction_id=transaction.id,
+        type=transaction.type.value,
+        amount_cents=transaction.amount_cents,
+    )
     return _transaction_to_response(transaction)
 
 
@@ -243,6 +252,12 @@ async def mark_transaction_paid(
 ) -> FinancialTransactionResponse:
     use_case = MarkTransactionPaidUseCase(transaction_repository)
     transaction = await use_case.execute(transaction_id=transaction_id, paid_at=payload.paid_at)
+    audit_event(
+        "transaction_marked_paid",
+        company_id=company_context.company_id,
+        transaction_id=transaction.id,
+        amount_cents=transaction.amount_cents,
+    )
     return _transaction_to_response(transaction)
 
 
@@ -256,6 +271,12 @@ async def cancel_transaction(
 ) -> FinancialTransactionResponse:
     use_case = CancelTransactionUseCase(transaction_repository)
     transaction = await use_case.execute(transaction_id=transaction_id)
+    audit_event(
+        "transaction_cancelled",
+        company_id=company_context.company_id,
+        transaction_id=transaction.id,
+        amount_cents=transaction.amount_cents,
+    )
     return _transaction_to_response(transaction)
 
 

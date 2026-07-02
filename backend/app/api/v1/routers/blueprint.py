@@ -11,6 +11,7 @@ from app.api.v1.deps import (
 )
 from app.application.blueprint.generate_blueprint import GenerateCompanyBlueprintUseCase
 from app.application.blueprint.get_blueprint import GetCompanyBlueprintUseCase
+from app.core.audit import audit_event
 from app.core.config import Settings, get_settings
 from app.core.tenant import CompanyContext
 from app.domain.blueprint.entities import CompanyBlueprint
@@ -71,6 +72,12 @@ async def generate_blueprint(
     )
     blueprint = await use_case.execute(
         company_id=company_context.company_id, additional_context=payload.additional_context
+    )
+    audit_event(
+        "blueprint_generated",
+        company_id=company_context.company_id,
+        ai_provider=blueprint.ai_provider,
+        modules=blueprint.modules,
     )
     return _to_response(blueprint)
 
