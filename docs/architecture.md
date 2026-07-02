@@ -24,6 +24,25 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 8 (frontend — fundação):** SPA Vite + React 19 + TypeScript estrito. Tailwind CSS
+v4 com tokens de design em CSS variables (`--background`, `--primary`...) e variante
+`dark` por classe no `<html>` — o tema é aplicado por um script inline no `index.html`
+antes do primeiro paint (sem flash) e gerenciado por um `ThemeProvider`
+(claro/escuro/sistema). Componentes de UI no estilo shadcn/ui escritos no repositório
+(Radix primitives + CVA), em vez de uma lib de componentes fechada — mesmo racional do
+shadcn: os componentes são código nosso, customizáveis sem lutar contra abstrações.
+Sessão: access token JWT vive apenas em memória (Zustand); refresh token em
+`localStorage` (trade-off documentado: httpOnly cookie exigiria mudar o contrato da API;
+mitigado pela rotação a cada uso + revogação server-side). No boot, o refresh token é
+trocado por uma sessão nova; um interceptor do axios captura 401, faz um único refresh
+(promise compartilhada evita corrida entre N requisições simultâneas) e repete a
+requisição. Estado de servidor via React Query (cache/invalidations por
+`["companies", id, ...]`); Zustand só para estado global leve. Navegação lateral do shell
+é filtrada pelos módulos do Company Blueprint — a "metadata-driven UI" chegando à
+interface. Code splitting por rota via `React.lazy` desde já, para o bundle inicial não
+crescer com as telas de gráficos. CI ganhou job de frontend (Prettier, ESLint, Vitest,
+`tsc -b` + build de produção).
+
 **Etapa 7 (dashboard e indicadores):** os KPIs sugeridos pela IA no blueprint (Etapa 4) até
 aqui eram só texto descritivo — sem uma forma de calcular um valor de verdade para eles. Em
 vez de deixar isso permanente, `KPIDefinition` ganhou `metric: KPIMetric`, um enum fechado

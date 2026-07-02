@@ -100,7 +100,15 @@ business-financial-control/
 │   ├── requirements.txt
 │   ├── requirements-dev.txt
 │   └── Dockerfile
-├── frontend/                # React + TypeScript (Etapa 8 do roadmap)
+├── frontend/                # React 19 + TypeScript + Vite + Tailwind v4
+│   ├── src/
+│   │   ├── app/             # shell autenticado (layout, rotas protegidas)
+│   │   ├── components/      # ui (estilo shadcn/ui) + tema claro/escuro
+│   │   ├── features/        # por domínio: auth, companies, blueprint...
+│   │   ├── lib/             # axios (refresh automático), tipos da API, utils
+│   │   ├── pages/           # páginas simples
+│   │   └── stores/          # Zustand (sessão)
+│   └── package.json
 ├── infra/
 │   └── docker-compose.yml   # MongoDB + Redis + backend
 ├── docs/
@@ -145,8 +153,22 @@ mypy app
 
 ## Como executar o frontend
 
-O frontend ainda será criado (Etapa 8 do roadmap). Esta seção será preenchida com os
-comandos de instalação e execução assim que o projeto Vite for adicionado.
+Pré-requisito: Node.js 22+.
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173 (proxy de /api para localhost:8000)
+```
+
+Qualidade e testes:
+
+```bash
+npm run lint           # ESLint
+npm run format:check   # Prettier
+npm test               # Vitest + Testing Library
+npm run build          # tsc -b (type check) + build de produção
+```
 
 ## Variáveis de ambiente
 
@@ -241,8 +263,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | ✅ Concluída |
 | 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | ✅ Concluída |
 | 7 | Dashboard e indicadores financeiros | ✅ Concluída |
-| 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | ⏳ Próxima |
-| 9 | Frontend — onboarding com IA (wizard) | Planejada |
+| 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | ✅ Concluída |
+| 9 | Frontend — onboarding com IA (wizard) | ⏳ Próxima |
 | 10 | Frontend — dashboard e telas dos módulos | Planejada |
 | 11 | IA avançada (insights automáticos, sazonalidade, base para previsões) | Planejada |
 | 12 | Hardening final (testes completos, auditoria, revisão de segurança, i18n) | Planejada |
@@ -311,6 +333,14 @@ Detalhes de implementação de cada mecanismo são documentados em
   calculados de verdade — cada KPI sugerido é associado pela IA a uma métrica computável
   de um catálogo fixo (`KPIMetric`), a mesma estratégia de enum controlado já usada para os
   módulos, evitando que a IA "invente" indicadores que a aplicação não sabe calcular.
+- Frontend — fundação: SPA em React 19 + TypeScript estrito + Vite, Tailwind CSS v4 com
+  design tokens (tema claro/escuro/sistema sem flash no primeiro paint), componentes no
+  estilo shadcn/ui (Radix + CVA), React Query, Zustand e code splitting por rota. Telas de
+  login/registro validadas com React Hook Form + Zod, sessão com access token só em
+  memória + refresh token rotacionado (interceptor axios renova em 401 e repete a
+  requisição), seleção de empresas com papel do usuário, e shell autenticado cuja navegação
+  lateral é filtrada pelos módulos do Company Blueprint. Job próprio no CI (Prettier,
+  ESLint, Vitest, `tsc -b` + build).
 
 ## Funcionalidades futuras
 
