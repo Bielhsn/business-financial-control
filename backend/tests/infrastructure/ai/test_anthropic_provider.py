@@ -9,6 +9,7 @@ import pytest
 from app.core.config import Settings
 from app.core.exceptions import AIProviderError
 from app.domain.company.entities import Company
+from app.domain.dashboard.kpi_registry import KPIMetric
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
 
 pytestmark = pytest.mark.anyio
@@ -55,7 +56,14 @@ async def test_generate_company_blueprint_parses_tool_use_response(
             {
                 "modules": ["financial_core", "clients"],
                 "financial_categories": [{"name": "Vendas", "type": "income"}],
-                "kpis": [{"key": "average_ticket", "name": "Ticket médio", "description": "..."}],
+                "kpis": [
+                    {
+                        "key": "average_ticket",
+                        "name": "Ticket médio",
+                        "description": "...",
+                        "metric": "average_ticket",
+                    }
+                ],
                 "client_custom_fields": [
                     {"key": "favorite_service", "label": "Serviço favorito", "type": "text"}
                 ],
@@ -70,6 +78,7 @@ async def test_generate_company_blueprint_parses_tool_use_response(
     assert draft.modules == ["financial_core", "clients"]
     assert draft.financial_categories[0].name == "Vendas"
     assert draft.kpis[0].key == "average_ticket"
+    assert draft.kpis[0].metric == KPIMetric.AVERAGE_TICKET
     assert draft.client_custom_fields[0].key == "favorite_service"
 
 
@@ -94,7 +103,7 @@ async def test_filters_out_hallucinated_module_ids(mock_client_cls: MagicMock) -
             {
                 "modules": ["financial_core", "not-a-real-module"],
                 "financial_categories": [{"name": "Vendas", "type": "income"}],
-                "kpis": [{"key": "x", "name": "X", "description": "Y"}],
+                "kpis": [{"key": "x", "name": "X", "description": "Y", "metric": "total_revenue"}],
                 "client_custom_fields": [],
             },
         )
@@ -141,7 +150,7 @@ async def test_raises_when_every_suggested_module_is_invalid(mock_client_cls: Ma
             {
                 "modules": ["not-real-1", "not-real-2"],
                 "financial_categories": [{"name": "Vendas", "type": "income"}],
-                "kpis": [{"key": "x", "name": "X", "description": "Y"}],
+                "kpis": [{"key": "x", "name": "X", "description": "Y", "metric": "total_revenue"}],
                 "client_custom_fields": [],
             },
         )
@@ -165,7 +174,7 @@ async def test_prompt_includes_company_additional_info_and_extra_context(
             {
                 "modules": ["financial_core"],
                 "financial_categories": [{"name": "Vendas", "type": "income"}],
-                "kpis": [{"key": "x", "name": "X", "description": "Y"}],
+                "kpis": [{"key": "x", "name": "X", "description": "Y", "metric": "total_revenue"}],
                 "client_custom_fields": [],
             },
         )
@@ -184,3 +193,27 @@ async def test_prompt_includes_company_additional_info_and_extra_context(
     sent_prompt = mock_create.call_args.kwargs["messages"][0]["content"]
     assert "Loja física e online." in sent_prompt
     assert "Cresceu 30% este ano." in sent_prompt
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_raises_when_kpi_metric_is_invalid(mock_client_cls: MagicMock) -> None:
+    mock_response = MagicMock()
+    mock_response.content = [
+        _FakeBlock(
+            "tool_use",
+            {
+                "modules": ["financial_core"],
+                "financial_categories": [{"name": "Vendas", "type": "income"}],
+                "kpis": [
+                    {"key": "x", "name": "X", "description": "Y", "metric": "not-a-real-metric"}
+                ],
+                "client_custom_fields": [],
+            },
+        )
+    ]
+    mock_client_cls.return_value.messages.create = AsyncMock(return_value=mock_response)
+
+    provider = AnthropicAIProvider(_settings())
+
+    with pytest.raises(AIProviderError):
+        await provider.generate_company_blueprint(company=_company(), additional_context=None)

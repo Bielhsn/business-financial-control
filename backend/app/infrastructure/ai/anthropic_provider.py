@@ -14,6 +14,7 @@ from app.domain.blueprint.entities import (
 from app.domain.blueprint.module_registry import MODULE_IDS, MODULE_REGISTRY
 from app.domain.blueprint.ports import CompanyBlueprintDraft
 from app.domain.company.entities import Company
+from app.domain.dashboard.kpi_registry import KPI_METRIC_REGISTRY, KPIMetric
 from app.domain.financial.entities import FinancialCategoryType
 
 _TOOL_NAME = "submit_company_blueprint"
@@ -58,8 +59,12 @@ def _build_tool_schema() -> ToolParam:
                             "key": {"type": "string"},
                             "name": {"type": "string"},
                             "description": {"type": "string"},
+                            "metric": {
+                                "type": "string",
+                                "enum": [m.metric.value for m in KPI_METRIC_REGISTRY],
+                            },
                         },
-                        "required": ["key", "name", "description"],
+                        "required": ["key", "name", "description", "metric"],
                     },
                     "minItems": 1,
                 },
@@ -89,10 +94,15 @@ def _build_prompt(company: Company, additional_context: str | None) -> str:
     modules_catalog = "\n".join(
         f"- {module.id}: {module.name} — {module.description}" for module in MODULE_REGISTRY
     )
+    metrics_catalog = "\n".join(
+        f"- {definition.metric.value}: {definition.description}"
+        for definition in KPI_METRIC_REGISTRY
+    )
     lines = [
         "Você é um especialista em estruturar dashboards financeiros para empresas de "
         "qualquer segmento.",
         f"Catálogo de módulos disponíveis:\n{modules_catalog}",
+        f"Catálogo de métricas computáveis disponíveis para KPIs:\n{metrics_catalog}",
         "Dados da empresa:",
         f"- Nome: {company.name}",
         f"- Segmento: {company.segment}",
@@ -109,9 +119,10 @@ def _build_prompt(company: Company, additional_context: str | None) -> str:
     lines.append(
         "Com base nesses dados, selecione os módulos mais adequados do catálogo (nunca "
         "invente módulos fora da lista), sugira categorias financeiras de receita e "
-        "despesa típicas deste segmento, indicadores financeiros (KPIs) relevantes e, se "
-        "fizer sentido, campos personalizados para o cadastro de clientes. Responda "
-        "apenas chamando a ferramenta fornecida."
+        "despesa típicas deste segmento, indicadores financeiros (KPIs) relevantes — cada "
+        "um associado a uma métrica computável do catálogo acima, com nome e descrição em "
+        "português adequados ao segmento — e, se fizer sentido, campos personalizados para "
+        "o cadastro de clientes. Responda apenas chamando a ferramenta fornecida."
     )
     return "\n".join(lines)
 
@@ -124,7 +135,12 @@ def _parse_blueprint(data: dict[str, Any]) -> CompanyBlueprintDraft:
             for item in data["financial_categories"]
         ]
         kpis = [
-            KPIDefinition(key=item["key"], name=item["name"], description=item["description"])
+            KPIDefinition(
+                key=item["key"],
+                name=item["name"],
+                description=item["description"],
+                metric=KPIMetric(item["metric"]),
+            )
             for item in data["kpis"]
         ]
         client_custom_fields = [

@@ -63,3 +63,7 @@ class FinancialTransactionRepository(Protocol):
     async def sum_paid_between(
         self, *, type: FinancialCategoryType, start: datetime, end: datetime
     ) -> int: ...
+
+    async def list_paid_between(
+        self, *, start: datetime, end: datetime
+    ) -> list[FinancialTransaction]: ...

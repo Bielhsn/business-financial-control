@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 
+from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.financial.entities import FinancialCategoryType
 
 
@@ -26,6 +27,7 @@ class KPIDefinition:
     key: str
     name: str
     description: str
+    metric: KPIMetric
 
 
 @dataclass

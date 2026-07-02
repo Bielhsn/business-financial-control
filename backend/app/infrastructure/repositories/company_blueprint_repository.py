@@ -7,6 +7,7 @@ from app.domain.blueprint.entities import (
     KPIDefinition,
     SuggestedFinancialCategory,
 )
+from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.financial.entities import FinancialCategoryType
 from app.infrastructure.database.models.company_blueprint import (
     CompanyBlueprintDocument,
@@ -26,7 +27,12 @@ def _to_entity(document: CompanyBlueprintDocument) -> CompanyBlueprint:
             for item in document.financial_categories
         ],
         kpis=[
-            KPIDefinition(key=item.key, name=item.name, description=item.description)
+            KPIDefinition(
+                key=item.key,
+                name=item.name,
+                description=item.description,
+                metric=KPIMetric(item.metric),
+            )
             for item in document.kpis
         ],
         client_custom_fields=[
@@ -55,7 +61,13 @@ class BeanieCompanyBlueprintRepository:
             for item in financial_categories
         ]
         kpis_embedded = [
-            KPIEmbedded(key=item.key, name=item.name, description=item.description) for item in kpis
+            KPIEmbedded(
+                key=item.key,
+                name=item.name,
+                description=item.description,
+                metric=item.metric.value,
+            )
+            for item in kpis
         ]
         custom_fields_embedded = [
             CustomFieldEmbedded(key=item.key, label=item.label, type=item.type.value)

@@ -3,6 +3,7 @@ import pytest
 from app.application.blueprint.get_blueprint import GetCompanyBlueprintUseCase
 from app.core.exceptions import NotFoundError
 from app.domain.blueprint.entities import KPIDefinition, SuggestedFinancialCategory
+from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.financial.entities import FinancialCategoryType
 from tests.fakes import FakeCompanyBlueprintRepository
 
@@ -17,7 +18,7 @@ async def test_returns_the_existing_blueprint() -> None:
         financial_categories=[
             SuggestedFinancialCategory(name="Vendas", type=FinancialCategoryType.INCOME)
         ],
-        kpis=[KPIDefinition(key="x", name="X", description="Y")],
+        kpis=[KPIDefinition(key="x", name="X", description="Y", metric=KPIMetric.TOTAL_REVENUE)],
         client_custom_fields=[],
         ai_provider="anthropic",
     )

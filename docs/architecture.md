@@ -24,6 +24,29 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 7 (dashboard e indicadores):** os KPIs sugeridos pela IA no blueprint (Etapa 4) até
+aqui eram só texto descritivo — sem uma forma de calcular um valor de verdade para eles. Em
+vez de deixar isso permanente, `KPIDefinition` ganhou `metric: KPIMetric`, um enum fechado
+(`KPI_METRIC_REGISTRY`, em `domain/dashboard/kpi_registry.py`) com as métricas que a
+aplicação sabe computar (receita, despesa, lucro, margem, ticket médio, contagem de
+lançamentos, clientes ativos). A IA é forçada (`tool_choice`) a associar cada KPI sugerido a
+uma dessas métricas — o mesmo padrão de enum controlado já usado para os módulos na Etapa 4,
+aplicado agora a indicadores, para impedir que a IA "invente" um KPI que a aplicação não
+consegue calcular.
+
+`GetDashboardUseCase` busca os lançamentos pagos **uma única vez**, cobrindo a maior janela
+necessária entre o período pedido, o período anterior (para o comparativo) e a janela de
+evolução mensal, e deriva todos os agregados em memória a partir dessa lista — uma escolha
+deliberada de simplicidade para o volume de uma única empresa nesta etapa; uma pipeline de
+agregação do MongoDB (`$match`/`$group` por mês/categoria) é a otimização natural quando o
+volume de lançamentos crescer o suficiente para justificar a complexidade adicional. Os
+valores computados (receita, despesa, lucro, margem, ticket médio, contagem, clientes
+ativos) alimentam tanto o resumo do dashboard quanto os KPIs do blueprint, resolvidos por
+`metric` num dicionário — sem blueprint gerado para a empresa, a lista de KPIs computados
+fica simplesmente vazia, em vez de falhar. O endpoint (`GET .../dashboard`) é liberado a
+qualquer membro da empresa (leitura), sem restrição adicional de papel, na mesma linha da
+leitura de categorias e lançamentos.
+
 **Etapa 6 (módulos dinâmicos):** `Client` ganha `custom_fields: dict[str, str]`, validados
 em `CreateClientUseCase`/`UpdateClientUseCase` contra as chaves definidas em
 `blueprint.client_custom_fields` (Etapa 4) — sem blueprint gerado, nenhum campo

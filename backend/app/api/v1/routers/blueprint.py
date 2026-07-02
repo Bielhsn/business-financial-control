@@ -39,7 +39,9 @@ def _to_response(blueprint: CompanyBlueprint) -> CompanyBlueprintResponse:
             for item in blueprint.financial_categories
         ],
         kpis=[
-            KPIResponse(key=item.key, name=item.name, description=item.description)
+            KPIResponse(
+                key=item.key, name=item.name, description=item.description, metric=item.metric
+            )
             for item in blueprint.kpis
         ],
         client_custom_fields=[

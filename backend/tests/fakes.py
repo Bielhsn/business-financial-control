@@ -14,6 +14,7 @@ from app.domain.catalog.entities import CatalogItem, CatalogItemKind, StockMovem
 from app.domain.client.entities import Client
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
+from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.employee.entities import Employee
 from app.domain.financial.entities import (
     FinancialCategory,
@@ -260,7 +261,10 @@ class FakeAIProvider:
             ],
             kpis=[
                 KPIDefinition(
-                    key="average_ticket", name="Ticket médio", description="Valor médio por venda."
+                    key="average_ticket",
+                    name="Ticket médio",
+                    description="Valor médio por venda.",
+                    metric=KPIMetric.AVERAGE_TICKET,
                 )
             ],
             client_custom_fields=[],
@@ -398,6 +402,17 @@ class FakeFinancialTransactionRepository:
             and t.paid_at is not None
             and start <= t.paid_at <= end
         )
+
+    async def list_paid_between(
+        self, *, start: datetime, end: datetime
+    ) -> list[FinancialTransaction]:
+        return [
+            t
+            for t in self._transactions.values()
+            if t.status == TransactionStatus.PAID
+            and t.paid_at is not None
+            and start <= t.paid_at <= end
+        ]
 
 
 class FakeClientRepository:

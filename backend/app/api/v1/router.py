@@ -6,6 +6,7 @@ from app.api.v1.routers import (
     catalog,
     clients,
     companies,
+    dashboard,
     employees,
     financial,
     health,
@@ -20,3 +21,4 @@ api_router.include_router(financial.router)
 api_router.include_router(clients.router)
 api_router.include_router(catalog.router)
 api_router.include_router(employees.router)
+api_router.include_router(dashboard.router)

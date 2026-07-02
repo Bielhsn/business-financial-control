@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from app.domain.blueprint.entities import CustomFieldType
+from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.financial.entities import FinancialCategoryType
 
 
@@ -19,6 +20,7 @@ class KPIResponse(BaseModel):
     key: str
     name: str
     description: str
+    metric: KPIMetric
 
 
 class CustomFieldResponse(BaseModel):

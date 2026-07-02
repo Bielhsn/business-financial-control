@@ -13,6 +13,7 @@ class KPIEmbedded(BaseModel):
     key: str
     name: str
     description: str
+    metric: str
 
 
 class CustomFieldEmbedded(BaseModel):

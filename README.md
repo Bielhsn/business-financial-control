@@ -240,8 +240,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | ✅ Concluída |
 | 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | ✅ Concluída |
 | 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | ✅ Concluída |
-| 7 | Dashboard e indicadores financeiros | ⏳ Próxima |
-| 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | Planejada |
+| 7 | Dashboard e indicadores financeiros | ✅ Concluída |
+| 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | ⏳ Próxima |
 | 9 | Frontend — onboarding com IA (wizard) | Planejada |
 | 10 | Frontend — dashboard e telas dos módulos | Planejada |
 | 11 | IA avançada (insights automáticos, sazonalidade, base para previsões) | Planejada |
@@ -302,13 +302,20 @@ Detalhes de implementação de cada mecanismo são documentados em
   vendas/ajuste de estoque liberados também a EMPLOYEE (operação do dia a dia); gestão de
   catálogo e funcionários restrita a OWNER/ADMIN/MANAGER; leitura liberada a qualquer
   membro.
+- Dashboard financeiro (`GET .../dashboard?start=...&end=...&months=...`, liberado a
+  qualquer membro): receita, despesa, lucro e margem do período; ticket médio e contagem
+  de lançamentos; clientes ativos (distintos, com compra paga no período); evolução
+  mensal de receita/despesa/lucro numa janela configurável (1 a 24 meses); top 5
+  categorias de receita e de despesa; comparativo percentual com o período anterior de
+  mesma duração; e os KPIs sugeridos pela IA no Company Blueprint, agora com valores
+  calculados de verdade — cada KPI sugerido é associado pela IA a uma métrica computável
+  de um catálogo fixo (`KPIMetric`), a mesma estratégia de enum controlado já usada para os
+  módulos, evitando que a IA "invente" indicadores que a aplicação não sabe calcular.
 
 ## Funcionalidades futuras
 
-- Telas de clientes, produtos, serviços, estoque e funcionários, adaptadas conforme os
-  módulos e campos personalizados do Company Blueprint de cada empresa.
-- Fluxo de caixa, contas a pagar/receber e dashboards interativos usando as categorias e
-  KPIs já sugeridos pela IA no onboarding.
+- Telas de clientes, produtos, serviços, estoque, funcionários e dashboard, adaptadas
+  conforme os módulos e campos personalizados do Company Blueprint de cada empresa.
 - Insights financeiros gerados por IA, detecção de sazonalidade e previsões.
 - Internacionalização, múltiplas moedas, temas, API pública e aplicativo mobile.
 

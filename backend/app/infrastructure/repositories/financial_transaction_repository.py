@@ -126,3 +126,15 @@ class BeanieFinancialTransactionRepository:
             }
         ).to_list()
         return sum(document.amount_cents for document in documents)
+
+    async def list_paid_between(
+        self, *, start: datetime, end: datetime
+    ) -> list[FinancialTransaction]:
+        documents = await FinancialTransactionDocument.find(
+            {
+                "company_id": get_current_company_id(),
+                "status": TransactionStatus.PAID.value,
+                "paid_at": {"$gte": start, "$lte": end},
+            }
+        ).to_list()
+        return [_to_entity(document) for document in documents]
