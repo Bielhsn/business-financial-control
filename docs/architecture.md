@@ -24,6 +24,22 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 11 (IA avançada — insights):** separação estrita entre calcular e interpretar. Os
+números vêm do `GetDashboardUseCase` (Etapa 7, já testado); a IA recebe **somente
+agregados** — receita, despesa, lucro, margem, comparativos, evolução mensal e top
+categorias — nunca lançamentos individuais (menos tokens, resposta mais focada e nenhum
+dado granular de cliente trafega para o provedor). O prompt instrui explicitamente a não
+recalcular nem inventar valores, e a resposta é forçada (`tool_choice`) a um schema com
+`kind` em enum fechado (`highlight`/`warning`/`opportunity`), 2–6 itens — mesmo padrão de
+IA restrita por catálogo das Etapas 4 e 7. Novo port `InsightsAIPort` no domínio;
+`AnthropicAIProvider` implementa os dois ports (blueprint + insights) — um único adapter
+de infraestrutura, dois contratos de domínio independentes. O endpoint é POST (não GET):
+gerar insights custa tokens e não pode ser disparado por prefetch/refetch automático de
+clientes HTTP; restrito a OWNER/ADMIN/MANAGER. Sazonalidade é tratada via evolução mensal
+no prompt; previsões ficam como evolução futura (a base — agregados mensais — já existe).
+Insights não são persistidos: são interpretação de um retrato do período, recomputáveis a
+qualquer momento — persistir criaria estado desatualizável sem benefício claro no MVP.
+
 **Etapa 10 (frontend — dashboard e módulos):** o dashboard consome o endpoint agregado da
 Etapa 7 — nenhum cálculo financeiro é refeito no navegador; o frontend só formata
 (`formatCents`/`formatPercent`) e desenha. Recharts fica isolado no chunk da página de

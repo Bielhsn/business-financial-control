@@ -25,6 +25,7 @@ import {
 } from "recharts";
 
 import { EmptyState } from "@/components/empty-state";
+import { InsightsCard } from "@/features/dashboard/insights-card";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -309,6 +310,8 @@ export function DashboardPage() {
               </CardContent>
             </Card>
           )}
+
+          <InsightsCard companyId={companyId ?? ""} start={range.start} end={range.end} />
 
           <Card>
             <CardHeader>

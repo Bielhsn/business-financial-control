@@ -9,7 +9,14 @@ import pytest
 from app.core.config import Settings
 from app.core.exceptions import AIProviderError
 from app.domain.company.entities import Company
+from app.domain.dashboard.entities import (
+    CategoryBreakdown,
+    DashboardSummary,
+    MonthlyBreakdown,
+    PeriodComparison,
+)
 from app.domain.dashboard.kpi_registry import KPIMetric
+from app.domain.insights.entities import InsightKind
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
 
 pytestmark = pytest.mark.anyio
@@ -217,3 +224,99 @@ async def test_raises_when_kpi_metric_is_invalid(mock_client_cls: MagicMock) -> 
 
     with pytest.raises(AIProviderError):
         await provider.generate_company_blueprint(company=_company(), additional_context=None)
+
+
+def _summary() -> DashboardSummary:
+    return DashboardSummary(
+        start=datetime(2026, 6, 1, tzinfo=UTC),
+        end=datetime(2026, 6, 30, tzinfo=UTC),
+        revenue_cents=1500000,
+        expense_cents=500000,
+        profit_cents=1000000,
+        profit_margin_pct=66.7,
+        average_ticket_cents=15000,
+        transaction_count=42,
+        active_clients=12,
+        monthly_breakdown=[
+            MonthlyBreakdown(
+                year=2026,
+                month=6,
+                revenue_cents=1500000,
+                expense_cents=500000,
+                profit_cents=1000000,
+            )
+        ],
+        top_income_categories=[
+            CategoryBreakdown(category_id="c1", category_name="Vendas", total_cents=1500000)
+        ],
+        top_expense_categories=[
+            CategoryBreakdown(category_id="c2", category_name="Aluguel", total_cents=500000)
+        ],
+        comparison=PeriodComparison(
+            revenue_change_pct=25.0, expense_change_pct=10.0, profit_change_pct=30.0
+        ),
+        kpis=[],
+    )
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_generate_financial_insights_parses_tool_use_response(
+    mock_client_cls: MagicMock,
+) -> None:
+    mock_response = MagicMock()
+    mock_response.content = [
+        _FakeBlock(
+            "tool_use",
+            {
+                "insights": [
+                    {"kind": "highlight", "title": "Bom lucro", "message": "Margem alta."},
+                    {"kind": "warning", "title": "Despesa subiu", "message": "Atenção."},
+                ]
+            },
+        )
+    ]
+    mock_create = AsyncMock(return_value=mock_response)
+    mock_client_cls.return_value.messages.create = mock_create
+
+    provider = AnthropicAIProvider(_settings())
+    insights = await provider.generate_financial_insights(company=_company(), summary=_summary())
+
+    assert len(insights) == 2
+    assert insights[0].kind == InsightKind.HIGHLIGHT
+    # O prompt inclui os números já computados (a IA não calcula nada).
+    sent_prompt = mock_create.call_args.kwargs["messages"][0]["content"]
+    assert "R$ 15000.00" in sent_prompt
+    assert "Vendas" in sent_prompt
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_generate_financial_insights_raises_on_invalid_kind(
+    mock_client_cls: MagicMock,
+) -> None:
+    mock_response = MagicMock()
+    mock_response.content = [
+        _FakeBlock(
+            "tool_use",
+            {"insights": [{"kind": "not-a-kind", "title": "X", "message": "Y"}]},
+        )
+    ]
+    mock_client_cls.return_value.messages.create = AsyncMock(return_value=mock_response)
+
+    provider = AnthropicAIProvider(_settings())
+
+    with pytest.raises(AIProviderError):
+        await provider.generate_financial_insights(company=_company(), summary=_summary())
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_generate_financial_insights_raises_on_empty_list(
+    mock_client_cls: MagicMock,
+) -> None:
+    mock_response = MagicMock()
+    mock_response.content = [_FakeBlock("tool_use", {"insights": []})]
+    mock_client_cls.return_value.messages.create = AsyncMock(return_value=mock_response)
+
+    provider = AnthropicAIProvider(_settings())
+
+    with pytest.raises(AIProviderError):
+        await provider.generate_financial_insights(company=_company(), summary=_summary())

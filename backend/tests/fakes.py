@@ -14,6 +14,7 @@ from app.domain.catalog.entities import CatalogItem, CatalogItemKind, StockMovem
 from app.domain.client.entities import Client
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
+from app.domain.dashboard.entities import DashboardSummary
 from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.employee.entities import Employee
 from app.domain.financial.entities import (
@@ -22,6 +23,7 @@ from app.domain.financial.entities import (
     FinancialTransaction,
     TransactionStatus,
 )
+from app.domain.insights.entities import FinancialInsight, InsightKind
 from app.domain.user.entities import User
 
 
@@ -270,12 +272,30 @@ class FakeAIProvider:
             client_custom_fields=[],
         )
         self.calls: list[tuple[Company, str | None]] = []
+        self.insight_calls: list[tuple[Company, DashboardSummary]] = []
 
     async def generate_company_blueprint(
         self, *, company: Company, additional_context: str | None
     ) -> CompanyBlueprintDraft:
         self.calls.append((company, additional_context))
         return self._draft
+
+    async def generate_financial_insights(
+        self, *, company: Company, summary: DashboardSummary
+    ) -> list[FinancialInsight]:
+        self.insight_calls.append((company, summary))
+        return [
+            FinancialInsight(
+                kind=InsightKind.HIGHLIGHT,
+                title="Lucro saudável",
+                message="Sua margem está acima da média do segmento.",
+            ),
+            FinancialInsight(
+                kind=InsightKind.WARNING,
+                title="Despesas em alta",
+                message="As despesas cresceram em relação ao período anterior.",
+            ),
+        ]
 
 
 class FakeFinancialCategoryRepository:

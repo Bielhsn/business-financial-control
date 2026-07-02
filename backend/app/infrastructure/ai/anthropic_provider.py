@@ -14,10 +14,13 @@ from app.domain.blueprint.entities import (
 from app.domain.blueprint.module_registry import MODULE_IDS, MODULE_REGISTRY
 from app.domain.blueprint.ports import CompanyBlueprintDraft
 from app.domain.company.entities import Company
+from app.domain.dashboard.entities import DashboardSummary
 from app.domain.dashboard.kpi_registry import KPI_METRIC_REGISTRY, KPIMetric
 from app.domain.financial.entities import FinancialCategoryType
+from app.domain.insights.entities import FinancialInsight, InsightKind
 
 _TOOL_NAME = "submit_company_blueprint"
+_INSIGHTS_TOOL_NAME = "submit_financial_insights"
 _MAX_TOKENS = 2048
 
 
@@ -163,6 +166,109 @@ def _parse_blueprint(data: dict[str, Any]) -> CompanyBlueprintDraft:
     )
 
 
+def _build_insights_tool_schema() -> ToolParam:
+    return {
+        "name": _INSIGHTS_TOOL_NAME,
+        "description": "Envia os insights financeiros sobre o período analisado.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "insights": {
+                    "type": "array",
+                    "description": "Insights sobre a saúde financeira do período.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "kind": {
+                                "type": "string",
+                                "enum": [kind.value for kind in InsightKind],
+                            },
+                            "title": {"type": "string"},
+                            "message": {"type": "string"},
+                        },
+                        "required": ["kind", "title", "message"],
+                    },
+                    "minItems": 2,
+                    "maxItems": 6,
+                },
+            },
+            "required": ["insights"],
+        },
+    }
+
+
+def _format_cents(cents: int) -> str:
+    return f"R$ {cents / 100:.2f}"
+
+
+def _build_insights_prompt(company: Company, summary: DashboardSummary) -> str:
+    monthly = "\n".join(
+        f"- {item.month:02d}/{item.year}: receita {_format_cents(item.revenue_cents)}, "
+        f"despesa {_format_cents(item.expense_cents)}, lucro {_format_cents(item.profit_cents)}"
+        for item in summary.monthly_breakdown
+    )
+    top_income = ", ".join(
+        f"{item.category_name} ({_format_cents(item.total_cents)})"
+        for item in summary.top_income_categories
+    )
+    top_expense = ", ".join(
+        f"{item.category_name} ({_format_cents(item.total_cents)})"
+        for item in summary.top_expense_categories
+    )
+
+    def pct(value: float | None) -> str:
+        return f"{value:+.1f}%" if value is not None else "sem base de comparação"
+
+    lines = [
+        "Você é um consultor financeiro para pequenas e médias empresas no Brasil.",
+        f"Empresa: {company.name} — segmento: {company.segment}, porte: {company.size}.",
+        f"Período analisado: {summary.start:%d/%m/%Y} a {summary.end:%d/%m/%Y}.",
+        "Números do período (já calculados pelo sistema — não recalcule):",
+        f"- Receita: {_format_cents(summary.revenue_cents)} "
+        f"({pct(summary.comparison.revenue_change_pct)} vs. período anterior)",
+        f"- Despesas: {_format_cents(summary.expense_cents)} "
+        f"({pct(summary.comparison.expense_change_pct)} vs. período anterior)",
+        f"- Lucro: {_format_cents(summary.profit_cents)} "
+        f"({pct(summary.comparison.profit_change_pct)} vs. período anterior)",
+        "- Margem de lucro: "
+        + (
+            f"{summary.profit_margin_pct:.1f}%"
+            if summary.profit_margin_pct is not None
+            else "não aplicável (sem receita)"
+        ),
+        f"- Ticket médio: {_format_cents(summary.average_ticket_cents)}",
+        f"- Lançamentos no período: {summary.transaction_count}",
+        f"- Clientes ativos: {summary.active_clients}",
+        f"Evolução mensal:\n{monthly or '- sem dados'}",
+        f"Principais categorias de receita: {top_income or 'nenhuma'}",
+        f"Principais categorias de despesa: {top_expense or 'nenhuma'}",
+        "Gere de 2 a 6 insights curtos e acionáveis em português: destaques positivos "
+        "(highlight), alertas de risco (warning) e oportunidades de melhoria "
+        "(opportunity). Considere sazonalidade e tendência a partir da evolução mensal "
+        "quando houver dados suficientes. Baseie-se apenas nos números fornecidos — "
+        "nunca invente valores. Responda apenas chamando a ferramenta fornecida.",
+    ]
+    return "\n".join(lines)
+
+
+def _parse_insights(data: dict[str, Any]) -> list[FinancialInsight]:
+    try:
+        insights = [
+            FinancialInsight(
+                kind=InsightKind(item["kind"]),
+                title=item["title"],
+                message=item["message"],
+            )
+            for item in data["insights"]
+        ]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise AIProviderError("Resposta da IA em formato inesperado.") from exc
+
+    if not insights:
+        raise AIProviderError("A IA não retornou nenhum insight.")
+    return insights
+
+
 class AnthropicAIProvider:
     """Adapter para a API da Anthropic (Claude). Assume que a API key já foi validada."""
 
@@ -198,3 +304,31 @@ class AnthropicAIProvider:
             raise AIProviderError("O provedor de IA não retornou uma resposta estruturada válida.")
 
         return _parse_blueprint(tool_use_block.input)
+
+    async def generate_financial_insights(
+        self, *, company: Company, summary: DashboardSummary
+    ) -> list[FinancialInsight]:
+        tool = _build_insights_tool_schema()
+        tool_choice: ToolChoiceToolParam = {"type": "tool", "name": _INSIGHTS_TOOL_NAME}
+        messages: list[MessageParam] = [
+            {"role": "user", "content": _build_insights_prompt(company, summary)}
+        ]
+
+        try:
+            response = await self._client.messages.create(
+                model=self._model,
+                max_tokens=_MAX_TOKENS,
+                tools=[tool],
+                tool_choice=tool_choice,
+                messages=messages,
+            )
+        except anthropic.APIError as exc:
+            raise AIProviderError("Falha ao consultar o provedor de IA.") from exc
+
+        tool_use_block = next(
+            (block for block in response.content if block.type == "tool_use"), None
+        )
+        if tool_use_block is None:
+            raise AIProviderError("O provedor de IA não retornou uma resposta estruturada válida.")
+
+        return _parse_insights(tool_use_block.input)

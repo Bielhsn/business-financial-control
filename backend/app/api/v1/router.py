@@ -10,6 +10,7 @@ from app.api.v1.routers import (
     employees,
     financial,
     health,
+    insights,
 )
 
 api_router = APIRouter()
@@ -22,3 +23,4 @@ api_router.include_router(clients.router)
 api_router.include_router(catalog.router)
 api_router.include_router(employees.router)
 api_router.include_router(dashboard.router)
+api_router.include_router(insights.router)

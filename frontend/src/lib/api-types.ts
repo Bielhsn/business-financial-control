@@ -211,6 +211,20 @@ export interface DashboardSummaryResponse {
   kpis: ComputedKPIResponse[];
 }
 
+export type InsightKind = "highlight" | "warning" | "opportunity";
+
+export interface InsightResponse {
+  kind: InsightKind;
+  title: string;
+  message: string;
+}
+
+export interface InsightsResponse {
+  start: string;
+  end: string;
+  insights: InsightResponse[];
+}
+
 export interface ApiErrorResponse {
   error: string;
   message: string;

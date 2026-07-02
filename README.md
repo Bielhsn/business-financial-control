@@ -270,8 +270,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 8   | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação)         | ✅ Concluída |
 | 9   | Frontend — onboarding com IA (wizard)                                                    | ✅ Concluída |
 | 10  | Frontend — dashboard e telas dos módulos                                                 | ✅ Concluída |
-| 11  | IA avançada (insights automáticos, sazonalidade, base para previsões)                    | ⏳ Próxima   |
-| 12  | Hardening final (testes completos, auditoria, revisão de segurança, i18n)                | Planejada    |
+| 11  | IA avançada (insights automáticos, sazonalidade, base para previsões)                    | ✅ Concluída |
+| 12  | Hardening final (testes completos, auditoria, revisão de segurança, i18n)                | ⏳ Próxima   |
 
 ## Funcionalidades atuais
 
@@ -362,6 +362,14 @@ Detalhes de implementação de cada mecanismo são documentados em
   relacionamento por cliente), produtos & serviços (catálogo unificado com ajuste de
   estoque auditado) e funcionários. Navegação do shell condicionada aos módulos do
   blueprint.
+- Insights financeiros por IA: `POST /api/v1/companies/{id}/insights` (restrito a
+  OWNER/ADMIN/MANAGER) gera de 2 a 6 insights (destaques, alertas e oportunidades) sobre
+  o período — a IA recebe **apenas os agregados já computados** pelo dashboard (nunca
+  lançamentos individuais) e é forçada via tool use a responder em formato estruturado
+  com tipos de um enum fechado; ela interpreta os números, nunca os calcula. Endpoint é
+  POST deliberadamente: consome tokens e não deve disparar por refetch automático. No
+  dashboard, card "Insights da IA" com geração sob demanda e degradação graciosa quando
+  o provedor não está configurado.
 
 ## Funcionalidades futuras
 
