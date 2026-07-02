@@ -269,8 +269,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 7   | Dashboard e indicadores financeiros                                                      | ✅ Concluída |
 | 8   | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação)         | ✅ Concluída |
 | 9   | Frontend — onboarding com IA (wizard)                                                    | ✅ Concluída |
-| 10  | Frontend — dashboard e telas dos módulos                                                 | ⏳ Próxima   |
-| 11  | IA avançada (insights automáticos, sazonalidade, base para previsões)                    | Planejada    |
+| 10  | Frontend — dashboard e telas dos módulos                                                 | ✅ Concluída |
+| 11  | IA avançada (insights automáticos, sazonalidade, base para previsões)                    | ⏳ Próxima   |
 | 12  | Hardening final (testes completos, auditoria, revisão de segurança, i18n)                | Planejada    |
 
 ## Funcionalidades atuais
@@ -352,6 +352,16 @@ Detalhes de implementação de cada mecanismo são documentados em
   um clique), KPIs e campos personalizados de cliente. Se o provedor de IA não estiver
   configurado (503), o fluxo degrada com elegância: a empresa é criada e o painel abre
   mesmo assim.
+- Frontend — dashboard e telas dos módulos: dashboard com seletor de período (mês, 30/90
+  dias, ano), cards de receita/despesa/lucro com comparativo percentual vs. período
+  anterior, KPIs do blueprint com valores reais, evolução mensal em gráfico (Recharts,
+  isolado em chunk próprio via code splitting) e top categorias. Telas completas de
+  lançamentos (novo lançamento com valor em reais convertido para centavos, filtros,
+  marcar como pago/cancelar, gestão de categorias com importação das sugestões da IA),
+  clientes (formulário com campos personalizados dinâmicos do blueprint e resumo de
+  relacionamento por cliente), produtos & serviços (catálogo unificado com ajuste de
+  estoque auditado) e funcionários. Navegação do shell condicionada aos módulos do
+  blueprint.
 
 ## Funcionalidades futuras
 

@@ -5,7 +5,7 @@ import { CompanyLayout } from "@/app/company-layout";
 import { ProtectedRoute } from "@/app/protected-route";
 
 // Rotas carregadas sob demanda (code splitting): o bundle inicial fica leve
-// mesmo quando páginas pesadas (gráficos etc.) forem adicionadas.
+// mesmo com páginas pesadas (gráficos etc.).
 const LoginPage = lazy(() =>
   import("@/features/auth/login-page").then((m) => ({ default: m.LoginPage })),
 );
@@ -19,7 +19,21 @@ const OnboardingPage = lazy(() =>
   import("@/features/onboarding/onboarding-page").then((m) => ({ default: m.OnboardingPage })),
 );
 const DashboardPage = lazy(() =>
-  import("@/pages/dashboard-page").then((m) => ({ default: m.DashboardPage })),
+  import("@/features/dashboard/dashboard-page").then((m) => ({ default: m.DashboardPage })),
+);
+const TransactionsPage = lazy(() =>
+  import("@/features/financial/transactions-page").then((m) => ({
+    default: m.TransactionsPage,
+  })),
+);
+const ClientsPage = lazy(() =>
+  import("@/features/clients/clients-page").then((m) => ({ default: m.ClientsPage })),
+);
+const CatalogPage = lazy(() =>
+  import("@/features/catalog/catalog-page").then((m) => ({ default: m.CatalogPage })),
+);
+const EmployeesPage = lazy(() =>
+  import("@/features/employees/employees-page").then((m) => ({ default: m.EmployeesPage })),
 );
 
 function PageFallback() {
@@ -45,6 +59,10 @@ export function App() {
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/c/:companyId" element={<CompanyLayout />}>
             <Route index element={<DashboardPage />} />
+            <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="clients" element={<ClientsPage />} />
+            <Route path="catalog" element={<CatalogPage />} />
+            <Route path="employees" element={<EmployeesPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/companies" replace />} />

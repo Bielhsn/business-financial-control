@@ -24,6 +24,19 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 10 (frontend — dashboard e módulos):** o dashboard consome o endpoint agregado da
+Etapa 7 — nenhum cálculo financeiro é refeito no navegador; o frontend só formata
+(`formatCents`/`formatPercent`) e desenha. Recharts fica isolado no chunk da página de
+dashboard (lazy route) — ~390 kB que só quem abre o dashboard baixa. Entrada de dinheiro:
+o usuário digita reais ("1.234,56") e `parseCurrencyToCents` converte para inteiro antes
+de qualquer requisição — float de dinheiro não existe em nenhum ponto do fluxo, do input
+ao banco. Formulário de cliente renderiza os `client_custom_fields` do blueprint
+dinamicamente (a metadata-driven UI completa: a IA definiu os campos no onboarding, o
+backend valida as chaves, o frontend gera os inputs). Campos vazios não são enviados —
+o backend rejeitaria chaves com valor vazio fora da definição. Mutações invalidam as
+queries relacionadas (lançamento novo invalida transações E dashboard), mantendo os
+números sempre coerentes sem refetch manual.
+
 **Etapa 9 (frontend — onboarding com IA):** wizard em máquina de estados explícita
 (`form → generating → result`, union type discriminada) em vez de flags booleanas soltas —
 impossível representar estados inválidos como "gerando sem empresa criada". A geração do
