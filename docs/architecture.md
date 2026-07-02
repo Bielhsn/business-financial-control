@@ -24,6 +24,18 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 9 (frontend — onboarding com IA):** wizard em máquina de estados explícita
+(`form → generating → result`, union type discriminada) em vez de flags booleanas soltas —
+impossível representar estados inválidos como "gerando sem empresa criada". A geração do
+blueprint dispara em `useEffect` na transição de passo (nunca no corpo do componente: o
+StrictMode re-renderiza e duplicaria a mutação). Falha de IA não bloqueia o produto: 503
+(provedor não configurado) é um estado esperado do wizard — a empresa já foi criada, o
+resultado explica e o painel abre mesmo assim; o blueprint pode ser gerado depois. A
+importação das categorias sugeridas reusa o endpoint idempotente de seed da Etapa 5. O
+catálogo de módulos do backend (`MODULE_REGISTRY`) é espelhado em `lib/modules.ts` para
+rotular os módulos na UI — divergência aqui é cosmética (label ausente), nunca funcional,
+pois o backend continua sendo a única fonte de verdade sobre módulos válidos.
+
 **Etapa 8 (frontend — fundação):** SPA Vite + React 19 + TypeScript estrito. Tailwind CSS
 v4 com tokens de design em CSS variables (`--background`, `--primary`...) e variante
 `dark` por classe no `<html>` — o tema é aplicado por um script inline no `index.html`

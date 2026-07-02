@@ -96,10 +96,12 @@ export interface BlueprintKPI {
   metric: KPIMetric;
 }
 
+export type CustomFieldType = "text" | "number" | "date" | "boolean" | "select";
+
 export interface BlueprintCustomField {
   key: string;
   label: string;
-  field_type: string;
+  type: CustomFieldType;
 }
 
 export interface BlueprintSuggestedCategory {

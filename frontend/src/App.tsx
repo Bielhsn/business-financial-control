@@ -16,7 +16,7 @@ const CompaniesPage = lazy(() =>
   import("@/features/companies/companies-page").then((m) => ({ default: m.CompaniesPage })),
 );
 const OnboardingPage = lazy(() =>
-  import("@/pages/onboarding-page").then((m) => ({ default: m.OnboardingPage })),
+  import("@/features/onboarding/onboarding-page").then((m) => ({ default: m.OnboardingPage })),
 );
 const DashboardPage = lazy(() =>
   import("@/pages/dashboard-page").then((m) => ({ default: m.DashboardPage })),

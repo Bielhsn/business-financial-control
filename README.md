@@ -52,16 +52,20 @@ Entregar um sistema multi-tenant, seguro e escalável que:
 ## Tecnologias utilizadas
 
 ### Frontend
+
 React · TypeScript · Tailwind CSS · React Router · TanStack Query · React Hook Form ·
 Zod · Axios · Framer Motion · Recharts · Lucide Icons · shadcn/ui · Zustand
 
 ### Backend
+
 Python · FastAPI · Beanie (MongoDB ODM sobre Motor) · Pydantic v2 · JWT · Argon2
 
 ### Infraestrutura
+
 MongoDB · Redis · Docker / Docker Compose · GitHub Actions (CI)
 
 ### IA
+
 Anthropic Claude API, integrada via uma interface plugável (`AIProviderPort`) que permite
 trocar de provedor sem alterar regras de negócio.
 
@@ -174,19 +178,19 @@ npm run build          # tsc -b (type check) + build de produção
 
 Backend (`backend/.env`, veja `backend/.env.example`):
 
-| Variável | Descrição |
-|---|---|
-| `ENVIRONMENT` | `development`, `staging` ou `production` |
-| `API_V1_PREFIX` | Prefixo das rotas da API (`/api/v1`) |
-| `SECRET_KEY` | Chave usada na assinatura de tokens — gere um valor forte e único por ambiente |
-| `MONGODB_URI` | String de conexão do MongoDB |
-| `MONGODB_DB_NAME` | Nome do banco de dados |
-| `REDIS_URL` | String de conexão do Redis (cache, rate limiting) |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Duração do access token JWT |
-| `REFRESH_TOKEN_EXPIRE_DAYS` | Duração do refresh token |
-| `CORS_ALLOWED_ORIGINS` | Origens permitidas, separadas por vírgula |
-| `AI_PROVIDER` | Provedor de IA ativo (`anthropic`) |
-| `ANTHROPIC_API_KEY` | Chave de API da Anthropic |
+| Variável                      | Descrição                                                                      |
+| ----------------------------- | ------------------------------------------------------------------------------ |
+| `ENVIRONMENT`                 | `development`, `staging` ou `production`                                       |
+| `API_V1_PREFIX`               | Prefixo das rotas da API (`/api/v1`)                                           |
+| `SECRET_KEY`                  | Chave usada na assinatura de tokens — gere um valor forte e único por ambiente |
+| `MONGODB_URI`                 | String de conexão do MongoDB                                                   |
+| `MONGODB_DB_NAME`             | Nome do banco de dados                                                         |
+| `REDIS_URL`                   | String de conexão do Redis (cache, rate limiting)                              |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Duração do access token JWT                                                    |
+| `REFRESH_TOKEN_EXPIRE_DAYS`   | Duração do refresh token                                                       |
+| `CORS_ALLOWED_ORIGINS`        | Origens permitidas, separadas por vírgula                                      |
+| `AI_PROVIDER`                 | Provedor de IA ativo (`anthropic`)                                             |
+| `ANTHROPIC_API_KEY`           | Chave de API da Anthropic                                                      |
 
 Nunca commite o arquivo `.env` — ele está no `.gitignore`.
 
@@ -253,21 +257,21 @@ Detalhes de implementação de cada mecanismo são documentados em
 
 ## Roadmap
 
-| # | Etapa | Status |
-|---|---|---|
-| 0 | Fundação do monorepo (estrutura, tooling, Docker Compose, CI) | ✅ Concluída |
-| 1 | Backend core (config, logging, exceções, conexão com o banco, health check) | ✅ Concluída |
-| 2 | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting) | ✅ Concluída |
-| 3 | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis) | ✅ Concluída |
-| 4 | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs) | ✅ Concluída |
-| 5 | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias) | ✅ Concluída |
-| 6 | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | ✅ Concluída |
-| 7 | Dashboard e indicadores financeiros | ✅ Concluída |
-| 8 | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação) | ✅ Concluída |
-| 9 | Frontend — onboarding com IA (wizard) | ⏳ Próxima |
-| 10 | Frontend — dashboard e telas dos módulos | Planejada |
-| 11 | IA avançada (insights automáticos, sazonalidade, base para previsões) | Planejada |
-| 12 | Hardening final (testes completos, auditoria, revisão de segurança, i18n) | Planejada |
+| #   | Etapa                                                                                    | Status       |
+| --- | ---------------------------------------------------------------------------------------- | ------------ |
+| 0   | Fundação do monorepo (estrutura, tooling, Docker Compose, CI)                            | ✅ Concluída |
+| 1   | Backend core (config, logging, exceções, conexão com o banco, health check)              | ✅ Concluída |
+| 2   | Autenticação e usuários (JWT, refresh token, Argon2, rate limiting)                      | ✅ Concluída |
+| 3   | Multi-tenant e empresas (modelo Company, isolamento por tenant, papéis)                  | ✅ Concluída |
+| 4   | Onboarding com IA (Company Blueprint: módulos, categorias, KPIs)                         | ✅ Concluída |
+| 5   | Módulo financeiro core (fluxo de caixa, contas a pagar/receber, categorias)              | ✅ Concluída |
+| 6   | Módulos dinâmicos (clientes com custom fields, produtos/serviços, estoque, funcionários) | ✅ Concluída |
+| 7   | Dashboard e indicadores financeiros                                                      | ✅ Concluída |
+| 8   | Frontend — fundação (Vite, Tailwind, shadcn/ui, tema claro/escuro, autenticação)         | ✅ Concluída |
+| 9   | Frontend — onboarding com IA (wizard)                                                    | ✅ Concluída |
+| 10  | Frontend — dashboard e telas dos módulos                                                 | ⏳ Próxima   |
+| 11  | IA avançada (insights automáticos, sazonalidade, base para previsões)                    | Planejada    |
+| 12  | Hardening final (testes completos, auditoria, revisão de segurança, i18n)                | Planejada    |
 
 ## Funcionalidades atuais
 
@@ -285,7 +289,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 - Autenticação completa: cadastro (`POST /api/v1/auth/register`), login com emissão de
   access token JWT + refresh token opaco e revogável (`POST /api/v1/auth/login`), rotação
   de refresh token (`POST /api/v1/auth/refresh`), logout com revogação (`POST
-  /api/v1/auth/logout`) e usuário autenticado (`GET /api/v1/auth/me`). Senhas com Argon2id;
+/api/v1/auth/logout`) e usuário autenticado (`GET /api/v1/auth/me`). Senhas com Argon2id;
   rate limiting nos endpoints de autenticação.
 - Multi-tenant: cadastro de empresas (`POST /api/v1/companies`, com os campos do
   onboarding: segmento, porte, número de funcionários, localização, regime tributário
@@ -298,7 +302,7 @@ Detalhes de implementação de cada mecanismo são documentados em
   Anthropic API para interpretar o segmento e os dados da empresa e gerar um **Company
   Blueprint** — módulos a ativar (de um catálogo pré-construído), categorias financeiras,
   KPIs relevantes e campos personalizados para o cadastro de clientes. `GET
-  .../blueprint` consulta o blueprint já gerado. Sem `ANTHROPIC_API_KEY` configurada, o
+.../blueprint` consulta o blueprint já gerado. Sem `ANTHROPIC_API_KEY` configurada, o
   endpoint responde 503 de forma explícita em vez de falhar de forma confusa.
 - Módulo financeiro core: categorias financeiras (`POST/GET/PATCH .../financial-categories`,
   com importação idempotente das sugestões do blueprint via
@@ -341,6 +345,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   requisição), seleção de empresas com papel do usuário, e shell autenticado cuja navegação
   lateral é filtrada pelos módulos do Company Blueprint. Job próprio no CI (Prettier,
   ESLint, Vitest, `tsc -b` + build).
+- Frontend — onboarding com IA: wizard de criação de empresa em etapas animadas
+  (dados do negócio → geração do blueprint com IA → resultado). O formulário aceita
+  segmento em texto livre; ao criar a empresa, o blueprint é gerado automaticamente e o
+  resultado mostra módulos ativados, categorias financeiras sugeridas (com importação em
+  um clique), KPIs e campos personalizados de cliente. Se o provedor de IA não estiver
+  configurado (503), o fluxo degrada com elegância: a empresa é criada e o painel abre
+  mesmo assim.
 
 ## Funcionalidades futuras
 
