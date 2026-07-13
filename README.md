@@ -311,8 +311,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 13  | Identidade Aurum & landing page pública                                  | ✅ Concluída |
 | 14  | Onboarding 2.0 (moeda, canais de venda, forma de venda) + multi-moeda    | ✅ Concluída |
 | 15  | Sidebar dinâmica completa e novos módulos por segmento                   | ✅ Concluída |
-| 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | ⏳ Próxima   |
-| 17  | Central de Integrações + importação CSV/OFX de lançamentos               | Planejada    |
+| 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | ✅ Concluída |
+| 17  | Central de Integrações + importação CSV/OFX de lançamentos               | ⏳ Próxima   |
 | 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | Planejada    |
 | 19  | Plataforma (API pública, webhooks, auditoria persistida, notificações)   | Planejada    |
 | 20  | Polimento premium (microinterações, command palette, PWA)                | Planejada    |
@@ -435,6 +435,15 @@ Detalhes de implementação de cada mecanismo são documentados em
   produto não travar sem IA. Módulos ainda sem backend têm páginas próprias com URL
   estável, badge "em desenvolvimento" e uma sugestão prática de como resolver hoje com os
   módulos existentes.
+
+- Customização visual por empresa (white-label light): cada empresa pode definir logo
+  (upload de imagem até 150 KB, armazenada como data URL validada — só `image/*`), cor
+  primária (hex validado, com contraste do texto calculado automaticamente por
+  luminância WCAG) e tema padrão. A cor sobrescreve os tokens de primária apenas dentro
+  do shell da empresa via CSS variables; o tema padrão da empresa vale só para usuários
+  que seguem a preferência do sistema — nunca sobrescreve escolha manual. Página de
+  configurações com presets, color picker e prévia ao vivo; salvar é restrito a
+  OWNER/ADMIN no backend.
 
 ## Funcionalidades futuras
 

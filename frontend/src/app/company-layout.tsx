@@ -1,4 +1,5 @@
-import { Building2, ChevronsUpDown, LogOut, Moon, Receipt, Sun } from "lucide-react";
+import { Building2, ChevronsUpDown, LogOut, Moon, Receipt, Settings, Sun } from "lucide-react";
+import { useEffect } from "react";
 import { NavLink, Navigate, Outlet, useNavigate, useParams } from "react-router-dom";
 
 import { AurumMark } from "@/components/brand/logo";
@@ -18,7 +19,7 @@ import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useCompany } from "@/features/companies/use-companies";
 import { BRAND } from "@/lib/brand";
 import { visibleNavItems } from "@/lib/navigation";
-import { cn } from "@/lib/utils";
+import { cn, readableForeground } from "@/lib/utils";
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -41,6 +42,22 @@ export function CompanyLayout() {
   const { data: blueprint } = useBlueprint(companyId ?? "");
   const { data: user } = useCurrentUser();
   const logout = useLogout();
+  const { theme } = useTheme();
+
+  // Tema padrão da empresa: aplicado apenas a quem segue a preferência do sistema
+  // (nunca sobrescreve escolha manual do usuário) e desfeito ao sair do painel.
+  const brandTheme = company?.brand_theme ?? null;
+  useEffect(() => {
+    if (theme !== "system" || brandTheme === null) {
+      return;
+    }
+    const root = document.documentElement;
+    const hadDark = root.classList.contains("dark");
+    root.classList.toggle("dark", brandTheme === "dark");
+    return () => {
+      root.classList.toggle("dark", hadDark);
+    };
+  }, [theme, brandTheme]);
 
   if (!companyId) {
     return <Navigate to="/companies" replace />;
@@ -54,8 +71,17 @@ export function CompanyLayout() {
   // com blueprint, é o retrato exato do que a IA ativou para o segmento.
   const visibleItems = visibleNavItems(blueprint ? blueprint.modules : null);
 
+  // Cor da marca da empresa: sobrescreve os tokens de primária apenas dentro do shell.
+  const brandStyle = company?.brand_primary_color
+    ? ({
+        "--primary": company.brand_primary_color,
+        "--ring": company.brand_primary_color,
+        "--primary-foreground": readableForeground(company.brand_primary_color),
+      } as React.CSSProperties)
+    : undefined;
+
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen" style={brandStyle}>
       <aside className="hidden w-60 shrink-0 flex-col border-r bg-card md:flex">
         <div className="flex h-14 items-center gap-2 border-b px-4">
           <button
@@ -64,8 +90,17 @@ export function CompanyLayout() {
             className="flex w-full items-center gap-2 rounded-md px-1 py-1 text-left transition-colors hover:bg-accent"
             aria-label="Trocar de empresa"
           >
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
-              <Building2 className="size-4" />
+            <div className="flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-md bg-primary/10 text-primary">
+              {company?.brand_logo ? (
+                <img
+                  src={company.brand_logo}
+                  alt=""
+                  aria-hidden="true"
+                  className="size-full object-contain"
+                />
+              ) : (
+                <Building2 className="size-4" />
+              )}
             </div>
             {isLoading ? (
               <Skeleton className="h-4 w-28" />
@@ -120,6 +155,14 @@ export function CompanyLayout() {
           </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Configurações da empresa"
+              onClick={() => navigate(`/c/${companyId}/settings`)}
+            >
+              <Settings />
+            </Button>
             <ThemeToggle />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

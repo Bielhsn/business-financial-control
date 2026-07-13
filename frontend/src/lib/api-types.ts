@@ -32,6 +32,9 @@ export interface CompanyResponse {
   sales_channels: string[];
   sales_mode: string | null;
   main_offerings: string | null;
+  brand_logo: string | null;
+  brand_primary_color: string | null;
+  brand_theme: "light" | "dark" | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

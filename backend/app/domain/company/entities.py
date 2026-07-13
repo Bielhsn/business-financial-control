@@ -25,6 +25,10 @@ class Company:
     sales_channels: list[str] = field(default_factory=list)
     sales_mode: str | None = None
     main_offerings: str | None = None
+    # Branding por empresa (white-label light): aplicado no shell do frontend.
+    brand_logo: str | None = None  # data URL (image/*), tamanho limitado no schema
+    brand_primary_color: str | None = None  # hex #RRGGBB
+    brand_theme: str | None = None  # "light" | "dark" (tema padrão da empresa)
 
 
 @dataclass

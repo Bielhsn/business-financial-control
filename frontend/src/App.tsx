@@ -50,6 +50,11 @@ const ProjectsPage = lazy(() =>
 const ContractsPage = lazy(() =>
   import("@/features/modules/coming-soon-page").then((m) => ({ default: m.ContractsPage })),
 );
+const CompanySettingsPage = lazy(() =>
+  import("@/features/settings/company-settings-page").then((m) => ({
+    default: m.CompanySettingsPage,
+  })),
+);
 
 function PageFallback() {
   return (
@@ -83,6 +88,7 @@ export function App() {
             <Route path="subscriptions" element={<SubscriptionsPage />} />
             <Route path="projects" element={<ProjectsPage />} />
             <Route path="contracts" element={<ContractsPage />} />
+            <Route path="settings" element={<CompanySettingsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/companies" replace />} />

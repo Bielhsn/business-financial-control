@@ -159,3 +159,47 @@ def test_create_company_defaults_to_brl_currency(client: TestClient) -> None:
     assert response.status_code == 201
     assert response.json()["currency"] == "BRL"
     assert response.json()["sales_channels"] == []
+
+
+def test_update_company_branding(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = client.post(
+        "/api/v1/companies", json=VALID_COMPANY_PAYLOAD, headers=headers
+    ).json()["id"]
+
+    response = client.patch(
+        f"/api/v1/companies/{company_id}",
+        json={
+            "brand_logo": "data:image/png;base64,iVBORw0KGgo=",
+            "brand_primary_color": "#B45309",
+            "brand_theme": "dark",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["brand_primary_color"] == "#B45309"
+    assert body["brand_theme"] == "dark"
+    assert body["brand_logo"].startswith("data:image/")
+
+
+def test_update_company_branding_rejects_invalid_values(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = client.post(
+        "/api/v1/companies", json=VALID_COMPANY_PAYLOAD, headers=headers
+    ).json()["id"]
+
+    bad_color = client.patch(
+        f"/api/v1/companies/{company_id}",
+        json={"brand_primary_color": "dourado"},
+        headers=headers,
+    )
+    assert bad_color.status_code == 422
+
+    not_an_image = client.patch(
+        f"/api/v1/companies/{company_id}",
+        json={"brand_logo": "data:text/html;base64,PGh0bWw+"},
+        headers=headers,
+    )
+    assert not_an_image.status_code == 422

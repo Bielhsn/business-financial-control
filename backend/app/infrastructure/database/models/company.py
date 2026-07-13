@@ -18,6 +18,9 @@ class CompanyDocument(Document):
     sales_channels: list[str] = []
     sales_mode: str | None = None
     main_offerings: str | None = None
+    brand_logo: str | None = None
+    brand_primary_color: str | None = None
+    brand_theme: str | None = None
     is_active: bool = True
     created_at: datetime
     updated_at: datetime

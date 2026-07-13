@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { cn, formatCents, formatPercent } from "@/lib/utils";
+import { cn, formatCents, formatPercent, readableForeground } from "@/lib/utils";
 
 describe("cn", () => {
   it("mescla classes e resolve conflitos do tailwind", () => {
@@ -28,5 +28,14 @@ describe("formatPercent", () => {
     expect(formatPercent(12.34)).toBe("+12,3%");
     expect(formatPercent(-4)).toBe("-4,0%");
     expect(formatPercent(0)).toBe("0,0%");
+  });
+});
+
+describe("readableForeground", () => {
+  it("usa texto claro sobre cores escuras e escuro sobre cores claras", () => {
+    expect(readableForeground("#1c1917")).toBe("#ffffff"); // grafite
+    expect(readableForeground("#B45309")).toBe("#ffffff"); // ouro-bronze
+    expect(readableForeground("#FDE68A")).toBe("#1c1917"); // ouro claro
+    expect(readableForeground("#ffffff")).toBe("#1c1917");
   });
 });

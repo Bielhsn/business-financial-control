@@ -24,6 +24,19 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 16 (customização visual por empresa):** white-label pela mesma alavanca da marca
+(Etapa 13): como toda a UI consome tokens (`--primary`, `--ring`...), a cor da empresa é
+um `style` com CSS variables no wrapper do shell — sobrescreve a primária só dentro do
+painel daquela empresa, sem tocar em landing/login/nada global. O texto sobre a cor
+custom é decidido por luminância relativa (WCAG) em `readableForeground` — contraste
+garantido para qualquer cor escolhida. Logo como data URL no documento da empresa
+(validação dupla: `image/*` + limite de tamanho no schema; nada de servir HTML de
+usuário) — um object storage (S3/GCS) é a evolução natural se logos crescerem, mas para
+≤150 KB o data URL elimina uma dependência de infraestrutura inteira. Tema padrão da
+empresa respeita hierarquia de preferência: escolha manual do usuário > tema da empresa >
+sistema — aplicado por efeito com cleanup no unmount, nunca persistido por cima da
+escolha do usuário.
+
 **Etapa 15 (sidebar dinâmica completa):** a navegação saiu do componente e virou dado —
 `lib/navigation.ts` declara os itens (rota, ícone, módulos que habilitam, core ou não) e
 `visibleNavItems(modules | null)` é uma função pura, testada isoladamente, que o

@@ -27,6 +27,27 @@ export function useCompany(companyId: string) {
   });
 }
 
+export interface UpdateCompanyInput {
+  name?: string;
+  brand_logo?: string | null;
+  brand_primary_color?: string | null;
+  brand_theme?: "light" | "dark" | null;
+}
+
+export function useUpdateCompany(companyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UpdateCompanyInput) => {
+      const { data } = await api.patch<CompanyResponse>(`/companies/${companyId}`, input);
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["companies", companyId], data);
+      void queryClient.invalidateQueries({ queryKey: ["companies"] });
+    },
+  });
+}
+
 export function useCreateCompany() {
   const queryClient = useQueryClient();
   return useMutation({
