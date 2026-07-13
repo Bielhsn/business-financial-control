@@ -12,6 +12,7 @@ from app.core.exceptions import (
     UnauthorizedError,
 )
 from app.core.tenant import CompanyContext, set_current_company_id
+from app.domain.audit.repository import AuditLogRepository
 from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
 from app.domain.blueprint.ports import AIProviderPort
@@ -28,6 +29,7 @@ from app.domain.financial.repository import (
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
+from app.infrastructure.repositories.audit_log_repository import BeanieAuditLogRepository
 from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
 from app.infrastructure.repositories.client_repository import BeanieClientRepository
 from app.infrastructure.repositories.company_blueprint_repository import (
@@ -170,3 +172,7 @@ def require_role(
         return company_context
 
     return _dependency
+
+
+def get_audit_log_repository() -> AuditLogRepository:
+    return BeanieAuditLogRepository()

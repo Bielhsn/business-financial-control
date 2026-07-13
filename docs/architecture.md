@@ -24,6 +24,19 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 19 (plataforma — auditoria persistida + notificações):** a auditoria evoluiu de
+log-only (Etapa 12) para **dupla escrita**: `record_audit` grava no log estruturado E na
+coleção `audit_logs` (índice composto `company_id + created_at desc`), consultável por
+OWNER/ADMIN. O repositório de auditoria recebe `company_id` explícito em vez de usar o
+contexto de tenant — a trilha também registra eventos fora de um request tenant-scoped
+(ex.: futuros jobs). Notificações são **derivadas, não armazenadas**: o sino computa em
+tempo real as contas vencidas/a vencer a partir dos lançamentos PENDING — zero estado
+novo para sincronizar (conta paga some da lista sozinha), zero notificações órfãs, e o
+custo é uma query que o índice de status já serve. Persistir notificações (com
+lido/não-lido, push, e-mail) vira necessário quando houver eventos não-deriváveis —
+decisão adiada de propósito. API pública com tokens e webhooks de saída ficam para a
+fase de deploy: sem ambiente público, seriam código morto não exercitável.
+
 **Etapa 18 (IA 2.0 — resumo e perguntas):** os dois recursos novos reusam o mesmo
 fundamento da Etapa 11 — a IA interpreta agregados que a aplicação computou — mas com
 saída em prosa em vez de schema: resumo executivo e resposta a pergunta são texto para

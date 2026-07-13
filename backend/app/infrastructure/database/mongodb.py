@@ -5,6 +5,7 @@ from pymongo import AsyncMongoClient
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.infrastructure.database.models.audit_log import AuditLogDocument
 from app.infrastructure.database.models.catalog_item import CatalogItemDocument
 from app.infrastructure.database.models.client import ClientDocument
 from app.infrastructure.database.models.company import CompanyDocument
@@ -46,6 +47,7 @@ async def connect_to_mongo() -> None:
         document_models=[
             UserDocument,
             RefreshTokenDocument,
+            AuditLogDocument,
             CompanyDocument,
             CompanyMembershipDocument,
             CompanyBlueprintDocument,

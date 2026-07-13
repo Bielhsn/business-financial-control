@@ -1,4 +1,5 @@
-import { Building2, Palette, Trash2, Upload } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Building2, History, Palette, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -16,10 +17,80 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCompany, useUpdateCompany } from "@/features/companies/use-companies";
-import { extractErrorMessage } from "@/lib/api";
+import { api, extractErrorMessage } from "@/lib/api";
 import { readableForeground } from "@/lib/utils";
 
 const MAX_LOGO_BYTES = 150 * 1024;
+
+const ACTION_LABELS: Record<string, string> = {
+  company_updated: "Empresa atualizada",
+  blueprint_generated: "Blueprint gerado por IA",
+  insights_generated: "Insights gerados",
+  period_summary_generated: "Resumo executivo gerado",
+  financial_question_asked: "Pergunta feita à IA",
+  transaction_created: "Lançamento criado",
+  transaction_marked_paid: "Lançamento pago",
+  transaction_cancelled: "Lançamento cancelado",
+  transactions_imported: "Extrato importado",
+  stock_adjusted: "Estoque ajustado",
+};
+
+interface AuditEntry {
+  id: string;
+  user_id: string | null;
+  action: string;
+  details: Record<string, unknown>;
+  created_at: string | null;
+}
+
+function AuditTrailCard({ companyId }: { companyId: string }) {
+  const { data: entries } = useQuery({
+    queryKey: ["companies", companyId, "audit-logs"],
+    queryFn: async () => {
+      const { data } = await api.get<AuditEntry[]>(`/companies/${companyId}/audit-logs`, {
+        params: { limit: 20 },
+      });
+      return data;
+    },
+  });
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <History className="size-4 text-primary" /> Atividade recente
+        </CardTitle>
+        <CardDescription>
+          Trilha de auditoria das ações sensíveis nesta empresa (visível a proprietários e
+          administradores).
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {(entries?.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma atividade registrada ainda.</p>
+        ) : (
+          <ul className="space-y-2">
+            {(entries ?? []).map((entry) => (
+              <li key={entry.id} className="flex items-center justify-between gap-3 text-sm">
+                <span>{ACTION_LABELS[entry.action] ?? entry.action}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">
+                  {entry.created_at
+                    ? new Date(entry.created_at).toLocaleString("pt-BR", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "—"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 const PRESET_COLORS = ["#B45309", "#4F46E5", "#0D9488", "#DC2626", "#DB2777", "#0F766E"];
 
@@ -201,6 +272,8 @@ export function CompanySettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      <AuditTrailCard companyId={id} />
     </div>
   );
 }

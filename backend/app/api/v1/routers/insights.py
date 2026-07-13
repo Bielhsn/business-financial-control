@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.v1.deps import (
     get_ai_provider,
+    get_audit_log_repository,
     get_company_blueprint_repository,
     get_company_repository,
     get_financial_category_repository,
@@ -16,8 +17,9 @@ from app.application.insights.generate_insights import (
     GenerateFinancialInsightsUseCase,
     SummarizePeriodUseCase,
 )
-from app.core.audit import audit_event
+from app.core.audit import record_audit
 from app.core.tenant import CompanyContext
+from app.domain.audit.repository import AuditLogRepository
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.company.repository import CompanyRepository
 from app.domain.company.roles import CompanyRole
@@ -58,6 +60,7 @@ async def generate_insights(
         CompanyBlueprintRepository, Depends(get_company_blueprint_repository)
     ],
     ai_provider: Annotated[InsightsAIPort, Depends(get_ai_provider)],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> InsightsResponse:
     dashboard_use_case = GetDashboardUseCase(
         transaction_repository, category_repository, blueprint_repository
@@ -66,7 +69,8 @@ async def generate_insights(
     result = await use_case.execute(
         company_id=company_context.company_id, start=payload.start, end=payload.end
     )
-    audit_event(
+    await record_audit(
+        audit_repository,
         "insights_generated",
         company_id=company_context.company_id,
         insight_count=len(result.insights),
@@ -99,6 +103,7 @@ async def summarize_period(
         CompanyBlueprintRepository, Depends(get_company_blueprint_repository)
     ],
     ai_provider: Annotated[InsightsAIPort, Depends(get_ai_provider)],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> PeriodSummaryResponse:
     dashboard_use_case = GetDashboardUseCase(
         transaction_repository, category_repository, blueprint_repository
@@ -107,7 +112,9 @@ async def summarize_period(
     summary_text = await use_case.execute(
         company_id=company_context.company_id, start=payload.start, end=payload.end
     )
-    audit_event("period_summary_generated", company_id=company_context.company_id)
+    await record_audit(
+        audit_repository, "period_summary_generated", company_id=company_context.company_id
+    )
     return PeriodSummaryResponse(summary=summary_text)
 
 
@@ -129,6 +136,7 @@ async def ask_question(
         CompanyBlueprintRepository, Depends(get_company_blueprint_repository)
     ],
     ai_provider: Annotated[InsightsAIPort, Depends(get_ai_provider)],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> AskQuestionResponse:
     dashboard_use_case = GetDashboardUseCase(
         transaction_repository, category_repository, blueprint_repository
@@ -140,5 +148,7 @@ async def ask_question(
         end=payload.end,
         question=payload.question,
     )
-    audit_event("financial_question_asked", company_id=company_context.company_id)
+    await record_audit(
+        audit_repository, "financial_question_asked", company_id=company_context.company_id
+    )
     return AskQuestionResponse(answer=answer)

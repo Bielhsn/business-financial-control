@@ -4,6 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.v1.deps import (
+    get_audit_log_repository,
     get_client_repository,
     get_company_blueprint_repository,
     get_company_context,
@@ -25,9 +26,10 @@ from app.application.financial.seed_categories_from_blueprint import (
     SeedFinancialCategoriesFromBlueprintUseCase,
 )
 from app.application.financial.update_category import UpdateFinancialCategoryUseCase
-from app.core.audit import audit_event
+from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
+from app.domain.audit.repository import AuditLogRepository
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.client.repository import ClientRepository
 from app.domain.company.roles import CompanyRole
@@ -190,6 +192,7 @@ async def create_transaction(
         FinancialTransactionRepository, Depends(get_financial_transaction_repository)
     ],
     client_repository: Annotated[ClientRepository, Depends(get_client_repository)],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> FinancialTransactionResponse:
     use_case = CreateFinancialTransactionUseCase(
         category_repository, transaction_repository, client_repository
@@ -205,7 +208,8 @@ async def create_transaction(
         client_id=payload.client_id,
         created_by=current_user.id,
     )
-    audit_event(
+    await record_audit(
+        audit_repository,
         "transaction_created",
         user_id=current_user.id,
         company_id=company_context.company_id,
@@ -227,6 +231,7 @@ async def import_transactions(
     transaction_repository: Annotated[
         FinancialTransactionRepository, Depends(get_financial_transaction_repository)
     ],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> ImportTransactionsResponse:
     use_case = ImportTransactionsUseCase(category_repository, transaction_repository)
     result = await use_case.execute(
@@ -242,7 +247,8 @@ async def import_transactions(
         ],
         created_by=current_user.id,
     )
-    audit_event(
+    await record_audit(
+        audit_repository,
         "transactions_imported",
         user_id=current_user.id,
         company_id=company_context.company_id,
@@ -293,10 +299,12 @@ async def mark_transaction_paid(
     transaction_repository: Annotated[
         FinancialTransactionRepository, Depends(get_financial_transaction_repository)
     ],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> FinancialTransactionResponse:
     use_case = MarkTransactionPaidUseCase(transaction_repository)
     transaction = await use_case.execute(transaction_id=transaction_id, paid_at=payload.paid_at)
-    audit_event(
+    await record_audit(
+        audit_repository,
         "transaction_marked_paid",
         company_id=company_context.company_id,
         transaction_id=transaction.id,
@@ -312,10 +320,12 @@ async def cancel_transaction(
     transaction_repository: Annotated[
         FinancialTransactionRepository, Depends(get_financial_transaction_repository)
     ],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> FinancialTransactionResponse:
     use_case = CancelTransactionUseCase(transaction_repository)
     transaction = await use_case.execute(transaction_id=transaction_id)
-    audit_event(
+    await record_audit(
+        audit_repository,
         "transaction_cancelled",
         company_id=company_context.company_id,
         transaction_id=transaction.id,

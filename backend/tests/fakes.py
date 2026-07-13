@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.exceptions import UnauthorizedError
+from app.domain.audit.entities import AuditEntry
 from app.domain.auth.entities import RefreshToken
 from app.domain.blueprint.entities import (
     CompanyBlueprint,
@@ -622,3 +623,34 @@ class FakeEmployeeRepository:
         for key, value in fields.items():
             setattr(employee, key, value)
         return employee
+
+
+class FakeAuditLogRepository:
+    def __init__(self) -> None:
+        self.entries: list[AuditEntry] = []
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        company_id: str,
+        user_id: str | None,
+        action: str,
+        details: dict[str, object],
+    ) -> AuditEntry:
+        entry = AuditEntry(
+            id=str(self._next_id),
+            company_id=company_id,
+            user_id=user_id,
+            action=action,
+            details=details,
+            created_at=datetime.now(UTC),
+        )
+        self._next_id += 1
+        self.entries.append(entry)
+        return entry
+
+    async def list_for_company(self, company_id: str, *, limit: int = 50) -> list[AuditEntry]:
+        matching = [e for e in self.entries if e.company_id == company_id]
+        matching.sort(key=lambda e: e.created_at or datetime.now(UTC), reverse=True)
+        return matching[:limit]

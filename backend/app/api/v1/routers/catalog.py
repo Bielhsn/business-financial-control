@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.v1.deps import (
+    get_audit_log_repository,
     get_catalog_item_repository,
     get_company_context,
     get_current_user,
@@ -12,9 +13,10 @@ from app.api.v1.deps import (
 from app.application.catalog.adjust_stock import AdjustStockUseCase
 from app.application.catalog.create_item import CreateCatalogItemUseCase
 from app.application.catalog.update_item import UpdateCatalogItemUseCase
-from app.core.audit import audit_event
+from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
+from app.domain.audit.repository import AuditLogRepository
 from app.domain.catalog.entities import CatalogItem
 from app.domain.catalog.repository import CatalogItemRepository, StockMovementRepository
 from app.domain.company.roles import CompanyRole
@@ -113,6 +115,7 @@ async def adjust_stock(
     current_user: Annotated[User, Depends(get_current_user)],
     item_repository: Annotated[CatalogItemRepository, Depends(get_catalog_item_repository)],
     movement_repository: Annotated[StockMovementRepository, Depends(get_stock_movement_repository)],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> CatalogItemResponse:
     use_case = AdjustStockUseCase(item_repository, movement_repository)
     item = await use_case.execute(
@@ -121,7 +124,8 @@ async def adjust_stock(
         reason=payload.reason,
         created_by=current_user.id,
     )
-    audit_event(
+    await record_audit(
+        audit_repository,
         "stock_adjusted",
         user_id=current_user.id,
         company_id=company_context.company_id,

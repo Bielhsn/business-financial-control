@@ -3,6 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.api.v1.deps import (
+    get_audit_log_repository,
     get_company_context,
     get_company_membership_repository,
     get_company_repository,
@@ -12,9 +13,10 @@ from app.api.v1.deps import (
 from app.application.company.create_company import CreateCompanyUseCase
 from app.application.company.list_my_companies import ListMyCompaniesUseCase
 from app.application.company.update_company import UpdateCompanyUseCase
-from app.core.audit import audit_event
+from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
+from app.domain.audit.repository import AuditLogRepository
 from app.domain.company.entities import Company
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
@@ -79,12 +81,14 @@ async def update_company(
     ],
     current_user: Annotated[User, Depends(get_current_user)],
     company_repository: Annotated[CompanyRepository, Depends(get_company_repository)],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> Company:
     use_case = UpdateCompanyUseCase(company_repository)
     company = await use_case.execute(
         company_id=company_context.company_id, **payload.model_dump(exclude_unset=True)
     )
-    audit_event(
+    await record_audit(
+        audit_repository,
         "company_updated",
         user_id=current_user.id,
         company_id=company_context.company_id,

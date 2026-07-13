@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 
 from app.api.v1.deps import (
     get_ai_provider,
+    get_audit_log_repository,
     get_company_blueprint_repository,
     get_company_context,
     get_company_repository,
@@ -11,9 +12,10 @@ from app.api.v1.deps import (
 )
 from app.application.blueprint.generate_blueprint import GenerateCompanyBlueprintUseCase
 from app.application.blueprint.get_blueprint import GetCompanyBlueprintUseCase
-from app.core.audit import audit_event
+from app.core.audit import record_audit
 from app.core.config import Settings, get_settings
 from app.core.tenant import CompanyContext
+from app.domain.audit.repository import AuditLogRepository
 from app.domain.blueprint.entities import CompanyBlueprint
 from app.domain.blueprint.ports import AIProviderPort
 from app.domain.blueprint.repository import CompanyBlueprintRepository
@@ -66,6 +68,7 @@ async def generate_blueprint(
     ],
     ai_provider: Annotated[AIProviderPort, Depends(get_ai_provider)],
     settings: Annotated[Settings, Depends(get_settings)],
+    audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> CompanyBlueprintResponse:
     use_case = GenerateCompanyBlueprintUseCase(
         company_repository, blueprint_repository, ai_provider, settings.ai_provider
@@ -73,7 +76,8 @@ async def generate_blueprint(
     blueprint = await use_case.execute(
         company_id=company_context.company_id, additional_context=payload.additional_context
     )
-    audit_event(
+    await record_audit(
+        audit_repository,
         "blueprint_generated",
         company_id=company_context.company_id,
         ai_provider=blueprint.ai_provider,

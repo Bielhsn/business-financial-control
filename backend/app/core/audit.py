@@ -7,11 +7,29 @@ trilha em log já é imutável no destino e não acopla auditoria à disponibili
 MongoDB.
 """
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.core.logging import get_logger
 
+if TYPE_CHECKING:
+    from app.domain.audit.repository import AuditLogRepository
+
 _audit_logger = get_logger("audit")
+
+
+async def record_audit(
+    repository: "AuditLogRepository",
+    action: str,
+    *,
+    company_id: str,
+    user_id: str | None = None,
+    **details: Any,
+) -> None:
+    """Registra a ação no log estruturado E na trilha persistida da empresa."""
+    audit_event(action, user_id=user_id, company_id=company_id, **details)
+    await repository.create(
+        company_id=company_id, user_id=user_id, action=action, details=dict(details)
+    )
 
 
 def audit_event(

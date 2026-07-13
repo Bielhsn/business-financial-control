@@ -314,8 +314,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | ✅ Concluída |
 | 17  | Central de Integrações + importação CSV/OFX de lançamentos               | ✅ Concluída |
 | 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | ✅ Concluída |
-| 19  | Plataforma (API pública, webhooks, auditoria persistida, notificações)   | ⏳ Próxima   |
-| 20  | Polimento premium (microinterações, command palette, PWA)                | Planejada    |
+| 19  | Plataforma (auditoria persistida + notificações; API pública futura)     | ✅ Concluída |
+| 20  | Polimento premium (microinterações, command palette, PWA)                | ⏳ Próxima   |
 
 ## Funcionalidades atuais
 
@@ -461,6 +461,15 @@ Detalhes de implementação de cada mecanismo são documentados em
   linguagem natural ("por que meu lucro caiu?", "onde estou gastando mais?") respondidas
   estritamente a partir dos números do período; quando os dados não bastam, a IA diz
   isso e sugere o que registrar. Ambos restritos a papéis de gestão e auditados.
+
+- Plataforma: a trilha de auditoria agora é **persistida e consultável** — as ações
+  sensíveis gravam em `audit_logs` (além do log estruturado) e OWNER/ADMIN consultam em
+  `GET .../audit-logs`, com "Atividade recente" nas configurações da empresa. Central de
+  **notificações in-app**: sino no topo com contas vencidas e a vencer nos próximos 7
+  dias — derivadas em tempo real dos lançamentos pendentes (nada é armazenado: conta
+  paga some sozinha, sem estado lido/não-lido para sincronizar). API pública com tokens
+  e webhooks de saída ficam para a fase de deploy (exigem ambiente público para serem
+  úteis).
 
 ## Funcionalidades futuras
 

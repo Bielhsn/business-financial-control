@@ -17,6 +17,7 @@ import { useTheme } from "@/components/theme/theme-provider";
 import { useCurrentUser, useLogout } from "@/features/auth/use-auth";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useCompany } from "@/features/companies/use-companies";
+import { NotificationsBell } from "@/features/notifications/notifications-bell";
 import { BRAND } from "@/lib/brand";
 import { visibleNavItems } from "@/lib/navigation";
 import { cn, readableForeground } from "@/lib/utils";
@@ -155,6 +156,7 @@ export function CompanyLayout() {
           </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-1">
+            <NotificationsBell companyId={companyId} />
             <Button
               variant="ghost"
               size="icon"
