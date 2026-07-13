@@ -25,6 +25,7 @@ import {
 } from "recharts";
 
 import { EmptyState } from "@/components/empty-state";
+import { AskCard, SummaryCard } from "@/features/dashboard/ai-panel";
 import { InsightsCard } from "@/features/dashboard/insights-card";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -318,6 +319,11 @@ export function DashboardPage() {
           )}
 
           <InsightsCard companyId={companyId ?? ""} start={range.start} end={range.end} />
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            <SummaryCard companyId={companyId ?? ""} start={range.start} end={range.end} />
+            <AskCard companyId={companyId ?? ""} start={range.start} end={range.end} />
+          </div>
 
           <Card>
             <CardHeader>

@@ -276,6 +276,11 @@ def _parse_insights(data: dict[str, Any]) -> list[FinancialInsight]:
     return insights
 
 
+def _grounding_context(company: Company, summary: DashboardSummary) -> str:
+    """Bloco de números compartilhado pelos prompts de resumo e de perguntas."""
+    return _build_insights_prompt(company, summary).rsplit("Gere de 2 a 6 insights", 1)[0]
+
+
 class AnthropicAIProvider:
     """Adapter para a API da Anthropic (Claude). Assume que a API key já foi validada."""
 
@@ -339,3 +344,38 @@ class AnthropicAIProvider:
             raise AIProviderError("O provedor de IA não retornou uma resposta estruturada válida.")
 
         return _parse_insights(tool_use_block.input)
+
+    async def generate_period_summary(self, *, company: Company, summary: DashboardSummary) -> str:
+        prompt = _grounding_context(company, summary) + (
+            "Escreva um resumo executivo do período em um único parágrafo (máximo 5 "
+            "frases), em português, direto e sem jargão: como foi o resultado, o que "
+            "mais pesou e para onde a tendência aponta. Use apenas os números "
+            "fornecidos — nunca invente valores. Responda somente com o parágrafo."
+        )
+        return await self._complete_text(prompt)
+
+    async def answer_financial_question(
+        self, *, company: Company, summary: DashboardSummary, question: str
+    ) -> str:
+        prompt = _grounding_context(company, summary) + (
+            "Responda à pergunta do usuário em português, em no máximo 4 frases, "
+            "estritamente a partir dos números acima. Se os dados fornecidos não "
+            "forem suficientes para responder, diga isso explicitamente e sugira o "
+            "que registrar no sistema para ter a resposta. Nunca invente valores.\n"
+            f"Pergunta do usuário: {question}"
+        )
+        return await self._complete_text(prompt)
+
+    async def _complete_text(self, prompt: str) -> str:
+        messages: list[MessageParam] = [{"role": "user", "content": prompt}]
+        try:
+            response = await self._client.messages.create(
+                model=self._model, max_tokens=1024, messages=messages
+            )
+        except anthropic.APIError as exc:
+            raise AIProviderError("Falha ao consultar o provedor de IA.") from exc
+
+        text = "".join(block.text for block in response.content if block.type == "text").strip()
+        if not text:
+            raise AIProviderError("O provedor de IA não retornou uma resposta.")
+        return text

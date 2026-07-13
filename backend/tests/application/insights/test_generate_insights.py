@@ -86,3 +86,56 @@ async def test_raises_not_found_for_unknown_company() -> None:
             start=datetime(2026, 6, 1, tzinfo=UTC),
             end=datetime(2026, 6, 30, tzinfo=UTC),
         )
+
+
+async def test_summarize_period_returns_ai_narrative() -> None:
+    companies = FakeCompanyRepository()
+    company_id = await _create_company(companies)
+    ai = FakeAIProvider()
+
+    from app.application.insights.generate_insights import SummarizePeriodUseCase
+
+    summary_text = await SummarizePeriodUseCase(companies, _dashboard_use_case(), ai).execute(
+        company_id=company_id,
+        start=datetime(2026, 6, 1, tzinfo=UTC),
+        end=datetime(2026, 6, 30, tzinfo=UTC),
+    )
+
+    assert "lucro" in summary_text.lower()
+    assert len(ai.summary_calls) == 1
+
+
+async def test_ask_question_passes_normalized_question_to_ai() -> None:
+    companies = FakeCompanyRepository()
+    company_id = await _create_company(companies)
+    ai = FakeAIProvider()
+
+    from app.application.insights.generate_insights import AnswerFinancialQuestionUseCase
+
+    answer = await AnswerFinancialQuestionUseCase(companies, _dashboard_use_case(), ai).execute(
+        company_id=company_id,
+        start=datetime(2026, 6, 1, tzinfo=UTC),
+        end=datetime(2026, 6, 30, tzinfo=UTC),
+        question="  Por que meu lucro caiu?  ",
+    )
+
+    assert "Por que meu lucro caiu?" in answer
+    assert ai.question_calls[0][2] == "Por que meu lucro caiu?"
+
+
+async def test_ask_question_rejects_too_short_question() -> None:
+    from app.application.insights.generate_insights import AnswerFinancialQuestionUseCase
+    from app.core.exceptions import ValidationError
+
+    companies = FakeCompanyRepository()
+    company_id = await _create_company(companies)
+
+    with pytest.raises(ValidationError):
+        await AnswerFinancialQuestionUseCase(
+            companies, _dashboard_use_case(), FakeAIProvider()
+        ).execute(
+            company_id=company_id,
+            start=datetime(2026, 6, 1, tzinfo=UTC),
+            end=datetime(2026, 6, 30, tzinfo=UTC),
+            question=" a ",
+        )

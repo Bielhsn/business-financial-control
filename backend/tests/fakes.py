@@ -281,6 +281,8 @@ class FakeAIProvider:
         )
         self.calls: list[tuple[Company, str | None]] = []
         self.insight_calls: list[tuple[Company, DashboardSummary]] = []
+        self.summary_calls: list[tuple[Company, DashboardSummary]] = []
+        self.question_calls: list[tuple[Company, DashboardSummary, str]] = []
 
     async def generate_company_blueprint(
         self, *, company: Company, additional_context: str | None
@@ -304,6 +306,16 @@ class FakeAIProvider:
                 message="As despesas cresceram em relação ao período anterior.",
             ),
         ]
+
+    async def generate_period_summary(self, *, company: Company, summary: DashboardSummary) -> str:
+        self.summary_calls.append((company, summary))
+        return "O período fechou com lucro sólido e despesas sob controle."
+
+    async def answer_financial_question(
+        self, *, company: Company, summary: DashboardSummary, question: str
+    ) -> str:
+        self.question_calls.append((company, summary, question))
+        return f"Resposta baseada nos agregados para: {question}"
 
 
 class FakeFinancialCategoryRepository:

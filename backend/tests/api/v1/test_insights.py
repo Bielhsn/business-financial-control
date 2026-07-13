@@ -100,3 +100,55 @@ def test_generate_insights_rejects_invalid_period(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_period_summary_endpoint(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    now = datetime.now(UTC)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/insights/summary",
+        json={"start": (now - timedelta(days=30)).isoformat(), "end": now.isoformat()},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert "lucro" in response.json()["summary"].lower()
+
+
+def test_ask_question_endpoint(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    now = datetime.now(UTC)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/insights/ask",
+        json={
+            "start": (now - timedelta(days=30)).isoformat(),
+            "end": now.isoformat(),
+            "question": "Onde estou gastando mais?",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert "Onde estou gastando mais?" in response.json()["answer"]
+
+
+def test_ask_question_rejects_short_question(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    now = datetime.now(UTC)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/insights/ask",
+        json={
+            "start": (now - timedelta(days=30)).isoformat(),
+            "end": now.isoformat(),
+            "question": "a",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 422

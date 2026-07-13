@@ -328,3 +328,55 @@ async def test_generate_financial_insights_raises_on_empty_list(
 
     with pytest.raises(AIProviderError):
         await provider.generate_financial_insights(company=_company(), summary=_summary())
+
+
+class _FakeTextBlock:
+    def __init__(self, text: str) -> None:
+        self.type = "text"
+        self.text = text
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_generate_period_summary_returns_text(mock_client_cls: MagicMock) -> None:
+    mock_response = MagicMock()
+    mock_response.content = [_FakeTextBlock("Mês sólido, com lucro de R$ 10.000,00.")]
+    mock_create = AsyncMock(return_value=mock_response)
+    mock_client_cls.return_value.messages.create = mock_create
+
+    provider = AnthropicAIProvider(_settings())
+    text = await provider.generate_period_summary(company=_company(), summary=_summary())
+
+    assert "Mês sólido" in text
+    sent_prompt = mock_create.call_args.kwargs["messages"][0]["content"]
+    # O prompt de texto compartilha o mesmo bloco de números dos insights.
+    assert "R$ 15000.00" in sent_prompt
+    assert "resumo executivo" in sent_prompt
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_answer_financial_question_includes_question(mock_client_cls: MagicMock) -> None:
+    mock_response = MagicMock()
+    mock_response.content = [_FakeTextBlock("Sua maior despesa é Aluguel.")]
+    mock_create = AsyncMock(return_value=mock_response)
+    mock_client_cls.return_value.messages.create = mock_create
+
+    provider = AnthropicAIProvider(_settings())
+    answer = await provider.answer_financial_question(
+        company=_company(), summary=_summary(), question="Qual minha maior despesa?"
+    )
+
+    assert answer == "Sua maior despesa é Aluguel."
+    sent_prompt = mock_create.call_args.kwargs["messages"][0]["content"]
+    assert "Qual minha maior despesa?" in sent_prompt
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_text_completion_raises_on_empty_response(mock_client_cls: MagicMock) -> None:
+    mock_response = MagicMock()
+    mock_response.content = []
+    mock_client_cls.return_value.messages.create = AsyncMock(return_value=mock_response)
+
+    provider = AnthropicAIProvider(_settings())
+
+    with pytest.raises(AIProviderError):
+        await provider.generate_period_summary(company=_company(), summary=_summary())

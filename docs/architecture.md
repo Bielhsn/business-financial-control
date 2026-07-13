@@ -24,6 +24,17 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 18 (IA 2.0 — resumo e perguntas):** os dois recursos novos reusam o mesmo
+fundamento da Etapa 11 — a IA interpreta agregados que a aplicação computou — mas com
+saída em prosa em vez de schema: resumo executivo e resposta a pergunta são texto para
+humanos, então tool use forçado não agrega (não há estrutura a garantir); o guard-rail
+está no prompt (bloco de números compartilhado + instrução explícita de nunca inventar
+valores e de admitir quando os dados não bastam) e no contrato do port, que continua
+recebendo somente `DashboardSummary`. O prompt de aterramento é fatorado
+(`_grounding_context`) do prompt de insights — uma única fonte dos números para as três
+capacidades. A validação da pergunta (mín. 3 caracteres) vive no use case, não só no
+schema HTTP — regra de negócio testável independente do transporte.
+
 **Etapa 17 (central de integrações + importação CSV):** a decisão central foi construir
 primeiro a **infraestrutura de ingestão** (endpoint de importação em lote) em vez de
 conectores específicos: cada integração futura (iFood, Stripe, banco) vira um adaptador

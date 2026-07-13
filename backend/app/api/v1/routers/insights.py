@@ -11,7 +11,11 @@ from app.api.v1.deps import (
     require_role,
 )
 from app.application.dashboard.get_dashboard import GetDashboardUseCase
-from app.application.insights.generate_insights import GenerateFinancialInsightsUseCase
+from app.application.insights.generate_insights import (
+    AnswerFinancialQuestionUseCase,
+    GenerateFinancialInsightsUseCase,
+    SummarizePeriodUseCase,
+)
 from app.core.audit import audit_event
 from app.core.tenant import CompanyContext
 from app.domain.blueprint.repository import CompanyBlueprintRepository
@@ -22,7 +26,14 @@ from app.domain.financial.repository import (
     FinancialTransactionRepository,
 )
 from app.domain.insights.ports import InsightsAIPort
-from app.schemas.insights import GenerateInsightsRequest, InsightResponse, InsightsResponse
+from app.schemas.insights import (
+    AskQuestionRequest,
+    AskQuestionResponse,
+    GenerateInsightsRequest,
+    InsightResponse,
+    InsightsResponse,
+    PeriodSummaryResponse,
+)
 
 router = APIRouter(prefix="/companies/{company_id}/insights", tags=["insights"])
 
@@ -68,3 +79,66 @@ async def generate_insights(
             for item in result.insights
         ],
     )
+
+
+@router.post("/summary", response_model=PeriodSummaryResponse)
+async def summarize_period(
+    payload: GenerateInsightsRequest,
+    company_context: Annotated[
+        CompanyContext,
+        Depends(require_role(CompanyRole.OWNER, CompanyRole.ADMIN, CompanyRole.MANAGER)),
+    ],
+    company_repository: Annotated[CompanyRepository, Depends(get_company_repository)],
+    transaction_repository: Annotated[
+        FinancialTransactionRepository, Depends(get_financial_transaction_repository)
+    ],
+    category_repository: Annotated[
+        FinancialCategoryRepository, Depends(get_financial_category_repository)
+    ],
+    blueprint_repository: Annotated[
+        CompanyBlueprintRepository, Depends(get_company_blueprint_repository)
+    ],
+    ai_provider: Annotated[InsightsAIPort, Depends(get_ai_provider)],
+) -> PeriodSummaryResponse:
+    dashboard_use_case = GetDashboardUseCase(
+        transaction_repository, category_repository, blueprint_repository
+    )
+    use_case = SummarizePeriodUseCase(company_repository, dashboard_use_case, ai_provider)
+    summary_text = await use_case.execute(
+        company_id=company_context.company_id, start=payload.start, end=payload.end
+    )
+    audit_event("period_summary_generated", company_id=company_context.company_id)
+    return PeriodSummaryResponse(summary=summary_text)
+
+
+@router.post("/ask", response_model=AskQuestionResponse)
+async def ask_question(
+    payload: AskQuestionRequest,
+    company_context: Annotated[
+        CompanyContext,
+        Depends(require_role(CompanyRole.OWNER, CompanyRole.ADMIN, CompanyRole.MANAGER)),
+    ],
+    company_repository: Annotated[CompanyRepository, Depends(get_company_repository)],
+    transaction_repository: Annotated[
+        FinancialTransactionRepository, Depends(get_financial_transaction_repository)
+    ],
+    category_repository: Annotated[
+        FinancialCategoryRepository, Depends(get_financial_category_repository)
+    ],
+    blueprint_repository: Annotated[
+        CompanyBlueprintRepository, Depends(get_company_blueprint_repository)
+    ],
+    ai_provider: Annotated[InsightsAIPort, Depends(get_ai_provider)],
+) -> AskQuestionResponse:
+    dashboard_use_case = GetDashboardUseCase(
+        transaction_repository, category_repository, blueprint_repository
+    )
+    use_case = AnswerFinancialQuestionUseCase(company_repository, dashboard_use_case, ai_provider)
+    answer = await use_case.execute(
+        company_id=company_context.company_id,
+        start=payload.start,
+        end=payload.end,
+        question=payload.question,
+    )
+    audit_event("financial_question_asked", company_id=company_context.company_id)
+    return AskQuestionResponse(answer=answer)

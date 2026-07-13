@@ -313,8 +313,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 15  | Sidebar dinâmica completa e novos módulos por segmento                   | ✅ Concluída |
 | 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | ✅ Concluída |
 | 17  | Central de Integrações + importação CSV/OFX de lançamentos               | ✅ Concluída |
-| 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | ⏳ Próxima   |
-| 19  | Plataforma (API pública, webhooks, auditoria persistida, notificações)   | Planejada    |
+| 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | ✅ Concluída |
+| 19  | Plataforma (API pública, webhooks, auditoria persistida, notificações)   | ⏳ Próxima   |
 | 20  | Polimento premium (microinterações, command palette, PWA)                | Planejada    |
 
 ## Funcionalidades atuais
@@ -453,6 +453,14 @@ Detalhes de implementação de cada mecanismo são documentados em
   assinados (negativo = despesa), validação linha a linha com relatório de erros e
   prévia antes de confirmar. No backend, `POST .../transactions/import` (até 500 linhas)
   cria categorias sob demanda (dedupe case-insensitive) e audita a importação.
+
+- IA 2.0: dois novos recursos no dashboard, ambos alimentados apenas pelos agregados já
+  computados (a IA nunca calcula nem vê lançamentos individuais). **Resumo executivo**
+  (`POST .../insights/summary`): o período narrado em um parágrafo direto — resultado, o
+  que pesou, tendência. **Pergunte à Aurum** (`POST .../insights/ask`): perguntas em
+  linguagem natural ("por que meu lucro caiu?", "onde estou gastando mais?") respondidas
+  estritamente a partir dos números do período; quando os dados não bastam, a IA diz
+  isso e sugere o que registrar. Ambos restritos a papéis de gestão e auditados.
 
 ## Funcionalidades futuras
 
