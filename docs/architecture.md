@@ -24,6 +24,16 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 15 (sidebar dinâmica completa):** a navegação saiu do componente e virou dado —
+`lib/navigation.ts` declara os itens (rota, ícone, módulos que habilitam, core ou não) e
+`visibleNavItems(modules | null)` é uma função pura, testada isoladamente, que o
+`CompanyLayout` só consome. Decisão de produto embutida: sem blueprint a navegação mostra
+os módulos operacionais básicos (clientes, catálogo, funcionários) — IA indisponível
+nunca pode significar produto inutilizável. Módulos por segmento sem backend próprio
+(agenda, assinaturas, projetos, contratos) ganham rotas estáveis com páginas "em
+desenvolvimento" que explicam o que vem e apontam um caminho prático com os módulos
+atuais — melhor um caminho honesto do que um item de menu que não faz nada.
+
 **Etapa 14 (onboarding 2.0 + multi-moeda):** `Company` ganhou `currency`,
 `sales_channels`, `sales_mode` e `main_offerings` — todos com defaults, então documentos
 antigos no Mongo carregam sem migração (schema-on-read do Beanie preenche os defaults

@@ -1,16 +1,4 @@
-import {
-  Building2,
-  ChevronsUpDown,
-  LayoutDashboard,
-  LogOut,
-  Moon,
-  Package,
-  Receipt,
-  Sun,
-  UserRound,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { Building2, ChevronsUpDown, LogOut, Moon, Receipt, Sun } from "lucide-react";
 import { NavLink, Navigate, Outlet, useNavigate, useParams } from "react-router-dom";
 
 import { AurumMark } from "@/components/brand/logo";
@@ -29,28 +17,8 @@ import { useCurrentUser, useLogout } from "@/features/auth/use-auth";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useCompany } from "@/features/companies/use-companies";
 import { BRAND } from "@/lib/brand";
+import { visibleNavItems } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
-
-interface NavItem {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  /** Módulos do blueprint que habilitam este item (algum deles). Vazio = sempre visível. */
-  modules: string[];
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { to: "", label: "Dashboard", icon: LayoutDashboard, modules: [] },
-  { to: "transactions", label: "Financeiro", icon: Wallet, modules: [] },
-  { to: "clients", label: "Clientes", icon: Users, modules: ["clients"] },
-  {
-    to: "catalog",
-    label: "Produtos & Serviços",
-    icon: Package,
-    modules: ["products", "services", "inventory"],
-  },
-  { to: "employees", label: "Funcionários", icon: UserRound, modules: ["employees"] },
-];
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
@@ -82,10 +50,9 @@ export function CompanyLayout() {
     return <Navigate to="/companies" replace />;
   }
 
-  const modules = blueprint?.modules ?? [];
-  const visibleItems = NAV_ITEMS.filter(
-    (item) => item.modules.length === 0 || item.modules.some((m) => modules.includes(m)),
-  );
+  // Sem blueprint (null) a navegação mostra os módulos operacionais básicos;
+  // com blueprint, é o retrato exato do que a IA ativou para o segmento.
+  const visibleItems = visibleNavItems(blueprint ? blueprint.modules : null);
 
   return (
     <div className="flex min-h-screen">

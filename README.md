@@ -310,8 +310,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | --- | ------------------------------------------------------------------------ | ------------ |
 | 13  | Identidade Aurum & landing page pública                                  | ✅ Concluída |
 | 14  | Onboarding 2.0 (moeda, canais de venda, forma de venda) + multi-moeda    | ✅ Concluída |
-| 15  | Sidebar dinâmica completa e novos módulos por segmento                   | ⏳ Próxima   |
-| 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | Planejada    |
+| 15  | Sidebar dinâmica completa e novos módulos por segmento                   | ✅ Concluída |
+| 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | ⏳ Próxima   |
 | 17  | Central de Integrações + importação CSV/OFX de lançamentos               | Planejada    |
 | 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | Planejada    |
 | 19  | Plataforma (API pública, webhooks, auditoria persistida, notificações)   | Planejada    |
@@ -427,6 +427,14 @@ Detalhes de implementação de cada mecanismo são documentados em
   precisa. Toda a interface formata valores na moeda da empresa ativa (R$, US$, €, £...),
   mantendo centavos inteiros por baixo. Campos novos são opcionais com defaults: empresas
   já criadas continuam funcionando sem migração.
+
+- Sidebar dinâmica completa: a navegação agora cobre todos os módulos do catálogo
+  (Agenda, Assinaturas, Projetos, Contratos, além dos já funcionais) e é derivada de uma
+  função pura testada (`visibleNavItems`) — com blueprint, mostra exatamente o que a IA
+  ativou para o segmento; sem blueprint, mostra os módulos operacionais básicos para o
+  produto não travar sem IA. Módulos ainda sem backend têm páginas próprias com URL
+  estável, badge "em desenvolvimento" e uma sugestão prática de como resolver hoje com os
+  módulos existentes.
 
 ## Funcionalidades futuras
 

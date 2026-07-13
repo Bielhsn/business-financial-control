@@ -38,6 +38,18 @@ const CatalogPage = lazy(() =>
 const EmployeesPage = lazy(() =>
   import("@/features/employees/employees-page").then((m) => ({ default: m.EmployeesPage })),
 );
+const AgendaPage = lazy(() =>
+  import("@/features/modules/coming-soon-page").then((m) => ({ default: m.AgendaPage })),
+);
+const SubscriptionsPage = lazy(() =>
+  import("@/features/modules/coming-soon-page").then((m) => ({ default: m.SubscriptionsPage })),
+);
+const ProjectsPage = lazy(() =>
+  import("@/features/modules/coming-soon-page").then((m) => ({ default: m.ProjectsPage })),
+);
+const ContractsPage = lazy(() =>
+  import("@/features/modules/coming-soon-page").then((m) => ({ default: m.ContractsPage })),
+);
 
 function PageFallback() {
   return (
@@ -67,6 +79,10 @@ export function App() {
             <Route path="clients" element={<ClientsPage />} />
             <Route path="catalog" element={<CatalogPage />} />
             <Route path="employees" element={<EmployeesPage />} />
+            <Route path="agenda" element={<AgendaPage />} />
+            <Route path="subscriptions" element={<SubscriptionsPage />} />
+            <Route path="projects" element={<ProjectsPage />} />
+            <Route path="contracts" element={<ContractsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/companies" replace />} />
