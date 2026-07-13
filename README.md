@@ -1,12 +1,28 @@
-# Business Financial Control
+# Aurum OS
 
-SaaS de Controle Financeiro Empresarial com onboarding assistido por IA: a plataforma
-interpreta o segmento de qualquer empresa (existente ou informado livremente pelo
-usuário) e monta automaticamente os módulos, categorias financeiras e indicadores
-adequados àquele negócio.
+> **Aurum Technologies** · *Inteligência que vale ouro.*
 
-> **Status:** MVP completo — todas as 12 etapas do roadmap concluídas. Próximos passos
-> em [Funcionalidades futuras](#funcionalidades-futuras).
+SaaS de gestão empresarial com onboarding assistido por IA: a plataforma interpreta o
+segmento de qualquer empresa (existente ou informado livremente pelo usuário) e monta
+automaticamente os módulos, categorias financeiras e indicadores adequados àquele
+negócio.
+
+## A marca
+
+| | |
+|---|---|
+| **Empresa** | Aurum Technologies |
+| **Produto** | Aurum OS |
+| **Slogan** | Inteligência que vale ouro. |
+| **Conceito** | *Aurum* é ouro em latim — o produto refina dados brutos da empresa em valor. Estética private-bank: grafite quente + dourado. |
+| **Paleta** | Ouro-bronze (primária) · grafite quente (base) · esmeralda (valores positivos) · dark mode "black & gold" |
+| **Tipografia** | Fraunces (display/títulos) + Inter (interface) |
+| **Missão** | Dar a qualquer empresa a inteligência financeira de uma grande corporação. |
+| **Visão** | Ser o sistema operacional de gestão de 1 milhão de PMEs na América Latina. |
+| **Valores** | Clareza acima de complexidade · Inteligência acessível · Dados do cliente são do cliente · Design é respeito |
+
+> **Status:** Fase 1 (MVP, etapas 0-12) concluída. Fase 2 — de projeto a produto — em
+> andamento; veja o [Roadmap](#roadmap).
 
 ## Sumário
 
@@ -287,6 +303,19 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 10  | Frontend — dashboard e telas dos módulos                                                 | ✅ Concluída |
 | 11  | IA avançada (insights automáticos, sazonalidade, base para previsões)                    | ✅ Concluída |
 | 12  | Hardening final (testes completos, auditoria, revisão de segurança, i18n)                | ✅ Concluída |
+
+### Fase 2 — de projeto a produto
+
+| #   | Etapa                                                                    | Status       |
+| --- | ------------------------------------------------------------------------ | ------------ |
+| 13  | Identidade Aurum & landing page pública                                  | ✅ Concluída |
+| 14  | Onboarding 2.0 (moeda, canais de venda, forma de venda) + multi-moeda    | ⏳ Próxima   |
+| 15  | Sidebar dinâmica completa e novos módulos por segmento                   | Planejada    |
+| 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | Planejada    |
+| 17  | Central de Integrações + importação CSV/OFX de lançamentos               | Planejada    |
+| 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | Planejada    |
+| 19  | Plataforma (API pública, webhooks, auditoria persistida, notificações)   | Planejada    |
+| 20  | Polimento premium (microinterações, command palette, PWA)                | Planejada    |
 
 ## Funcionalidades atuais
 

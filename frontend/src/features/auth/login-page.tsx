@@ -1,17 +1,18 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
-import { TrendingUp } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
 
+import { AurumLogo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useLogin } from "@/features/auth/use-auth";
 import { extractErrorMessage } from "@/lib/api";
+import { BRAND } from "@/lib/brand";
 
 const loginSchema = z.object({
   email: z.string().email("Informe um e-mail válido."),
@@ -50,15 +51,15 @@ export function LoginPage() {
         transition={{ duration: 0.3, ease: "easeOut" }}
         className="w-full max-w-sm"
       >
-        <div className="mb-6 flex items-center justify-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <TrendingUp className="size-5" />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">Business Financial Control</span>
+        <div className="mb-6 flex flex-col items-center gap-2">
+          <Link to="/" aria-label="Página inicial">
+            <AurumLogo withProductSuffix />
+          </Link>
+          <p className="text-sm text-muted-foreground">{BRAND.slogan}</p>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle className="text-xl">Entrar</CardTitle>
+            <CardTitle className="font-display text-xl">Entrar</CardTitle>
             <CardDescription>Acesse o painel financeiro da sua empresa.</CardDescription>
           </CardHeader>
           <CardContent>

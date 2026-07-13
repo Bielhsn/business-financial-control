@@ -4,51 +4,54 @@
    para permitir alternância manual de tema. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ─── Aurum brand tokens ────────────────────────────────────────────────
+   Ouro-bronze como primária sobre grafite quente; dark mode "black & gold".
+   Trocar a marca da plataforma = trocar estes tokens. */
 :root {
-  --background: oklch(0.985 0.002 247.839);
-  --foreground: oklch(0.21 0.034 264.665);
+  --background: oklch(0.984 0.004 85);
+  --foreground: oklch(0.24 0.015 65);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.034 264.665);
+  --card-foreground: oklch(0.24 0.015 65);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.034 264.665);
-  --primary: oklch(0.511 0.262 276.966);
-  --primary-foreground: oklch(0.985 0.002 247.839);
-  --secondary: oklch(0.967 0.003 264.542);
-  --secondary-foreground: oklch(0.278 0.033 256.848);
-  --muted: oklch(0.967 0.003 264.542);
-  --muted-foreground: oklch(0.551 0.027 264.364);
-  --accent: oklch(0.954 0.023 277.7);
-  --accent-foreground: oklch(0.359 0.144 278.697);
+  --popover-foreground: oklch(0.24 0.015 65);
+  --primary: oklch(0.58 0.125 68);
+  --primary-foreground: oklch(0.99 0.005 90);
+  --secondary: oklch(0.955 0.012 85);
+  --secondary-foreground: oklch(0.35 0.02 65);
+  --muted: oklch(0.96 0.008 85);
+  --muted-foreground: oklch(0.54 0.02 70);
+  --accent: oklch(0.94 0.035 85);
+  --accent-foreground: oklch(0.45 0.09 70);
   --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0.002 247.839);
+  --destructive-foreground: oklch(0.985 0.002 90);
   --success: oklch(0.627 0.194 149.214);
-  --border: oklch(0.928 0.006 264.531);
-  --input: oklch(0.928 0.006 264.531);
-  --ring: oklch(0.585 0.233 277.117);
+  --border: oklch(0.91 0.012 80);
+  --input: oklch(0.91 0.012 80);
+  --ring: oklch(0.7 0.13 75);
   --radius: 0.625rem;
 }
 
 .dark {
-  --background: oklch(0.175 0.02 264.665);
-  --foreground: oklch(0.967 0.003 264.542);
-  --card: oklch(0.215 0.025 264.665);
-  --card-foreground: oklch(0.967 0.003 264.542);
-  --popover: oklch(0.215 0.025 264.665);
-  --popover-foreground: oklch(0.967 0.003 264.542);
-  --primary: oklch(0.673 0.182 276.935);
-  --primary-foreground: oklch(0.175 0.02 264.665);
-  --secondary: oklch(0.278 0.033 256.848);
-  --secondary-foreground: oklch(0.967 0.003 264.542);
-  --muted: oklch(0.265 0.03 256.848);
-  --muted-foreground: oklch(0.707 0.022 261.325);
-  --accent: oklch(0.31 0.06 276.935);
-  --accent-foreground: oklch(0.87 0.065 274.039);
+  --background: oklch(0.165 0.008 60);
+  --foreground: oklch(0.95 0.01 85);
+  --card: oklch(0.205 0.011 65);
+  --card-foreground: oklch(0.95 0.01 85);
+  --popover: oklch(0.205 0.011 65);
+  --popover-foreground: oklch(0.95 0.01 85);
+  --primary: oklch(0.8 0.135 80);
+  --primary-foreground: oklch(0.2 0.02 65);
+  --secondary: oklch(0.27 0.015 65);
+  --secondary-foreground: oklch(0.93 0.01 85);
+  --muted: oklch(0.25 0.012 65);
+  --muted-foreground: oklch(0.68 0.02 80);
+  --accent: oklch(0.32 0.05 78);
+  --accent-foreground: oklch(0.87 0.09 85);
   --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.175 0.02 264.665);
+  --destructive-foreground: oklch(0.165 0.008 60);
   --success: oklch(0.723 0.192 149.579);
-  --border: oklch(0.29 0.03 256.848);
-  --input: oklch(0.31 0.033 256.848);
-  --ring: oklch(0.585 0.233 277.117);
+  --border: oklch(0.285 0.015 70);
+  --input: oklch(0.305 0.017 70);
+  --ring: oklch(0.75 0.13 80);
 }
 
 @theme inline {
@@ -79,6 +82,7 @@
   --font-sans:
     "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial,
     sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
 }
 
 @layer base {

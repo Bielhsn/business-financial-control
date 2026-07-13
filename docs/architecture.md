@@ -24,6 +24,15 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 13 (identidade Aurum & landing):** a marca vive inteiramente em tokens: trocar a
+identidade da plataforma = trocar as CSS variables em `index.css` (paleta ouro/grafite,
+dark "black & gold") e as constantes em `lib/brand.ts` — nenhum componente conhece cores
+ou nomes hardcoded. Tipografia de display (Fraunces) via Google Fonts com fallback de
+sistema (`ui-serif`): se a fonte não carregar, nada quebra. Logo é SVG inline
+(`components/brand/logo.tsx`) — sem asset binário, tema-safe e nítido em qualquer DPI. A
+landing é uma rota pública da mesma SPA (lazy, não pesa no app autenticado), com preview
+do painel construído em HTML/CSS puro em vez de screenshot — não desatualiza e pesa zero.
+
 **Etapa 12 (hardening final):** `SecurityHeadersMiddleware` (ASGI puro, sem dependência de
 `BaseHTTPMiddleware`) injeta em toda resposta: CSP `default-src 'none'; frame-ancestors
 'none'` — adequada porque a API nunca serve HTML —, X-Frame-Options DENY,

@@ -6,6 +6,9 @@ import { ProtectedRoute } from "@/app/protected-route";
 
 // Rotas carregadas sob demanda (code splitting): o bundle inicial fica leve
 // mesmo com páginas pesadas (gráficos etc.).
+const LandingPage = lazy(() =>
+  import("@/features/landing/landing-page").then((m) => ({ default: m.LandingPage })),
+);
 const LoginPage = lazy(() =>
   import("@/features/auth/login-page").then((m) => ({ default: m.LoginPage })),
 );
@@ -52,6 +55,7 @@ export function App() {
   return (
     <Suspense fallback={<PageFallback />}>
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>

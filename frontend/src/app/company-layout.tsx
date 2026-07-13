@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { NavLink, Navigate, Outlet, useNavigate, useParams } from "react-router-dom";
 
+import { AurumMark } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -27,6 +28,7 @@ import { useTheme } from "@/components/theme/theme-provider";
 import { useCurrentUser, useLogout } from "@/features/auth/use-auth";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useCompany } from "@/features/companies/use-companies";
+import { BRAND } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -126,7 +128,7 @@ export function CompanyLayout() {
             </NavLink>
           ))}
         </nav>
-        <div className="border-t p-3 text-xs text-muted-foreground">
+        <div className="space-y-2 border-t p-3 text-xs text-muted-foreground">
           {blueprint ? (
             <p className="flex items-center gap-1.5">
               <Receipt className="size-3.5" />
@@ -135,6 +137,10 @@ export function CompanyLayout() {
           ) : (
             <p>Gere o blueprint com IA para adaptar o painel.</p>
           )}
+          <p className="flex items-center gap-1.5 opacity-70">
+            <AurumMark className="size-4" />
+            {BRAND.product}
+          </p>
         </div>
       </aside>
 
