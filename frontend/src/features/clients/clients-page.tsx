@@ -28,6 +28,7 @@ import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useClientSummary, useClients, useCreateClient } from "@/features/clients/use-clients";
 import { extractErrorMessage } from "@/lib/api";
 import type { BlueprintCustomField, ClientResponse } from "@/lib/api-types";
+import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { formatCents } from "@/lib/utils";
 
 const clientSchema = z.object({
@@ -186,6 +187,7 @@ function ClientDetailDialog({
   customFieldDefs: BlueprintCustomField[];
 }) {
   const [open, setOpen] = useState(false);
+  const currency = useCompanyCurrency(companyId);
   const { data: summary } = useClientSummary(companyId, open ? client.id : null);
   const labelFor = (key: string) =>
     customFieldDefs.find((field) => field.key === key)?.label ?? key;
@@ -217,7 +219,7 @@ function ClientDetailDialog({
           <div className="rounded-lg border p-3 text-center">
             <p className="text-xs text-muted-foreground">Total gasto</p>
             <p className="mt-1 text-sm font-semibold">
-              {summary ? formatCents(summary.total_spent_cents) : "…"}
+              {summary ? formatCents(summary.total_spent_cents, currency) : "…"}
             </p>
           </div>
           <div className="rounded-lg border p-3 text-center">

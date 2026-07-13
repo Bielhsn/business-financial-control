@@ -19,6 +19,10 @@ def _to_entity(document: CompanyDocument) -> Company:
         size=document.size,
         tax_regime=document.tax_regime,
         additional_info=document.additional_info,
+        currency=document.currency,
+        sales_channels=document.sales_channels,
+        sales_mode=document.sales_mode,
+        main_offerings=document.main_offerings,
         is_active=document.is_active,
         created_at=document.created_at,
         updated_at=document.updated_at,
@@ -39,6 +43,10 @@ class BeanieCompanyRepository:
         size: str,
         tax_regime: str | None,
         additional_info: str | None,
+        currency: str = "BRL",
+        sales_channels: list[str] | None = None,
+        sales_mode: str | None = None,
+        main_offerings: str | None = None,
     ) -> Company:
         now = datetime.now(UTC)
         document = CompanyDocument(
@@ -52,6 +60,10 @@ class BeanieCompanyRepository:
             size=size,
             tax_regime=tax_regime,
             additional_info=additional_info,
+            currency=currency,
+            sales_channels=sales_channels or [],
+            sales_mode=sales_mode,
+            main_offerings=main_offerings,
             created_at=now,
             updated_at=now,
         )

@@ -24,6 +24,20 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 14 (onboarding 2.0 + multi-moeda):** `Company` ganhou `currency`,
+`sales_channels`, `sales_mode` e `main_offerings` — todos com defaults, então documentos
+antigos no Mongo carregam sem migração (schema-on-read do Beanie preenche os defaults
+declarados). Esses dados entram no prompt do blueprint: quanto mais contexto real
+(canais, forma de venda, o que vende), menos a IA precisa adivinhar a partir só do nome
+do segmento. Multi-moeda na apresentação, não no armazenamento: valores continuam
+inteiros em centavos agnósticos de moeda; a moeda da empresa só decide a formatação
+(`Intl.NumberFormat`) no frontend — conversão cambial entre moedas está explicitamente
+fora de escopo (exigiria fonte de cotação e política de data de conversão). Descoberta
+importante desta etapa: os testes de API liam o `.env` local — um teste de "IA não
+configurada" chegou a chamar a API real da Anthropic quando uma chave apareceu no
+ambiente. Corrigido com override de `get_settings` no conftest (`Settings(_env_file=None)`):
+a suíte é determinística e nunca depende do ambiente da máquina.
+
 **Etapa 13 (identidade Aurum & landing):** a marca vive inteiramente em tokens: trocar a
 identidade da plataforma = trocar as CSS variables em `index.css` (paleta ouro/grafite,
 dark "black & gold") e as constantes em `lib/brand.ts` — nenhum componente conhece cores

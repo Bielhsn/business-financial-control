@@ -14,6 +14,10 @@ class CompanyDocument(Document):
     size: str
     tax_regime: str | None = None
     additional_info: str | None = None
+    currency: str = "BRL"
+    sales_channels: list[str] = []
+    sales_mode: str | None = None
+    main_offerings: str | None = None
     is_active: bool = True
     created_at: datetime
     updated_at: datetime

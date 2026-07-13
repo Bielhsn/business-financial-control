@@ -191,6 +191,10 @@ async def test_prompt_includes_company_additional_info_and_extra_context(
 
     company = _company()
     company.additional_info = "Loja física e online."
+    company.currency = "USD"
+    company.sales_channels = ["Loja física", "WhatsApp"]
+    company.sales_mode = "Agendamento"
+    company.main_offerings = "Cortes e pomadas"
     provider = AnthropicAIProvider(_settings())
 
     await provider.generate_company_blueprint(
@@ -200,6 +204,10 @@ async def test_prompt_includes_company_additional_info_and_extra_context(
     sent_prompt = mock_create.call_args.kwargs["messages"][0]["content"]
     assert "Loja física e online." in sent_prompt
     assert "Cresceu 30% este ano." in sent_prompt
+    assert "Moeda de operação: USD" in sent_prompt
+    assert "Canais de venda: Loja física, WhatsApp" in sent_prompt
+    assert "Forma de venda: Agendamento" in sent_prompt
+    assert "Principais produtos/serviços: Cortes e pomadas" in sent_prompt
 
 
 @patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")

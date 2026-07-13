@@ -114,7 +114,14 @@ def _build_prompt(company: Company, additional_context: str | None) -> str:
         f"- Quantidade média de clientes: {company.average_customer_count}",
         f"- Localização: {company.city}/{company.state}, {company.country}",
         f"- Regime tributário: {company.tax_regime or 'não informado'}",
+        f"- Moeda de operação: {company.currency}",
     ]
+    if company.sales_channels:
+        lines.append(f"- Canais de venda: {', '.join(company.sales_channels)}")
+    if company.sales_mode:
+        lines.append(f"- Forma de venda: {company.sales_mode}")
+    if company.main_offerings:
+        lines.append(f"- Principais produtos/serviços: {company.main_offerings}")
     if company.additional_info:
         lines.append(f"- Informações adicionais da empresa: {company.additional_info}")
     if additional_context:

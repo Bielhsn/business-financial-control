@@ -47,6 +47,7 @@ import type {
   FinancialTransactionResponse,
   TransactionStatus,
 } from "@/lib/api-types";
+import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { parseCurrencyToCents } from "@/lib/money";
 import { formatCents } from "@/lib/utils";
 
@@ -404,10 +405,12 @@ function TransactionRow({
   transaction,
   categoryName,
   companyId,
+  currency,
 }: {
   transaction: FinancialTransactionResponse;
   categoryName: string;
   companyId: string;
+  currency: string;
 }) {
   const markPaid = useMarkTransactionPaid(companyId);
   const cancel = useCancelTransaction(companyId);
@@ -448,7 +451,7 @@ function TransactionRow({
           }
         >
           {isIncome ? "+" : "-"}
-          {formatCents(transaction.amount_cents)}
+          {formatCents(transaction.amount_cents, currency)}
         </span>
         {transaction.status === "pending" && (
           <div className="flex gap-1">
@@ -492,6 +495,7 @@ function TransactionRow({
 export function TransactionsPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId ?? "";
+  const currency = useCompanyCurrency(id);
   const [typeFilter, setTypeFilter] = useState<"all" | FinancialCategoryType>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | TransactionStatus>("all");
 
@@ -559,6 +563,7 @@ export function TransactionsPage() {
                 transaction={transaction}
                 categoryName={categoryNames.get(transaction.category_id) ?? "—"}
                 companyId={id}
+                currency={currency}
               />
             ))}
           </CardContent>

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from app.domain.company.roles import CompanyRole
@@ -20,6 +20,11 @@ class Company:
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    # Onboarding 2.0 — defaults mantêm compatibilidade com empresas já criadas.
+    currency: str = "BRL"
+    sales_channels: list[str] = field(default_factory=list)
+    sales_mode: str | None = None
+    main_offerings: str | None = None
 
 
 @dataclass

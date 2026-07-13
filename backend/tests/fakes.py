@@ -134,6 +134,10 @@ class FakeCompanyRepository:
         size: str,
         tax_regime: str | None,
         additional_info: str | None,
+        currency: str = "BRL",
+        sales_channels: list[str] | None = None,
+        sales_mode: str | None = None,
+        main_offerings: str | None = None,
     ) -> Company:
         company_id = str(self._next_id)
         self._next_id += 1
@@ -150,6 +154,10 @@ class FakeCompanyRepository:
             size=size,
             tax_regime=tax_regime,
             additional_info=additional_info,
+            currency=currency,
+            sales_channels=sales_channels or [],
+            sales_mode=sales_mode,
+            main_offerings=main_offerings,
             is_active=True,
             created_at=now,
             updated_at=now,

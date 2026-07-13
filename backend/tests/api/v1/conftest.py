@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.api.v1 import deps
+from app.core.config import Settings, get_settings
 from app.core.rate_limit import limiter
 from app.main import app
 from tests.fakes import (
@@ -111,6 +112,9 @@ def client(
     fake_stock_movement_repository: FakeStockMovementRepository,
     fake_employee_repository: FakeEmployeeRepository,
 ) -> Iterator[TestClient]:
+    # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
+    # nem de chaves reais de IA — o 503 de "IA não configurada" fica determinístico.
+    app.dependency_overrides[get_settings] = lambda: Settings(_env_file=None)
     app.dependency_overrides[deps.get_user_repository] = lambda: fake_user_repository
     app.dependency_overrides[deps.get_refresh_token_repository] = (
         lambda: fake_refresh_token_repository

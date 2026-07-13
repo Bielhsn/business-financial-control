@@ -42,6 +42,27 @@ import { moduleDescription, moduleLabel } from "@/lib/modules";
 import axios from "axios";
 
 const COMPANY_SIZES = ["MEI", "Microempresa", "Pequena", "Média", "Grande"];
+const CURRENCIES = [
+  { code: "BRL", label: "Real (R$)" },
+  { code: "USD", label: "Dólar (US$)" },
+  { code: "EUR", label: "Euro (€)" },
+  { code: "GBP", label: "Libra (£)" },
+];
+const SALES_CHANNELS = [
+  "Loja física",
+  "E-commerce próprio",
+  "Delivery/apps",
+  "Marketplace",
+  "WhatsApp/redes sociais",
+  "B2B/contratos",
+];
+const SALES_MODES = [
+  "Venda direta/balcão",
+  "Agendamento",
+  "Pedidos/comandas",
+  "Assinatura/mensalidade",
+  "Projetos/orçamentos",
+];
 const TAX_REGIMES = ["Simples Nacional", "MEI", "Lucro Presumido", "Lucro Real", "Outro"];
 
 const companySchema = z.object({
@@ -60,6 +81,10 @@ const companySchema = z.object({
   state: z.string().min(1, "Informe o estado.").max(200),
   country: z.string().min(1, "Informe o país.").max(200),
   tax_regime: z.string().max(200).optional(),
+  currency: z.string().min(1, "Selecione a moeda."),
+  sales_channels: z.array(z.string()),
+  sales_mode: z.string().optional(),
+  main_offerings: z.string().max(1000).optional(),
   additional_info: z.string().max(2000).optional(),
 });
 
@@ -121,6 +146,10 @@ export function OnboardingPage() {
       average_customer_count: 0,
       size: "",
       tax_regime: "",
+      currency: "BRL",
+      sales_channels: [],
+      sales_mode: "",
+      main_offerings: "",
     },
   });
 
@@ -137,6 +166,10 @@ export function OnboardingPage() {
         size: values.size,
         tax_regime: values.tax_regime || null,
         additional_info: values.additional_info || null,
+        currency: values.currency,
+        sales_channels: values.sales_channels,
+        sales_mode: values.sales_mode || null,
+        main_offerings: values.main_offerings || null,
       },
       {
         onSuccess: (company) => {
@@ -341,6 +374,97 @@ export function OnboardingPage() {
                           </p>
                         )}
                       </div>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label>Moeda</Label>
+                        <Controller
+                          control={control}
+                          name="currency"
+                          render={({ field }) => (
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <SelectTrigger aria-label="Moeda">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {CURRENCIES.map((currency) => (
+                                  <SelectItem key={currency.code} value={currency.code}>
+                                    {currency.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Como você vende? (opcional)</Label>
+                        <Controller
+                          control={control}
+                          name="sales_mode"
+                          render={({ field }) => (
+                            <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                              <SelectTrigger aria-label="Forma de venda">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SALES_MODES.map((mode) => (
+                                  <SelectItem key={mode} value={mode}>
+                                    {mode}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Canais de venda (opcional)</Label>
+                      <Controller
+                        control={control}
+                        name="sales_channels"
+                        render={({ field }) => (
+                          <div className="flex flex-wrap gap-2">
+                            {SALES_CHANNELS.map((channel) => {
+                              const selected = field.value.includes(channel);
+                              return (
+                                <button
+                                  key={channel}
+                                  type="button"
+                                  aria-pressed={selected}
+                                  onClick={() =>
+                                    field.onChange(
+                                      selected
+                                        ? field.value.filter((c) => c !== channel)
+                                        : [...field.value, channel],
+                                    )
+                                  }
+                                  className={
+                                    "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
+                                    (selected
+                                      ? "border-primary bg-primary text-primary-foreground"
+                                      : "bg-transparent text-muted-foreground hover:bg-accent hover:text-accent-foreground")
+                                  }
+                                >
+                                  {channel}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="main_offerings">O que você vende? (opcional)</Label>
+                      <Textarea
+                        id="main_offerings"
+                        placeholder="Ex.: cortes, barba e venda de pomadas; hambúrgueres artesanais e bebidas…"
+                        {...register("main_offerings")}
+                      />
                     </div>
 
                     <div className="space-y-2">

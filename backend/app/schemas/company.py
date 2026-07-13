@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -16,6 +17,12 @@ class CreateCompanyRequest(BaseModel):
     size: str = Field(min_length=1, max_length=100)
     tax_regime: str | None = Field(default=None, max_length=200)
     additional_info: str | None = Field(default=None, max_length=2000)
+    currency: str = Field(default="BRL", pattern=r"^[A-Za-z]{3}$")
+    sales_channels: list[Annotated[str, Field(min_length=1, max_length=100)]] = Field(
+        default_factory=list, max_length=15
+    )
+    sales_mode: str | None = Field(default=None, max_length=200)
+    main_offerings: str | None = Field(default=None, max_length=1000)
 
 
 class UpdateCompanyRequest(BaseModel):
@@ -29,6 +36,12 @@ class UpdateCompanyRequest(BaseModel):
     size: str | None = Field(default=None, min_length=1, max_length=100)
     tax_regime: str | None = Field(default=None, max_length=200)
     additional_info: str | None = Field(default=None, max_length=2000)
+    currency: str | None = Field(default=None, pattern=r"^[A-Za-z]{3}$")
+    sales_channels: list[Annotated[str, Field(min_length=1, max_length=100)]] | None = Field(
+        default=None, max_length=15
+    )
+    sales_mode: str | None = Field(default=None, max_length=200)
+    main_offerings: str | None = Field(default=None, max_length=1000)
 
 
 class CompanyResponse(BaseModel):
@@ -45,6 +58,10 @@ class CompanyResponse(BaseModel):
     size: str
     tax_regime: str | None
     additional_info: str | None
+    currency: str
+    sales_channels: list[str]
+    sales_mode: str | None
+    main_offerings: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime

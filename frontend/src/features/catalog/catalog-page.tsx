@@ -37,6 +37,7 @@ import {
 } from "@/features/catalog/use-catalog";
 import { extractErrorMessage } from "@/lib/api";
 import type { CatalogItemResponse } from "@/lib/api-types";
+import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { parseCurrencyToCents } from "@/lib/money";
 import { formatCents } from "@/lib/utils";
 
@@ -303,6 +304,7 @@ export function CatalogPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId ?? "";
   const { data: items, isLoading } = useCatalogItems(id);
+  const currency = useCompanyCurrency(id);
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
@@ -341,7 +343,9 @@ export function CatalogPage() {
                     {item.kind === "product" ? "Produto" : "Serviço"}
                   </Badge>
                 </div>
-                <p className="mt-2 text-lg font-semibold">{formatCents(item.price_cents)}</p>
+                <p className="mt-2 text-lg font-semibold">
+                  {formatCents(item.price_cents, currency)}
+                </p>
                 {item.description && (
                   <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
                 )}

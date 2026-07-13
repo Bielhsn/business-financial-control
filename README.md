@@ -309,8 +309,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | #   | Etapa                                                                    | Status       |
 | --- | ------------------------------------------------------------------------ | ------------ |
 | 13  | Identidade Aurum & landing page pública                                  | ✅ Concluída |
-| 14  | Onboarding 2.0 (moeda, canais de venda, forma de venda) + multi-moeda    | ⏳ Próxima   |
-| 15  | Sidebar dinâmica completa e novos módulos por segmento                   | Planejada    |
+| 14  | Onboarding 2.0 (moeda, canais de venda, forma de venda) + multi-moeda    | ✅ Concluída |
+| 15  | Sidebar dinâmica completa e novos módulos por segmento                   | ⏳ Próxima   |
 | 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | Planejada    |
 | 17  | Central de Integrações + importação CSV/OFX de lançamentos               | Planejada    |
 | 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | Planejada    |
@@ -420,6 +420,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   origens configuradas e trilha de auditoria estruturada para ações sensíveis (logins com
   sucesso/falha, edição de empresa, geração de blueprint/insights, lançamentos e ajustes
   de estoque). Suíte final: 227 testes no backend (90% de cobertura) + 15 no frontend.
+
+- Onboarding 2.0 e multi-moeda: o cadastro da empresa agora captura moeda de operação
+  (ISO 4217), canais de venda, forma de venda e principais produtos/serviços — tudo
+  alimenta o prompt do blueprint, deixando a personalização por segmento bem mais
+  precisa. Toda a interface formata valores na moeda da empresa ativa (R$, US$, €, £...),
+  mantendo centavos inteiros por baixo. Campos novos são opcionais com defaults: empresas
+  já criadas continuam funcionando sem migração.
 
 ## Funcionalidades futuras
 

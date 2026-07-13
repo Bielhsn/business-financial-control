@@ -126,3 +126,36 @@ async def test_update_company_forbidden_for_insufficient_role(
     )
 
     assert response.status_code == 403
+
+
+def test_create_company_with_onboarding_v2_fields(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+
+    response = client.post(
+        "/api/v1/companies",
+        json={
+            **VALID_COMPANY_PAYLOAD,
+            "currency": "usd",
+            "sales_channels": ["Loja física", "Delivery/apps", " "],
+            "sales_mode": "Agendamento",
+            "main_offerings": "Cortes, barba e venda de pomadas",
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["currency"] == "USD"  # normalizada para maiúsculas
+    assert body["sales_channels"] == ["Loja física", "Delivery/apps"]  # vazios descartados
+    assert body["sales_mode"] == "Agendamento"
+    assert body["main_offerings"] == "Cortes, barba e venda de pomadas"
+
+
+def test_create_company_defaults_to_brl_currency(client: TestClient) -> None:
+    headers = _auth_header(client, "dono2@example.com")
+
+    response = client.post("/api/v1/companies", json=VALID_COMPANY_PAYLOAD, headers=headers)
+
+    assert response.status_code == 201
+    assert response.json()["currency"] == "BRL"
+    assert response.json()["sales_channels"] == []

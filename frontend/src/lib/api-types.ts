@@ -28,6 +28,10 @@ export interface CompanyResponse {
   size: string;
   tax_regime: string | null;
   additional_info: string | null;
+  currency: string;
+  sales_channels: string[];
+  sales_mode: string | null;
+  main_offerings: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -49,6 +53,10 @@ export interface CreateCompanyRequest {
   size: string;
   tax_regime: string | null;
   additional_info: string | null;
+  currency: string;
+  sales_channels: string[];
+  sales_mode: string | null;
+  main_offerings: string | null;
 }
 
 export type FinancialCategoryType = "income" | "expense";

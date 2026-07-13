@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard } from "@/features/dashboard/use-dashboard";
+import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import type { CategoryBreakdownResponse, ComputedKPIResponse } from "@/lib/api-types";
 import { cn, formatCents, formatPercent } from "@/lib/utils";
 
@@ -150,10 +151,10 @@ function StatCard({
   );
 }
 
-function formatKPIValue(kpi: ComputedKPIResponse): string {
+function formatKPIValue(kpi: ComputedKPIResponse, currency: string): string {
   switch (kpi.unit) {
     case "cents":
-      return formatCents(kpi.value);
+      return formatCents(kpi.value, currency);
     case "percentage":
       return `${kpi.value.toFixed(1).replace(".", ",")}%`;
     case "count":
@@ -164,9 +165,11 @@ function formatKPIValue(kpi: ComputedKPIResponse): string {
 function CategoryBars({
   items,
   tone,
+  currency,
 }: {
   items: CategoryBreakdownResponse[];
   tone: "income" | "expense";
+  currency: string;
 }) {
   const max = Math.max(...items.map((i) => i.total_cents), 1);
   if (items.length === 0) {
@@ -178,7 +181,9 @@ function CategoryBars({
         <div key={item.category_id}>
           <div className="mb-1 flex items-center justify-between text-sm">
             <span className="truncate">{item.category_name}</span>
-            <span className="ml-2 shrink-0 font-medium">{formatCents(item.total_cents)}</span>
+            <span className="ml-2 shrink-0 font-medium">
+              {formatCents(item.total_cents, currency)}
+            </span>
           </div>
           <div className="h-2 overflow-hidden rounded-full bg-muted">
             <div
@@ -198,6 +203,7 @@ function CategoryBars({
 export function DashboardPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const [period, setPeriod] = useState<PeriodKey>("this_month");
+  const currency = useCompanyCurrency(companyId ?? "");
   const range = useMemo(() => periodRange(period), [period]);
   const { data, isLoading } = useDashboard(companyId ?? "", range);
 
@@ -263,21 +269,21 @@ export function DashboardPage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Receita"
-              value={formatCents(data.revenue_cents)}
+              value={formatCents(data.revenue_cents, currency)}
               icon={TrendingUp}
               change={data.comparison.revenue_change_pct}
               tone="positive"
             />
             <StatCard
               title="Despesas"
-              value={formatCents(data.expense_cents)}
+              value={formatCents(data.expense_cents, currency)}
               icon={TrendingDown}
               change={data.comparison.expense_change_pct}
               tone="negative"
             />
             <StatCard
               title="Lucro"
-              value={formatCents(data.profit_cents)}
+              value={formatCents(data.profit_cents, currency)}
               icon={Wallet}
               change={data.comparison.profit_change_pct}
               tone={data.profit_cents >= 0 ? "positive" : "negative"}
@@ -302,7 +308,7 @@ export function DashboardPage() {
                   <div key={kpi.key} className="rounded-lg border p-4">
                     <p className="text-sm text-muted-foreground">{kpi.name}</p>
                     <p className="mt-1 text-xl font-semibold tracking-tight">
-                      {formatKPIValue(kpi)}
+                      {formatKPIValue(kpi, currency)}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">{kpi.description}</p>
                   </div>
@@ -343,7 +349,7 @@ export function DashboardPage() {
                     />
                     <Tooltip
                       formatter={(value: number | string) =>
-                        formatCents(Math.round(Number(value) * 100))
+                        formatCents(Math.round(Number(value) * 100), currency)
                       }
                       contentStyle={{
                         backgroundColor: "var(--color-popover)",
@@ -368,7 +374,11 @@ export function DashboardPage() {
                 <CardTitle className="text-base">Principais receitas</CardTitle>
               </CardHeader>
               <CardContent>
-                <CategoryBars items={data.top_income_categories} tone="income" />
+                <CategoryBars
+                  items={data.top_income_categories}
+                  tone="income"
+                  currency={currency}
+                />
               </CardContent>
             </Card>
             <Card>
@@ -376,7 +386,11 @@ export function DashboardPage() {
                 <CardTitle className="text-base">Principais despesas</CardTitle>
               </CardHeader>
               <CardContent>
-                <CategoryBars items={data.top_expense_categories} tone="expense" />
+                <CategoryBars
+                  items={data.top_expense_categories}
+                  tone="expense"
+                  currency={currency}
+                />
               </CardContent>
             </Card>
           </div>

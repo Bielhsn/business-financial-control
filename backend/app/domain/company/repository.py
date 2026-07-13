@@ -18,6 +18,10 @@ class CompanyRepository(Protocol):
         size: str,
         tax_regime: str | None,
         additional_info: str | None,
+        currency: str = "BRL",
+        sales_channels: list[str] | None = None,
+        sales_mode: str | None = None,
+        main_offerings: str | None = None,
     ) -> Company: ...
 
     async def get_by_id(self, company_id: str) -> Company | None: ...

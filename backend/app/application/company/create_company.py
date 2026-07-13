@@ -34,6 +34,10 @@ class CreateCompanyUseCase:
         size: str,
         tax_regime: str | None,
         additional_info: str | None,
+        currency: str = "BRL",
+        sales_channels: list[str] | None = None,
+        sales_mode: str | None = None,
+        main_offerings: str | None = None,
     ) -> Company:
         company = await self._company_repository.create(
             name=name.strip(),
@@ -46,6 +50,10 @@ class CreateCompanyUseCase:
             size=size.strip(),
             tax_regime=tax_regime.strip() if tax_regime else None,
             additional_info=additional_info.strip() if additional_info else None,
+            currency=currency.strip().upper(),
+            sales_channels=[c.strip() for c in (sales_channels or []) if c.strip()],
+            sales_mode=sales_mode.strip() if sales_mode else None,
+            main_offerings=main_offerings.strip() if main_offerings else None,
         )
 
         try:
