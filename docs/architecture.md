@@ -24,6 +24,20 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 17 (central de integrações + importação CSV):** a decisão central foi construir
+primeiro a **infraestrutura de ingestão** (endpoint de importação em lote) em vez de
+conectores específicos: cada integração futura (iFood, Stripe, banco) vira um adaptador
+que produz as mesmas linhas normalizadas — e o usuário já resolve hoje qualquer
+plataforma que exporte planilha. O parse do CSV acontece no cliente (o backend recebe
+JSON tipado e validado pelo Pydantic, nunca arquivo bruto — menos superfície de ataque e
+erros de encoding viram problema do parser testado no front). Convenção de extrato:
+valor assinado decide o tipo (negativo = despesa) e o backend guarda o valor absoluto.
+Categorias são resolvidas por (nome, tipo) com `casefold()` — importar duas planilhas
+com "Vendas"/"vendas" não duplica categoria. Datas brasileiras são validadas por
+round-trip (o `Date` do JS "rola" 99/99/9999 para uma data real — bug clássico pego por
+teste). Limite de 500 linhas por chamada mantém a requisição e o tempo de resposta
+previsíveis; arquivos maiores = múltiplos lotes.
+
 **Etapa 16 (customização visual por empresa):** white-label pela mesma alavanca da marca
 (Etapa 13): como toda a UI consome tokens (`--primary`, `--ring`...), a cor da empresa é
 um `style` com CSS variables no wrapper do shell — sobrescreve a primária só dentro do

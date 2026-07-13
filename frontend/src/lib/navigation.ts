@@ -4,6 +4,7 @@ import {
   FolderKanban,
   LayoutDashboard,
   Package,
+  Plug,
   Repeat,
   UserRound,
   Users,
@@ -63,6 +64,7 @@ export const NAV_ITEMS: NavItem[] = [
     modules: ["contracts"],
     comingSoon: true,
   },
+  { to: "integrations", label: "Integrações", icon: Plug, modules: [], always: true },
 ];
 
 /** Itens exibidos quando a empresa ainda não gerou blueprint (IA desligada ou pendente):

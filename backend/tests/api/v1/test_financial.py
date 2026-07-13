@@ -371,3 +371,51 @@ def test_get_cash_flow_summary(client: TestClient) -> None:
     body = response.json()
     assert body["income_cents"] == 15000
     assert body["balance_cents"] == 15000
+
+
+def test_import_transactions_in_bulk(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    now = datetime.now(UTC)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/transactions/import",
+        json={
+            "rows": [
+                {
+                    "date": now.isoformat(),
+                    "description": "PIX recebido",
+                    "amount_cents": 15000,
+                    "category_name": "Vendas",
+                },
+                {
+                    "date": now.isoformat(),
+                    "description": "Conta de luz",
+                    "amount_cents": -8000,
+                },
+            ]
+        },
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["imported"] == 2
+    assert body["categories_created"] == 2  # "Vendas" + "Importados"
+
+    list_response = client.get(f"/api/v1/companies/{company_id}/transactions", headers=headers)
+    assert len(list_response.json()) == 2
+
+
+def test_import_rejects_zero_amount(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    now = datetime.now(UTC)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/transactions/import",
+        json={"rows": [{"date": now.isoformat(), "description": "X", "amount_cents": 0}]},
+        headers=headers,
+    )
+
+    assert response.status_code == 422

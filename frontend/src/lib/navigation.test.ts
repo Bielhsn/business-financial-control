@@ -8,7 +8,7 @@ function routesOf(modules: string[] | null): string[] {
 
 describe("visibleNavItems", () => {
   it("sempre inclui dashboard e financeiro", () => {
-    expect(routesOf([])).toEqual(["", "transactions"]);
+    expect(routesOf([])).toEqual(["", "transactions", "integrations"]);
   });
 
   it("habilita itens conforme os módulos do blueprint", () => {
@@ -17,6 +17,7 @@ describe("visibleNavItems", () => {
       "transactions",
       "clients",
       "agenda",
+      "integrations",
     ]);
   });
 
@@ -26,7 +27,14 @@ describe("visibleNavItems", () => {
   });
 
   it("sem blueprint, mostra os módulos operacionais básicos", () => {
-    expect(routesOf(null)).toEqual(["", "transactions", "clients", "catalog", "employees"]);
+    expect(routesOf(null)).toEqual([
+      "",
+      "transactions",
+      "clients",
+      "catalog",
+      "employees",
+      "integrations",
+    ]);
   });
 
   it("módulos de segmento (assinaturas, projetos, contratos) só aparecem com blueprint", () => {

@@ -1,8 +1,33 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.domain.financial.entities import FinancialCategoryType, TransactionStatus
+
+
+class ImportTransactionRow(BaseModel):
+    date: datetime
+    description: str = Field(min_length=1, max_length=500)
+    # Assinado, convenção de extrato: positivo = receita, negativo = despesa.
+    amount_cents: int
+    category_name: str | None = Field(default=None, max_length=200)
+    paid: bool = True
+
+    @field_validator("amount_cents")
+    @classmethod
+    def _amount_must_not_be_zero(cls, value: int) -> int:
+        if value == 0:
+            raise ValueError("O valor do lançamento não pode ser zero.")
+        return value
+
+
+class ImportTransactionsRequest(BaseModel):
+    rows: list[ImportTransactionRow] = Field(min_length=1, max_length=500)
+
+
+class ImportTransactionsResponse(BaseModel):
+    imported: int
+    categories_created: int
 
 
 class CreateCategoryRequest(BaseModel):

@@ -55,6 +55,11 @@ const CompanySettingsPage = lazy(() =>
     default: m.CompanySettingsPage,
   })),
 );
+const IntegrationsPage = lazy(() =>
+  import("@/features/integrations/integrations-page").then((m) => ({
+    default: m.IntegrationsPage,
+  })),
+);
 
 function PageFallback() {
   return (
@@ -89,6 +94,7 @@ export function App() {
             <Route path="projects" element={<ProjectsPage />} />
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="settings" element={<CompanySettingsPage />} />
+            <Route path="integrations" element={<IntegrationsPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/companies" replace />} />

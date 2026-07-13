@@ -16,6 +16,10 @@ from app.application.financial.cancel_transaction import CancelTransactionUseCas
 from app.application.financial.create_category import CreateFinancialCategoryUseCase
 from app.application.financial.create_transaction import CreateFinancialTransactionUseCase
 from app.application.financial.get_cash_flow_summary import GetCashFlowSummaryUseCase
+from app.application.financial.import_transactions import (
+    ImportRow,
+    ImportTransactionsUseCase,
+)
 from app.application.financial.mark_transaction_paid import MarkTransactionPaidUseCase
 from app.application.financial.seed_categories_from_blueprint import (
     SeedFinancialCategoriesFromBlueprintUseCase,
@@ -45,6 +49,8 @@ from app.schemas.financial import (
     CreateTransactionRequest,
     FinancialCategoryResponse,
     FinancialTransactionResponse,
+    ImportTransactionsRequest,
+    ImportTransactionsResponse,
     MarkPaidRequest,
     UpdateCategoryRequest,
     UpdateTransactionRequest,
@@ -208,6 +214,44 @@ async def create_transaction(
         amount_cents=transaction.amount_cents,
     )
     return _transaction_to_response(transaction)
+
+
+@router.post("/transactions/import", response_model=ImportTransactionsResponse)
+async def import_transactions(
+    payload: ImportTransactionsRequest,
+    company_context: Annotated[CompanyContext, Depends(require_role(*_STAFF_ROLES))],
+    current_user: Annotated[User, Depends(get_current_user)],
+    category_repository: Annotated[
+        FinancialCategoryRepository, Depends(get_financial_category_repository)
+    ],
+    transaction_repository: Annotated[
+        FinancialTransactionRepository, Depends(get_financial_transaction_repository)
+    ],
+) -> ImportTransactionsResponse:
+    use_case = ImportTransactionsUseCase(category_repository, transaction_repository)
+    result = await use_case.execute(
+        rows=[
+            ImportRow(
+                date=row.date,
+                description=row.description,
+                amount_cents=row.amount_cents,
+                category_name=row.category_name,
+                paid=row.paid,
+            )
+            for row in payload.rows
+        ],
+        created_by=current_user.id,
+    )
+    audit_event(
+        "transactions_imported",
+        user_id=current_user.id,
+        company_id=company_context.company_id,
+        imported=result.imported,
+        categories_created=result.categories_created,
+    )
+    return ImportTransactionsResponse(
+        imported=result.imported, categories_created=result.categories_created
+    )
 
 
 @router.get("/transactions", response_model=list[FinancialTransactionResponse])

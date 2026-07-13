@@ -312,8 +312,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 14  | Onboarding 2.0 (moeda, canais de venda, forma de venda) + multi-moeda    | ✅ Concluída |
 | 15  | Sidebar dinâmica completa e novos módulos por segmento                   | ✅ Concluída |
 | 16  | Customização visual por empresa (logo, cor, tema — white-label light)    | ✅ Concluída |
-| 17  | Central de Integrações + importação CSV/OFX de lançamentos               | ⏳ Próxima   |
-| 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | Planejada    |
+| 17  | Central de Integrações + importação CSV/OFX de lançamentos               | ✅ Concluída |
+| 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | ⏳ Próxima   |
 | 19  | Plataforma (API pública, webhooks, auditoria persistida, notificações)   | Planejada    |
 | 20  | Polimento premium (microinterações, command palette, PWA)                | Planejada    |
 
@@ -444,6 +444,15 @@ Detalhes de implementação de cada mecanismo são documentados em
   que seguem a preferência do sistema — nunca sobrescreve escolha manual. Página de
   configurações com presets, color picker e prévia ao vivo; salvar é restrito a
   OWNER/ADMIN no backend.
+
+- Central de Integrações + importação CSV: novo módulo "Integrações" na navegação com
+  o catálogo de conectores planejados (iFood, Stripe, Mercado Pago, bancos, Omie, CRMs…)
+  e a **importação de extrato CSV funcionando de verdade**: parser próprio com suporte a
+  campos entre aspas e detecção de delimitador (`;` bancário ou `,`), mapeamento por
+  cabeçalho (data/descrição/valor/categoria) ou posicional, valores brasileiros
+  assinados (negativo = despesa), validação linha a linha com relatório de erros e
+  prévia antes de confirmar. No backend, `POST .../transactions/import` (até 500 linhas)
+  cria categorias sob demanda (dedupe case-insensitive) e audita a importação.
 
 ## Funcionalidades futuras
 
