@@ -2,3 +2,11 @@ fastapi==0.115.6
 uvicorn[standard]==0.34.0
 pydantic==2.10.4
 pydantic-settings==2.7.0
+pymongo==4.17.0
+beanie==2.1.0
+structlog==26.1.0
+pyjwt==2.13.0
+argon2-cffi==25.1.0
+slowapi==0.1.10
+email-validator==2.3.0
+anthropic==0.115.0
