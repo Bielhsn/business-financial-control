@@ -21,8 +21,8 @@ negócio.
 | **Visão** | Ser o sistema operacional de gestão de 1 milhão de PMEs na América Latina. |
 | **Valores** | Clareza acima de complexidade · Inteligência acessível · Dados do cliente são do cliente · Design é respeito |
 
-> **Status:** Fase 1 (MVP, etapas 0-12) concluída. Fase 2 — de projeto a produto — em
-> andamento; veja o [Roadmap](#roadmap).
+> **Status:** Fases 1 e 2 concluídas — as 21 etapas do roadmap (0-20) estão entregues
+> com CI verde. Próximos passos em [Funcionalidades futuras](#funcionalidades-futuras).
 
 ## Sumário
 
@@ -315,7 +315,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 17  | Central de Integrações + importação CSV/OFX de lançamentos               | ✅ Concluída |
 | 18  | IA 2.0 (resumo do mês, perguntas sobre a empresa, metas, anomalias)      | ✅ Concluída |
 | 19  | Plataforma (auditoria persistida + notificações; API pública futura)     | ✅ Concluída |
-| 20  | Polimento premium (microinterações, command palette, PWA)                | ⏳ Próxima   |
+| 20  | Polimento premium (microinterações, command palette, PWA)                | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -470,6 +470,12 @@ Detalhes de implementação de cada mecanismo são documentados em
   paga some sozinha, sem estado lido/não-lido para sincronizar). API pública com tokens
   e webhooks de saída ficam para a fase de deploy (exigem ambiente público para serem
   úteis).
+
+- Polimento premium: paleta de comandos (Ctrl/⌘K) com navegação e ações por teclado
+  (filtragem, setas, Enter — implementação própria sobre o Dialog, sem dependência
+  extra), microinteração tátil nos botões, manifest PWA (instalável, tema "black &
+  gold") e botão de busca no header. A navegação da paleta é derivada da mesma fonte da
+  sidebar — módulos novos aparecem nos dois lugares automaticamente.
 
 ## Funcionalidades futuras
 

@@ -1,8 +1,18 @@
-import { Building2, ChevronsUpDown, LogOut, Moon, Receipt, Settings, Sun } from "lucide-react";
+import {
+  Building2,
+  ChevronsUpDown,
+  LogOut,
+  Moon,
+  Receipt,
+  Search,
+  Settings,
+  Sun,
+} from "lucide-react";
 import { useEffect } from "react";
 import { NavLink, Navigate, Outlet, useNavigate, useParams } from "react-router-dom";
 
 import { AurumMark } from "@/components/brand/logo";
+import { CommandPalette, openCommandPalette } from "@/components/command-palette";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -156,6 +166,15 @@ export function CompanyLayout() {
           </div>
           <div className="hidden md:block" />
           <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              className="hidden gap-2 text-muted-foreground sm:inline-flex"
+              onClick={openCommandPalette}
+            >
+              <Search className="size-3.5" /> Buscar…
+              <kbd className="rounded border bg-muted px-1 text-[10px]">⌘K</kbd>
+            </Button>
             <NotificationsBell companyId={companyId} />
             <Button
               variant="ghost"
@@ -192,6 +211,7 @@ export function CompanyLayout() {
         <main className="min-w-0 flex-1 bg-background">
           <Outlet />
         </main>
+        <CommandPalette companyId={companyId} navItems={visibleItems} />
       </div>
     </div>
   );

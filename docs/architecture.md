@@ -24,6 +24,17 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 20 (polimento premium):** a paleta de comandos (Ctrl/⌘K) é implementação própria
+sobre o Dialog existente (~150 linhas) em vez de adicionar `cmdk`: o custo de manter é
+menor que o de mais uma dependência com ciclo de vida próprio, e ela consome os mesmos
+`NAV_ITEMS` da sidebar — um módulo novo aparece na navegação e na paleta sem tocar em
+nenhum dos dois. Abertura por atalho global ou por evento custom
+(`openCommandPalette()`), para o botão do header não precisar de estado compartilhado.
+PWA: manifest + theme-color tornam o painel instalável; service worker/offline ficou de
+fora de propósito — dados financeiros multi-tenant em cache offline são um risco que só
+vale correr com requisito real. Microinterações: feedback tátil global nos botões
+(`active:scale`) via classe base — um lugar, todos os botões.
+
 **Etapa 19 (plataforma — auditoria persistida + notificações):** a auditoria evoluiu de
 log-only (Etapa 12) para **dupla escrita**: `record_audit` grava no log estruturado E na
 coleção `audit_logs` (índice composto `company_id + created_at desc`), consultável por
