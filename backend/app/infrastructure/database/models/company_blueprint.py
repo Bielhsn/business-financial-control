@@ -27,6 +27,7 @@ class CompanyBlueprintDocument(Document):
     modules: list[str]
     financial_categories: list[FinancialCategoryEmbedded]
     kpis: list[KPIEmbedded]
+    integrations: list[str] = []
     client_custom_fields: list[CustomFieldEmbedded]
     ai_provider: str
     generated_at: datetime

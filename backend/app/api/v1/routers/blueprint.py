@@ -51,6 +51,7 @@ def _to_response(blueprint: CompanyBlueprint) -> CompanyBlueprintResponse:
             CustomFieldResponse(key=item.key, label=item.label, type=item.type)
             for item in blueprint.client_custom_fields
         ],
+        integrations=blueprint.integrations,
         ai_provider=blueprint.ai_provider,
         generated_at=blueprint.generated_at,
     )

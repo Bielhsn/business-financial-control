@@ -4,8 +4,33 @@ from beanie import PydanticObjectId
 from beanie.operators import Inc, Set
 
 from app.core.tenant import get_current_company_id
-from app.domain.catalog.entities import CatalogItem, CatalogItemKind
-from app.infrastructure.database.models.catalog_item import CatalogItemDocument
+from app.domain.catalog.entities import CatalogItem, CatalogItemKind, ProductVariant
+from app.infrastructure.database.models.catalog_item import (
+    CatalogItemDocument,
+    ProductVariantModel,
+)
+
+
+def _variant_to_entity(model: ProductVariantModel) -> ProductVariant:
+    return ProductVariant(
+        name=model.name,
+        sku=model.sku,
+        barcode=model.barcode,
+        price_cents=model.price_cents,
+        promo_price_cents=model.promo_price_cents,
+        stock_quantity=model.stock_quantity,
+    )
+
+
+def _variant_to_model(variant: ProductVariant) -> ProductVariantModel:
+    return ProductVariantModel(
+        name=variant.name,
+        sku=variant.sku,
+        barcode=variant.barcode,
+        price_cents=variant.price_cents,
+        promo_price_cents=variant.promo_price_cents,
+        stock_quantity=variant.stock_quantity,
+    )
 
 
 def _to_entity(document: CatalogItemDocument) -> CatalogItem:
@@ -21,6 +46,21 @@ def _to_entity(document: CatalogItemDocument) -> CatalogItem:
         is_active=document.is_active,
         created_at=document.created_at,
         updated_at=document.updated_at,
+        sku=document.sku,
+        barcode=document.barcode,
+        brand=document.brand,
+        supplier=document.supplier,
+        category=document.category,
+        subcategory=document.subcategory,
+        short_description=document.short_description,
+        tags=list(document.tags),
+        cost_price_cents=document.cost_price_cents,
+        promo_price_cents=document.promo_price_cents,
+        min_stock=document.min_stock,
+        max_stock=document.max_stock,
+        stock_location=document.stock_location,
+        images=list(document.images),
+        variants=[_variant_to_entity(variant) for variant in document.variants],
     )
 
 
@@ -36,6 +76,21 @@ class BeanieCatalogItemRepository:
         kind: CatalogItemKind,
         tracks_inventory: bool,
         stock_quantity: int | None,
+        sku: str | None = None,
+        barcode: str | None = None,
+        brand: str | None = None,
+        supplier: str | None = None,
+        category: str | None = None,
+        subcategory: str | None = None,
+        short_description: str | None = None,
+        tags: list[str] | None = None,
+        cost_price_cents: int | None = None,
+        promo_price_cents: int | None = None,
+        min_stock: int | None = None,
+        max_stock: int | None = None,
+        stock_location: str | None = None,
+        images: list[str] | None = None,
+        variants: list[ProductVariant] | None = None,
     ) -> CatalogItem:
         now = datetime.now(UTC)
         document = CatalogItemDocument(
@@ -46,6 +101,21 @@ class BeanieCatalogItemRepository:
             kind=kind.value,
             tracks_inventory=tracks_inventory,
             stock_quantity=stock_quantity,
+            sku=sku,
+            barcode=barcode,
+            brand=brand,
+            supplier=supplier,
+            category=category,
+            subcategory=subcategory,
+            short_description=short_description,
+            tags=tags or [],
+            cost_price_cents=cost_price_cents,
+            promo_price_cents=promo_price_cents,
+            min_stock=min_stock,
+            max_stock=max_stock,
+            stock_location=stock_location,
+            images=images or [],
+            variants=[_variant_to_model(variant) for variant in (variants or [])],
             created_at=now,
             updated_at=now,
         )
@@ -57,6 +127,13 @@ class BeanieCatalogItemRepository:
             return None
         document = await CatalogItemDocument.find_one(
             CatalogItemDocument.id == PydanticObjectId(item_id),
+            CatalogItemDocument.company_id == get_current_company_id(),
+        )
+        return _to_entity(document) if document else None
+
+    async def find_by_sku(self, sku: str) -> CatalogItem | None:
+        document = await CatalogItemDocument.find_one(
+            CatalogItemDocument.sku == sku,
             CatalogItemDocument.company_id == get_current_company_id(),
         )
         return _to_entity(document) if document else None
@@ -73,6 +150,12 @@ class BeanieCatalogItemRepository:
         if document is None:
             return None
         for field_name, value in fields.items():
+            if field_name == "variants" and isinstance(value, list):
+                value = [
+                    _variant_to_model(variant)
+                    for variant in value
+                    if isinstance(variant, ProductVariant)
+                ]
             setattr(document, field_name, value)
         document.updated_at = datetime.now(UTC)
         await document.save()

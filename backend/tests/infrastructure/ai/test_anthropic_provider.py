@@ -380,3 +380,39 @@ async def test_text_completion_raises_on_empty_response(mock_client_cls: MagicMo
 
     with pytest.raises(AIProviderError):
         await provider.generate_period_summary(company=_company(), summary=_summary())
+
+
+@patch("app.infrastructure.ai.anthropic_provider.anthropic.AsyncAnthropic")
+async def test_blueprint_filters_unknown_integrations(mock_client_cls: MagicMock) -> None:
+    mock_response = MagicMock()
+    mock_response.content = [
+        _FakeBlock(
+            "tool_use",
+            {
+                "modules": ["financial_core"],
+                "financial_categories": [{"name": "Vendas", "type": "income"}],
+                "kpis": [
+                    {
+                        "key": "x",
+                        "name": "X",
+                        "description": "Y",
+                        "metric": "total_revenue",
+                    }
+                ],
+                "client_custom_fields": [],
+                "integrations": ["whatsapp", "integracao-inventada", "shopify"],
+            },
+        )
+    ]
+    mock_create = AsyncMock(return_value=mock_response)
+    mock_client_cls.return_value.messages.create = mock_create
+
+    provider = AnthropicAIProvider(_settings())
+    draft = await provider.generate_company_blueprint(company=_company(), additional_context=None)
+
+    # Defesa em profundidade: ids fora do catálogo são descartados silenciosamente.
+    assert draft.integrations == ["whatsapp", "shopify"]
+    # O prompt apresenta o catálogo de integrações à IA.
+    sent_prompt = mock_create.call_args.kwargs["messages"][0]["content"]
+    assert "Catálogo de integrações disponíveis:" in sent_prompt
+    assert "- ifood: iFood (Delivery)" in sent_prompt

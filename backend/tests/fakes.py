@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.exceptions import UnauthorizedError
+from app.domain.advisor.entities import BusinessSignal
 from app.domain.audit.entities import AuditEntry
 from app.domain.auth.entities import RefreshToken
 from app.domain.blueprint.entities import (
@@ -11,7 +12,12 @@ from app.domain.blueprint.entities import (
     SuggestedFinancialCategory,
 )
 from app.domain.blueprint.ports import CompanyBlueprintDraft
-from app.domain.catalog.entities import CatalogItem, CatalogItemKind, StockMovement
+from app.domain.catalog.entities import (
+    CatalogItem,
+    CatalogItemKind,
+    ProductVariant,
+    StockMovement,
+)
 from app.domain.client.entities import Client
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
@@ -238,6 +244,7 @@ class FakeCompanyBlueprintRepository:
         kpis: list[KPIDefinition],
         client_custom_fields: list[CustomFieldDefinition],
         ai_provider: str,
+        integrations: list[str] | None = None,
     ) -> CompanyBlueprint:
         existing = self._blueprints.get(company_id)
         if existing is not None:
@@ -255,6 +262,7 @@ class FakeCompanyBlueprintRepository:
             client_custom_fields=client_custom_fields,
             ai_provider=ai_provider,
             generated_at=datetime.now(UTC),
+            integrations=integrations or [],
         )
         self._blueprints[company_id] = blueprint
         return blueprint
@@ -279,11 +287,13 @@ class FakeAIProvider:
                 )
             ],
             client_custom_fields=[],
+            integrations=["whatsapp", "mercado_pago"],
         )
         self.calls: list[tuple[Company, str | None]] = []
         self.insight_calls: list[tuple[Company, DashboardSummary]] = []
         self.summary_calls: list[tuple[Company, DashboardSummary]] = []
         self.question_calls: list[tuple[Company, DashboardSummary, str]] = []
+        self.recommendation_calls: list[tuple[Company, DashboardSummary, list[BusinessSignal]]] = []
 
     async def generate_company_blueprint(
         self, *, company: Company, additional_context: str | None
@@ -317,6 +327,12 @@ class FakeAIProvider:
     ) -> str:
         self.question_calls.append((company, summary, question))
         return f"Resposta baseada nos agregados para: {question}"
+
+    async def generate_recommendations(
+        self, *, company: Company, summary: DashboardSummary, signals: list[BusinessSignal]
+    ) -> str:
+        self.recommendation_calls.append((company, summary, signals))
+        return "- **Reponha o estoque:** priorize os produtos zerados nesta semana."
 
 
 class FakeFinancialCategoryRepository:
@@ -517,6 +533,21 @@ class FakeCatalogItemRepository:
         kind: CatalogItemKind,
         tracks_inventory: bool,
         stock_quantity: int | None,
+        sku: str | None = None,
+        barcode: str | None = None,
+        brand: str | None = None,
+        supplier: str | None = None,
+        category: str | None = None,
+        subcategory: str | None = None,
+        short_description: str | None = None,
+        tags: list[str] | None = None,
+        cost_price_cents: int | None = None,
+        promo_price_cents: int | None = None,
+        min_stock: int | None = None,
+        max_stock: int | None = None,
+        stock_location: str | None = None,
+        images: list[str] | None = None,
+        variants: list[ProductVariant] | None = None,
     ) -> CatalogItem:
         item_id = str(self._next_id)
         self._next_id += 1
@@ -533,12 +564,33 @@ class FakeCatalogItemRepository:
             is_active=True,
             created_at=now,
             updated_at=now,
+            sku=sku,
+            barcode=barcode,
+            brand=brand,
+            supplier=supplier,
+            category=category,
+            subcategory=subcategory,
+            short_description=short_description,
+            tags=tags or [],
+            cost_price_cents=cost_price_cents,
+            promo_price_cents=promo_price_cents,
+            min_stock=min_stock,
+            max_stock=max_stock,
+            stock_location=stock_location,
+            images=images or [],
+            variants=variants or [],
         )
         self._items[item_id] = item
         return item
 
     async def get_by_id(self, item_id: str) -> CatalogItem | None:
         return self._items.get(item_id)
+
+    async def find_by_sku(self, sku: str) -> CatalogItem | None:
+        for item in self._items.values():
+            if item.sku == sku:
+                return item
+        return None
 
     async def list_all(self, *, only_active: bool = True) -> list[CatalogItem]:
         return [i for i in self._items.values() if not only_active or i.is_active]

@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.routers import (
+    advisor,
     audit,
     auth,
     blueprint,
@@ -28,3 +29,4 @@ api_router.include_router(dashboard.router)
 api_router.include_router(insights.router)
 api_router.include_router(audit.router)
 api_router.include_router(notifications.router)
+api_router.include_router(advisor.router)

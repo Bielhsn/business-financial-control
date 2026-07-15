@@ -21,7 +21,7 @@ negócio.
 | **Visão** | Ser o sistema operacional de gestão de 1 milhão de PMEs na América Latina. |
 | **Valores** | Clareza acima de complexidade · Inteligência acessível · Dados do cliente são do cliente · Design é respeito |
 
-> **Status:** Fases 1 e 2 concluídas — as 21 etapas do roadmap (0-20) estão entregues
+> **Status:** Fases 1, 2 e 3 concluídas — as 24 etapas do roadmap (0-23) estão entregues
 > com CI verde. Próximos passos em [Funcionalidades futuras](#funcionalidades-futuras).
 
 ## Sumário
@@ -317,6 +317,14 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 19  | Plataforma (auditoria persistida + notificações; API pública futura)     | ✅ Concluída |
 | 20  | Polimento premium (microinterações, command palette, PWA)                | ✅ Concluída |
 
+### Fase 3 — inteligência por segmento
+
+| #   | Etapa                                                                    | Status       |
+| --- | ------------------------------------------------------------------------ | ------------ |
+| 21  | Integrações inteligentes por segmento (IA seleciona do catálogo)         | ✅ Concluída |
+| 22  | Catálogo 2.0 — produto profissional (imagens, variações, SKU, margens)   | ✅ Concluída |
+| 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | ✅ Concluída |
+
 ## Funcionalidades atuais
 
 - Estrutura do monorepo, tooling de qualidade (Ruff, Black, mypy) e CI configurados.
@@ -476,6 +484,29 @@ Detalhes de implementação de cada mecanismo são documentados em
   extra), microinteração tátil nos botões, manifest PWA (instalável, tema "black &
   gold") e botão de busca no header. A navegação da paleta é derivada da mesma fonte da
   sidebar — módulos novos aparecem nos dois lugares automaticamente.
+
+- Integrações inteligentes por segmento: o blueprint agora inclui as **integrações
+  relevantes para o negócio**, escolhidas pela IA de um catálogo fechado de ~60
+  conectores (`INTEGRATION_REGISTRY` — delivery, e-commerce, marketplaces, logística,
+  pagamentos, bancos, fiscal, agendamento, fitness, saúde, CRM, comunicação, analytics).
+  Uma loja de roupas vê Shopify/Nuvemshop/Melhor Envio; um restaurante vê iFood/KDS; um
+  SaaS vê Stripe/Mixpanel/GitHub — sem nenhum código por segmento: a IA interpreta o
+  segmento (inclusive texto livre) e seleciona do catálogo, com filtro server-side
+  contra ids inventados. A página de Integrações destaca as recomendadas e recolhe o
+  restante do catálogo.
+
+- Catálogo 2.0 — cadastro profissional de produtos: SKU (com unicidade por empresa),
+  código de barras, marca, fornecedor, categoria/subcategoria, tags, descrições curta e
+  completa, múltiplas imagens (até 6, com principal, reordenação e exclusão), variações
+  (cor/tamanho com SKU, preço e estoque próprios), preço de custo e promocional com
+  margem calculada no servidor, estoque mínimo/máximo com alerta visual e localização
+  física. Tudo opcional: um serviço simples continua sendo só nome + preço.
+
+- IA consultora — o sistema calcula sinais de negócio deterministicamente (estoque
+  zerado, estoque abaixo do mínimo, margem apertada, queda de receita vs. média dos
+  meses anteriores, contas pendentes vencidas) e mostra tudo no dashboard sem custo de
+  IA; com um clique, a IA prioriza os sinais e escreve recomendações práticas para a
+  semana — sempre a partir dos números computados, nunca inventando valores.
 
 ## Funcionalidades futuras
 

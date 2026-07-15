@@ -127,6 +127,7 @@ export interface CompanyBlueprintResponse {
   financial_categories: BlueprintSuggestedCategory[];
   kpis: BlueprintKPI[];
   client_custom_fields: BlueprintCustomField[];
+  integrations: string[];
   ai_provider: string;
   generated_at: string;
 }
@@ -152,6 +153,15 @@ export interface ClientSummaryResponse {
 
 export type CatalogItemKind = "product" | "service";
 
+export interface ProductVariantResponse {
+  name: string;
+  sku: string | null;
+  barcode: string | null;
+  price_cents: number | null;
+  promo_price_cents: number | null;
+  stock_quantity: number;
+}
+
 export interface CatalogItemResponse {
   id: string;
   name: string;
@@ -161,6 +171,23 @@ export interface CatalogItemResponse {
   tracks_inventory: boolean;
   stock_quantity: number | null;
   is_active: boolean;
+  sku: string | null;
+  barcode: string | null;
+  brand: string | null;
+  supplier: string | null;
+  category: string | null;
+  subcategory: string | null;
+  short_description: string | null;
+  tags: string[];
+  cost_price_cents: number | null;
+  promo_price_cents: number | null;
+  min_stock: number | null;
+  max_stock: number | null;
+  stock_location: string | null;
+  images: string[];
+  variants: ProductVariantResponse[];
+  margin_cents: number | null;
+  margin_pct: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -234,6 +261,27 @@ export interface InsightsResponse {
   start: string;
   end: string;
   insights: InsightResponse[];
+}
+
+export type SignalKind =
+  "stock_zero" | "stock_low" | "low_margin" | "revenue_drop" | "overdue_bills";
+
+export type SignalSeverity = "info" | "warning" | "critical";
+
+export interface BusinessSignalResponse {
+  kind: SignalKind;
+  severity: SignalSeverity;
+  title: string;
+  detail: string;
+}
+
+export interface SignalsResponse {
+  signals: BusinessSignalResponse[];
+}
+
+export interface RecommendationsResponse {
+  signals: BusinessSignalResponse[];
+  recommendations: string;
 }
 
 export interface ApiErrorResponse {

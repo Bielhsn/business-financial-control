@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from app.domain.blueprint.entities import (
@@ -15,6 +15,7 @@ class CompanyBlueprintDraft:
     financial_categories: list[SuggestedFinancialCategory]
     kpis: list[KPIDefinition]
     client_custom_fields: list[CustomFieldDefinition]
+    integrations: list[str] = field(default_factory=list)
 
 
 class AIProviderPort(Protocol):

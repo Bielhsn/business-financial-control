@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { centsToInput, parseCurrencyToCents } from "@/lib/money";
+import { centsToInput, marginPct, parseCurrencyToCents } from "@/lib/money";
 
 describe("parseCurrencyToCents", () => {
   it("aceita formato brasileiro com milhar e decimal", () => {
@@ -26,5 +26,20 @@ describe("centsToInput", () => {
   it("converte centavos para o formato de edição", () => {
     expect(centsToInput(123456)).toBe("1234,56");
     expect(centsToInput(99)).toBe("0,99");
+  });
+});
+
+describe("marginPct", () => {
+  it("calcula margem sobre o preço de venda", () => {
+    expect(marginPct(7990, 3200)).toBe(59.95);
+  });
+
+  it("usa o preço promocional quando informado — mesma regra do backend", () => {
+    expect(marginPct(7990, 3200, 5990)).toBe(46.58);
+  });
+
+  it("retorna null sem custo ou sem preço efetivo positivo", () => {
+    expect(marginPct(7990, null)).toBeNull();
+    expect(marginPct(0, 3200)).toBeNull();
   });
 });

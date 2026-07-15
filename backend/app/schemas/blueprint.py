@@ -36,5 +36,6 @@ class CompanyBlueprintResponse(BaseModel):
     financial_categories: list[FinancialCategoryResponse]
     kpis: list[KPIResponse]
     client_custom_fields: list[CustomFieldResponse]
+    integrations: list[str]
     ai_provider: str
     generated_at: datetime

@@ -24,6 +24,49 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 23 (IA consultora):** mesma divisão de responsabilidades das etapas 11/18 —
+**a aplicação calcula, a IA narra**. Os sinais de negócio (`BusinessSignal`) são 100%
+determinísticos, computados em `ComputeBusinessSignalsUseCase` com limites simples e
+explicáveis (estoque zerado; estoque ≤ mínimo — usa os campos da Etapa 22; margem < 15%
+sobre o preço efetivo; receita do mês < 70% da média dos meses anteriores; pendências
+vencidas). `GET /advisor/signals` não usa IA — barato, sem efeito colateral, o dashboard
+pode recarregar à vontade. Só `POST /advisor/recommendations` consome tokens: a IA
+recebe os sinais prontos + agregados do dashboard e devolve recomendações priorizadas em
+markdown, com a instrução explícita de nunca recalcular nem inventar sinais. O port
+`InsightsAIPort` ganhou `generate_recommendations`; sem provedor configurado, o endpoint
+responde 503 como os demais recursos de IA.
+
+**Etapa 22 (Catálogo 2.0):** o `CatalogItem` foi estendido para ficha profissional de
+produto (SKU, código de barras, marca, fornecedor, categoria/subcategoria, tags,
+descrições curta/completa, custo/promoção, estoque mín/máx/localização, imagens e
+variações) **sem quebrar nada existente**: todos os campos novos têm default no documento
+Beanie (itens antigos carregam sem migração) e são opcionais na API — um serviço simples
+continua sendo nome + preço. Decisões estruturais: variações são **embutidas** no
+documento do item (pydantic embutido, não coleção própria) porque só existem no contexto
+do produto pai; imagens seguem o mesmo padrão do logo da empresa (data URL `image/*`
+validada, ~150 KB, máx. 6 — sem storage externo por enquanto); a margem é **calculada no
+servidor** na resposta (`margin_cents`/`margin_pct`, sobre o preço efetivo = promocional
+quando houver) e o frontend replica a mesma fórmula só para preview ao vivo no
+formulário; unicidade de SKU é verificada por empresa no use case (`find_by_sku`), com
+regras compartilhadas de validação (`application/catalog/validation.py`) entre criação e
+edição — a edição valida a combinação final (valor novo quando enviado, atual caso
+contrário), para promo/custo continuarem coerentes em PATCHes parciais. Ajuste de
+quantidade de estoque continua passando exclusivamente por `adjust-stock` (movimentos
+auditáveis); o formulário de edição não toca em `stock_quantity`.
+
+**Etapa 21 (integrações inteligentes por segmento):** início da Fase 3 ("inteligência por
+segmento"). A decisão estrutural: **nada de mapas fixos segmento → integrações** — isso
+quebraria com segmentos em texto livre ("loja de roupas de pet") e exigiria código novo a
+cada segmento. Em vez disso, o mecanismo que já é o coração da plataforma foi estendido: o
+blueprint ganha `integrations`, selecionadas pela IA de um catálogo fechado
+(`INTEGRATION_REGISTRY`, ~60 conectores com grupos), com enum no tool schema + filtro
+server-side por `INTEGRATION_IDS` — o mesmo padrão triplo de defesa dos módulos (Etapa 4)
+e das métricas de KPI (Etapa 7). O prompt instrui negativamente ("nunca sugira delivery
+para quem não vende comida"). Suportar um segmento novo continua não exigindo código;
+adicionar um conector novo = uma linha no registro. Blueprints antigos carregam com
+`integrations=[]` (default no documento — sem migração) e a página cai no catálogo
+completo com um convite a regenerar o blueprint.
+
 **Etapa 20 (polimento premium):** a paleta de comandos (Ctrl/⌘K) é implementação própria
 sobre o Dialog existente (~150 linhas) em vez de adicionar `cmdk`: o custo de manter é
 menor que o de mais uma dependência com ciclo de vida próprio, e ela consome os mesmos

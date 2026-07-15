@@ -1,7 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import type { InsightsResponse } from "@/lib/api-types";
+import type { InsightsResponse, RecommendationsResponse, SignalsResponse } from "@/lib/api-types";
 
 interface PeriodInput {
   start: string;
@@ -25,6 +25,30 @@ export function useGeneratePeriodSummary(companyId: string) {
       const { data } = await api.post<{ summary: string }>(
         `/companies/${companyId}/insights/summary`,
         input,
+      );
+      return data;
+    },
+  });
+}
+
+/** Query (GET): sinais são computados pela aplicação, sem IA — barato e sem
+ * efeito colateral, pode recarregar à vontade. */
+export function useAdvisorSignals(companyId: string) {
+  return useQuery({
+    queryKey: ["companies", companyId, "advisor", "signals"],
+    queryFn: async () => {
+      const { data } = await api.get<SignalsResponse>(`/companies/${companyId}/advisor/signals`);
+      return data;
+    },
+  });
+}
+
+/** Mutação (POST): a narração das recomendações consome tokens de IA. */
+export function useGenerateRecommendations(companyId: string) {
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post<RecommendationsResponse>(
+        `/companies/${companyId}/advisor/recommendations`,
       );
       return data;
     },

@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from enum import StrEnum
 
@@ -47,3 +47,4 @@ class CompanyBlueprint:
     client_custom_fields: list[CustomFieldDefinition]
     ai_provider: str
     generated_at: datetime
+    integrations: list[str] = field(default_factory=list)
