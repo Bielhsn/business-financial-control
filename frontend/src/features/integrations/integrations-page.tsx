@@ -1,4 +1,4 @@
-import { FileSpreadsheet, Plug, Sparkles, Upload } from "lucide-react";
+import { FileSpreadsheet, Plug, Sparkles, Upload, Wand2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,43 +7,13 @@ import { PageHeader } from "@/components/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useImportTransactions } from "@/features/integrations/use-import-transactions";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { extractErrorMessage } from "@/lib/api";
 import { parseImportCsv, type ImportParseResult } from "@/lib/csv";
+import { INTEGRATIONS, integrationInfo } from "@/lib/integrations";
 import { formatCents } from "@/lib/utils";
-
-interface Connector {
-  name: string;
-  group: string;
-}
-
-/** Catálogo de conectores planejados — a infraestrutura de importação já existe;
- * cada conector é um adaptador sobre ela. */
-const CONNECTOR_CATALOG: Connector[] = [
-  { name: "iFood", group: "Delivery" },
-  { name: "Rappi", group: "Delivery" },
-  { name: "99Food", group: "Delivery" },
-  { name: "Mercado Livre", group: "Marketplace" },
-  { name: "Shopee", group: "Marketplace" },
-  { name: "Amazon", group: "Marketplace" },
-  { name: "Stripe", group: "Pagamentos" },
-  { name: "Mercado Pago", group: "Pagamentos" },
-  { name: "PagSeguro", group: "Pagamentos" },
-  { name: "Asaas", group: "Pagamentos" },
-  { name: "Nubank PJ", group: "Bancos" },
-  { name: "Inter Empresas", group: "Bancos" },
-  { name: "Itaú", group: "Bancos" },
-  { name: "Omie", group: "Contabilidade" },
-  { name: "Conta Azul", group: "Contabilidade" },
-  { name: "Bling", group: "Contabilidade" },
-  { name: "HubSpot", group: "CRM" },
-  { name: "RD Station", group: "CRM" },
-  { name: "WhatsApp Business", group: "Comunicação" },
-  { name: "Slack", group: "Comunicação" },
-  { name: "Google Calendar", group: "Google" },
-  { name: "Google Analytics", group: "Google" },
-];
 
 function CsvImportCard({ companyId }: { companyId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -190,7 +160,16 @@ function CsvImportCard({ companyId }: { companyId: string }) {
 export function IntegrationsPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId ?? "";
-  const groups = [...new Set(CONNECTOR_CATALOG.map((c) => c.group))];
+  const { data: blueprint } = useBlueprint(id);
+
+  // Integrações recomendadas pela IA no blueprint (específicas do segmento);
+  // o restante do catálogo fica disponível, mas em segundo plano.
+  const recommended = (blueprint?.integrations ?? [])
+    .map((integrationId) => integrationInfo(integrationId))
+    .filter((item): item is NonNullable<typeof item> => item !== undefined);
+  const recommendedIds = new Set(recommended.map((item) => item.id));
+  const others = INTEGRATIONS.filter((item) => !recommendedIds.has(item.id));
+  const otherGroups = [...new Set(others.map((item) => item.group))];
 
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
@@ -226,26 +205,81 @@ export function IntegrationsPage() {
           </CardContent>
         </Card>
 
-        {groups.map((group) => (
-          <Card key={group}>
+        {recommended.length > 0 && (
+          <Card className="border-primary/40">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <Plug className="size-4 text-primary" /> {group}
+                <Wand2 className="size-4 text-primary" /> Recomendadas para o seu segmento
               </CardTitle>
+              <CardDescription>
+                Selecionadas pela IA no blueprint da sua empresa — as conexões que fazem sentido
+                real para este tipo de negócio.
+              </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {CONNECTOR_CATALOG.filter((c) => c.group === group).map((connector) => (
+              {recommended.map((item) => (
                 <div
-                  key={connector.name}
-                  className="flex items-center justify-between rounded-lg border p-3"
+                  key={item.id}
+                  className="flex items-center justify-between rounded-lg border border-primary/30 bg-accent/40 p-3"
                 >
-                  <p className="text-sm font-medium">{connector.name}</p>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{item.name}</p>
+                    <p className="text-xs text-muted-foreground">{item.group}</p>
+                  </div>
                   <Badge variant="muted">Em breve</Badge>
                 </div>
               ))}
             </CardContent>
           </Card>
-        ))}
+        )}
+
+        {recommended.length === 0 && (
+          <Card>
+            <CardContent className="py-6 text-center text-sm text-muted-foreground">
+              Gere o blueprint com IA (no onboarding da empresa) para ver aqui as integrações
+              recomendadas para o seu segmento.
+            </CardContent>
+          </Card>
+        )}
+
+        <details className="group">
+          <summary className="cursor-pointer list-none">
+            <div className="flex items-center justify-between rounded-xl border bg-card p-4 transition-colors hover:bg-accent/40">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Plug className="size-4 text-primary" /> Todas as integrações do catálogo
+                <span className="text-xs font-normal text-muted-foreground">({others.length})</span>
+              </div>
+              <span className="text-xs text-muted-foreground group-open:hidden">mostrar</span>
+              <span className="hidden text-xs text-muted-foreground group-open:inline">
+                ocultar
+              </span>
+            </div>
+          </summary>
+          <div className="mt-4 space-y-6">
+            {otherGroups.map((group) => (
+              <Card key={group}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Plug className="size-4 text-primary" /> {group}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {others
+                    .filter((item) => item.group === group)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
+                        <p className="text-sm font-medium">{item.name}</p>
+                        <Badge variant="muted">Em breve</Badge>
+                      </div>
+                    ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </details>
 
         <p className="text-center text-xs text-muted-foreground">
           Precisa de um conector específico? Enquanto ele não chega, a importação CSV cobre qualquer

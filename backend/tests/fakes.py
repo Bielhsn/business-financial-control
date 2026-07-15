@@ -238,6 +238,7 @@ class FakeCompanyBlueprintRepository:
         kpis: list[KPIDefinition],
         client_custom_fields: list[CustomFieldDefinition],
         ai_provider: str,
+        integrations: list[str] | None = None,
     ) -> CompanyBlueprint:
         existing = self._blueprints.get(company_id)
         if existing is not None:
@@ -255,6 +256,7 @@ class FakeCompanyBlueprintRepository:
             client_custom_fields=client_custom_fields,
             ai_provider=ai_provider,
             generated_at=datetime.now(UTC),
+            integrations=integrations or [],
         )
         self._blueprints[company_id] = blueprint
         return blueprint
@@ -279,6 +281,7 @@ class FakeAIProvider:
                 )
             ],
             client_custom_fields=[],
+            integrations=["whatsapp", "mercado_pago"],
         )
         self.calls: list[tuple[Company, str | None]] = []
         self.insight_calls: list[tuple[Company, DashboardSummary]] = []

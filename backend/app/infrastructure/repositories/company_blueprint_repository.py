@@ -41,6 +41,7 @@ def _to_entity(document: CompanyBlueprintDocument) -> CompanyBlueprint:
         ],
         ai_provider=document.ai_provider,
         generated_at=document.generated_at,
+        integrations=list(document.integrations),
     )
 
 
@@ -54,6 +55,7 @@ class BeanieCompanyBlueprintRepository:
         kpis: list[KPIDefinition],
         client_custom_fields: list[CustomFieldDefinition],
         ai_provider: str,
+        integrations: list[str] | None = None,
     ) -> CompanyBlueprint:
         now = datetime.now(UTC)
         financial_categories_embedded = [
@@ -83,6 +85,7 @@ class BeanieCompanyBlueprintRepository:
             existing.kpis = kpis_embedded
             existing.client_custom_fields = custom_fields_embedded
             existing.ai_provider = ai_provider
+            existing.integrations = integrations or []
             existing.generated_at = now
             await existing.save()
             return _to_entity(existing)
@@ -94,6 +97,7 @@ class BeanieCompanyBlueprintRepository:
             kpis=kpis_embedded,
             client_custom_fields=custom_fields_embedded,
             ai_provider=ai_provider,
+            integrations=integrations or [],
             generated_at=now,
         )
         await document.insert()

@@ -34,4 +34,5 @@ class GenerateCompanyBlueprintUseCase:
             kpis=draft.kpis,
             client_custom_fields=draft.client_custom_fields,
             ai_provider=self._ai_provider_name,
+            integrations=draft.integrations,
         )

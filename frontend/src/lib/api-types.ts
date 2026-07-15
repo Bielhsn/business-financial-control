@@ -127,6 +127,7 @@ export interface CompanyBlueprintResponse {
   financial_categories: BlueprintSuggestedCategory[];
   kpis: BlueprintKPI[];
   client_custom_fields: BlueprintCustomField[];
+  integrations: string[];
   ai_provider: string;
   generated_at: string;
 }

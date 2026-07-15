@@ -24,6 +24,19 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 21 (integrações inteligentes por segmento):** início da Fase 3 ("inteligência por
+segmento"). A decisão estrutural: **nada de mapas fixos segmento → integrações** — isso
+quebraria com segmentos em texto livre ("loja de roupas de pet") e exigiria código novo a
+cada segmento. Em vez disso, o mecanismo que já é o coração da plataforma foi estendido: o
+blueprint ganha `integrations`, selecionadas pela IA de um catálogo fechado
+(`INTEGRATION_REGISTRY`, ~60 conectores com grupos), com enum no tool schema + filtro
+server-side por `INTEGRATION_IDS` — o mesmo padrão triplo de defesa dos módulos (Etapa 4)
+e das métricas de KPI (Etapa 7). O prompt instrui negativamente ("nunca sugira delivery
+para quem não vende comida"). Suportar um segmento novo continua não exigindo código;
+adicionar um conector novo = uma linha no registro. Blueprints antigos carregam com
+`integrations=[]` (default no documento — sem migração) e a página cai no catálogo
+completo com um convite a regenerar o blueprint.
+
 **Etapa 20 (polimento premium):** a paleta de comandos (Ctrl/⌘K) é implementação própria
 sobre o Dialog existente (~150 linhas) em vez de adicionar `cmdk`: o custo de manter é
 menor que o de mais uma dependência com ciclo de vida próprio, e ela consome os mesmos

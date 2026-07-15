@@ -11,6 +11,7 @@ from app.domain.blueprint.entities import (
     KPIDefinition,
     SuggestedFinancialCategory,
 )
+from app.domain.blueprint.integration_registry import INTEGRATION_IDS, INTEGRATION_REGISTRY
 from app.domain.blueprint.module_registry import MODULE_IDS, MODULE_REGISTRY
 from app.domain.blueprint.ports import CompanyBlueprintDraft
 from app.domain.company.entities import Company
@@ -71,6 +72,19 @@ def _build_tool_schema() -> ToolParam:
                     },
                     "minItems": 1,
                 },
+                "integrations": {
+                    "type": "array",
+                    "description": (
+                        "Integrações do catálogo realmente úteis para este segmento "
+                        "(entre 6 e 14)."
+                    ),
+                    "items": {
+                        "type": "string",
+                        "enum": [item.id for item in INTEGRATION_REGISTRY],
+                    },
+                    "minItems": 3,
+                    "maxItems": 14,
+                },
                 "client_custom_fields": {
                     "type": "array",
                     "description": "Campos extras para o cadastro de clientes deste segmento.",
@@ -88,7 +102,13 @@ def _build_tool_schema() -> ToolParam:
                     },
                 },
             },
-            "required": ["modules", "financial_categories", "kpis", "client_custom_fields"],
+            "required": [
+                "modules",
+                "financial_categories",
+                "kpis",
+                "integrations",
+                "client_custom_fields",
+            ],
         },
     }
 
@@ -101,11 +121,15 @@ def _build_prompt(company: Company, additional_context: str | None) -> str:
         f"- {definition.metric.value}: {definition.description}"
         for definition in KPI_METRIC_REGISTRY
     )
+    integrations_catalog = "\n".join(
+        f"- {item.id}: {item.name} ({item.group})" for item in INTEGRATION_REGISTRY
+    )
     lines = [
         "Você é um especialista em estruturar dashboards financeiros para empresas de "
         "qualquer segmento.",
         f"Catálogo de módulos disponíveis:\n{modules_catalog}",
         f"Catálogo de métricas computáveis disponíveis para KPIs:\n{metrics_catalog}",
+        f"Catálogo de integrações disponíveis:\n{integrations_catalog}",
         "Dados da empresa:",
         f"- Nome: {company.name}",
         f"- Segmento: {company.segment}",
@@ -131,8 +155,11 @@ def _build_prompt(company: Company, additional_context: str | None) -> str:
         "invente módulos fora da lista), sugira categorias financeiras de receita e "
         "despesa típicas deste segmento, indicadores financeiros (KPIs) relevantes — cada "
         "um associado a uma métrica computável do catálogo acima, com nome e descrição em "
-        "português adequados ao segmento — e, se fizer sentido, campos personalizados para "
-        "o cadastro de clientes. Responda apenas chamando a ferramenta fornecida."
+        "português adequados ao segmento —, as integrações do catálogo que fazem sentido "
+        "real para este tipo de negócio (nunca sugira delivery para quem não vende comida, "
+        "nem e-commerce para quem só atende presencialmente) e, se fizer sentido, campos "
+        "personalizados para o cadastro de clientes. Responda apenas chamando a ferramenta "
+        "fornecida."
     )
     return "\n".join(lines)
 
@@ -159,6 +186,11 @@ def _parse_blueprint(data: dict[str, Any]) -> CompanyBlueprintDraft:
             )
             for item in data.get("client_custom_fields", [])
         ]
+        integrations = [
+            integration_id
+            for integration_id in data.get("integrations", [])
+            if integration_id in INTEGRATION_IDS
+        ]
     except (KeyError, TypeError, ValueError) as exc:
         raise AIProviderError("Resposta da IA em formato inesperado.") from exc
 
@@ -170,6 +202,7 @@ def _parse_blueprint(data: dict[str, Any]) -> CompanyBlueprintDraft:
         financial_categories=financial_categories,
         kpis=kpis,
         client_custom_fields=client_custom_fields,
+        integrations=integrations,
     )
 
 

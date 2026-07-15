@@ -18,6 +18,7 @@ class CompanyBlueprintRepository(Protocol):
         kpis: list[KPIDefinition],
         client_custom_fields: list[CustomFieldDefinition],
         ai_provider: str,
+        integrations: list[str] | None = None,
     ) -> CompanyBlueprint: ...
 
     async def get_by_company_id(self, company_id: str) -> CompanyBlueprint | None: ...

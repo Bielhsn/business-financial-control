@@ -317,6 +317,14 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 19  | Plataforma (auditoria persistida + notificações; API pública futura)     | ✅ Concluída |
 | 20  | Polimento premium (microinterações, command palette, PWA)                | ✅ Concluída |
 
+### Fase 3 — inteligência por segmento
+
+| #   | Etapa                                                                    | Status       |
+| --- | ------------------------------------------------------------------------ | ------------ |
+| 21  | Integrações inteligentes por segmento (IA seleciona do catálogo)         | ✅ Concluída |
+| 22  | Catálogo 2.0 — produto profissional (imagens, variações, SKU, margens)   | ⏳ Próxima   |
+| 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | Planejada    |
+
 ## Funcionalidades atuais
 
 - Estrutura do monorepo, tooling de qualidade (Ruff, Black, mypy) e CI configurados.
@@ -476,6 +484,16 @@ Detalhes de implementação de cada mecanismo são documentados em
   extra), microinteração tátil nos botões, manifest PWA (instalável, tema "black &
   gold") e botão de busca no header. A navegação da paleta é derivada da mesma fonte da
   sidebar — módulos novos aparecem nos dois lugares automaticamente.
+
+- Integrações inteligentes por segmento: o blueprint agora inclui as **integrações
+  relevantes para o negócio**, escolhidas pela IA de um catálogo fechado de ~60
+  conectores (`INTEGRATION_REGISTRY` — delivery, e-commerce, marketplaces, logística,
+  pagamentos, bancos, fiscal, agendamento, fitness, saúde, CRM, comunicação, analytics).
+  Uma loja de roupas vê Shopify/Nuvemshop/Melhor Envio; um restaurante vê iFood/KDS; um
+  SaaS vê Stripe/Mixpanel/GitHub — sem nenhum código por segmento: a IA interpreta o
+  segmento (inclusive texto livre) e seleciona do catálogo, com filtro server-side
+  contra ids inventados. A página de Integrações destaca as recomendadas e recolhe o
+  restante do catálogo.
 
 ## Funcionalidades futuras
 
