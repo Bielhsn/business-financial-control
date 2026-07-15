@@ -17,7 +17,7 @@ from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
 from app.domain.audit.repository import AuditLogRepository
-from app.domain.catalog.entities import CatalogItem
+from app.domain.catalog.entities import CatalogItem, ProductVariant
 from app.domain.catalog.repository import CatalogItemRepository, StockMovementRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.user.entities import User
@@ -25,6 +25,8 @@ from app.schemas.catalog import (
     AdjustStockRequest,
     CatalogItemResponse,
     CreateCatalogItemRequest,
+    ProductVariantPayload,
+    ProductVariantResponse,
     UpdateCatalogItemRequest,
 )
 
@@ -39,7 +41,25 @@ _STAFF_ROLES = (
 _MANAGEMENT_ROLES = (CompanyRole.OWNER, CompanyRole.ADMIN, CompanyRole.MANAGER)
 
 
+def _to_variant_entity(payload: ProductVariantPayload) -> ProductVariant:
+    return ProductVariant(
+        name=payload.name,
+        sku=payload.sku,
+        barcode=payload.barcode,
+        price_cents=payload.price_cents,
+        promo_price_cents=payload.promo_price_cents,
+        stock_quantity=payload.stock_quantity,
+    )
+
+
 def _to_response(item: CatalogItem) -> CatalogItemResponse:
+    margin_cents: int | None = None
+    margin_pct: float | None = None
+    if item.cost_price_cents is not None:
+        effective_price = item.promo_price_cents or item.price_cents
+        margin_cents = effective_price - item.cost_price_cents
+        if effective_price > 0:
+            margin_pct = round(margin_cents / effective_price * 100, 2)
     return CatalogItemResponse(
         id=item.id,
         company_id=item.company_id,
@@ -50,6 +70,33 @@ def _to_response(item: CatalogItem) -> CatalogItemResponse:
         tracks_inventory=item.tracks_inventory,
         stock_quantity=item.stock_quantity,
         is_active=item.is_active,
+        sku=item.sku,
+        barcode=item.barcode,
+        brand=item.brand,
+        supplier=item.supplier,
+        category=item.category,
+        subcategory=item.subcategory,
+        short_description=item.short_description,
+        tags=item.tags,
+        cost_price_cents=item.cost_price_cents,
+        promo_price_cents=item.promo_price_cents,
+        min_stock=item.min_stock,
+        max_stock=item.max_stock,
+        stock_location=item.stock_location,
+        images=item.images,
+        variants=[
+            ProductVariantResponse(
+                name=variant.name,
+                sku=variant.sku,
+                barcode=variant.barcode,
+                price_cents=variant.price_cents,
+                promo_price_cents=variant.promo_price_cents,
+                stock_quantity=variant.stock_quantity,
+            )
+            for variant in item.variants
+        ],
+        margin_cents=margin_cents,
+        margin_pct=margin_pct,
         created_at=item.created_at,
         updated_at=item.updated_at,
     )
@@ -69,6 +116,21 @@ async def create_catalog_item(
         kind=payload.kind,
         tracks_inventory=payload.tracks_inventory,
         stock_quantity=payload.stock_quantity,
+        sku=payload.sku,
+        barcode=payload.barcode,
+        brand=payload.brand,
+        supplier=payload.supplier,
+        category=payload.category,
+        subcategory=payload.subcategory,
+        short_description=payload.short_description,
+        tags=payload.tags,
+        cost_price_cents=payload.cost_price_cents,
+        promo_price_cents=payload.promo_price_cents,
+        min_stock=payload.min_stock,
+        max_stock=payload.max_stock,
+        stock_location=payload.stock_location,
+        images=payload.images,
+        variants=[_to_variant_entity(variant) for variant in payload.variants],
     )
     return _to_response(item)
 
@@ -103,7 +165,10 @@ async def update_catalog_item(
     item_repository: Annotated[CatalogItemRepository, Depends(get_catalog_item_repository)],
 ) -> CatalogItemResponse:
     use_case = UpdateCatalogItemUseCase(item_repository)
-    item = await use_case.execute(item_id=item_id, **payload.model_dump(exclude_unset=True))
+    fields: dict[str, object] = payload.model_dump(exclude_unset=True)
+    if payload.variants is not None:
+        fields["variants"] = [_to_variant_entity(variant) for variant in payload.variants]
+    item = await use_case.execute(item_id=item_id, **fields)
     return _to_response(item)
 
 

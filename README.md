@@ -322,8 +322,8 @@ Detalhes de implementação de cada mecanismo são documentados em
 | #   | Etapa                                                                    | Status       |
 | --- | ------------------------------------------------------------------------ | ------------ |
 | 21  | Integrações inteligentes por segmento (IA seleciona do catálogo)         | ✅ Concluída |
-| 22  | Catálogo 2.0 — produto profissional (imagens, variações, SKU, margens)   | ⏳ Próxima   |
-| 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | Planejada    |
+| 22  | Catálogo 2.0 — produto profissional (imagens, variações, SKU, margens)   | ✅ Concluída |
+| 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | ⏳ Próxima   |
 
 ## Funcionalidades atuais
 
@@ -494,6 +494,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   segmento (inclusive texto livre) e seleciona do catálogo, com filtro server-side
   contra ids inventados. A página de Integrações destaca as recomendadas e recolhe o
   restante do catálogo.
+
+- Catálogo 2.0 — cadastro profissional de produtos: SKU (com unicidade por empresa),
+  código de barras, marca, fornecedor, categoria/subcategoria, tags, descrições curta e
+  completa, múltiplas imagens (até 6, com principal, reordenação e exclusão), variações
+  (cor/tamanho com SKU, preço e estoque próprios), preço de custo e promocional com
+  margem calculada no servidor, estoque mínimo/máximo com alerta visual e localização
+  física. Tudo opcional: um serviço simples continua sendo só nome + preço.
 
 ## Funcionalidades futuras
 

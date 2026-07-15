@@ -36,3 +36,23 @@ export function parseCurrencyToCents(raw: string): number | null {
 export function centsToInput(cents: number): string {
   return (cents / 100).toFixed(2).replace(".", ",");
 }
+
+/**
+ * Margem percentual sobre o preço efetivo de venda (promocional quando houver),
+ * arredondada a 2 casas — mesma regra do backend. Retorna null sem preço de
+ * custo ou sem preço efetivo positivo.
+ */
+export function marginPct(
+  priceCents: number,
+  costCents: number | null,
+  promoCents?: number | null,
+): number | null {
+  if (costCents === null || costCents === undefined) {
+    return null;
+  }
+  const effective = promoCents ?? priceCents;
+  if (effective <= 0) {
+    return null;
+  }
+  return Math.round(((effective - costCents) / effective) * 10000) / 100;
+}

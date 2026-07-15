@@ -1,7 +1,7 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Package, PackagePlus, Plus, Wrench } from "lucide-react";
+import { Package, PackagePlus, Pencil, Plus, Wrench } from "lucide-react";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -22,196 +22,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  useAdjustStock,
-  useCatalogItems,
-  useCreateCatalogItem,
-} from "@/features/catalog/use-catalog";
+import { ProductFormDialog } from "@/features/catalog/product-form";
+import { useAdjustStock, useCatalogItems } from "@/features/catalog/use-catalog";
 import { extractErrorMessage } from "@/lib/api";
 import type { CatalogItemResponse } from "@/lib/api-types";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
-import { parseCurrencyToCents } from "@/lib/money";
 import { formatCents } from "@/lib/utils";
-
-const itemSchema = z.object({
-  name: z.string().min(1, "Informe o nome.").max(200),
-  kind: z.enum(["product", "service"]),
-  price: z
-    .string()
-    .min(1, "Informe o preço.")
-    .refine((value) => {
-      const cents = parseCurrencyToCents(value);
-      return cents !== null && cents > 0;
-    }, "Preço inválido — use o formato 1.234,56."),
-  tracks_inventory: z.enum(["yes", "no"]),
-  stock_quantity: z.string().optional(),
-  description: z.string().max(2000).optional(),
-});
-
-type ItemForm = z.infer<typeof itemSchema>;
-
-function NewItemDialog({ companyId }: { companyId: string }) {
-  const [open, setOpen] = useState(false);
-  const createItem = useCreateCatalogItem(companyId);
-
-  const {
-    register,
-    handleSubmit,
-    control,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<ItemForm>({
-    resolver: zodResolver(itemSchema),
-    defaultValues: { kind: "product", tracks_inventory: "no" },
-  });
-
-  const kind = watch("kind");
-  const tracksInventory = watch("tracks_inventory") === "yes" && kind === "product";
-
-  const onSubmit = handleSubmit((values) => {
-    const cents = parseCurrencyToCents(values.price);
-    if (cents === null) {
-      return;
-    }
-    createItem.mutate(
-      {
-        name: values.name,
-        kind: values.kind,
-        price_cents: cents,
-        description: values.description || null,
-        tracks_inventory: tracksInventory,
-        stock_quantity: tracksInventory ? Number(values.stock_quantity || 0) : null,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Item criado!");
-          reset({ kind: values.kind, tracks_inventory: "no" });
-          setOpen(false);
-        },
-        onError: (error) => toast.error(extractErrorMessage(error)),
-      },
-    );
-  });
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus /> Novo item
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Novo produto ou serviço</DialogTitle>
-          <DialogDescription>
-            Produtos podem controlar estoque; serviços não têm estoque.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="item-name">Nome</Label>
-              <Input id="item-name" {...register("name")} />
-              {errors.name && (
-                <p role="alert" className="text-sm text-destructive">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo</Label>
-              <Controller
-                control={control}
-                name="kind"
-                render={({ field }) => (
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger aria-label="Tipo do item">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="product">Produto</SelectItem>
-                      <SelectItem value="service">Serviço</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )}
-              />
-            </div>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="item-price">Preço (R$)</Label>
-              <Input
-                id="item-price"
-                inputMode="decimal"
-                placeholder="99,90"
-                {...register("price")}
-              />
-              {errors.price && (
-                <p role="alert" className="text-sm text-destructive">
-                  {errors.price.message}
-                </p>
-              )}
-            </div>
-            {kind === "product" && (
-              <div className="space-y-2">
-                <Label>Controlar estoque?</Label>
-                <Controller
-                  control={control}
-                  name="tracks_inventory"
-                  render={({ field }) => (
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger aria-label="Controlar estoque">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="no">Não</SelectItem>
-                        <SelectItem value="yes">Sim</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </div>
-            )}
-          </div>
-
-          {tracksInventory && (
-            <div className="space-y-2">
-              <Label htmlFor="item-stock">Estoque inicial</Label>
-              <Input
-                id="item-stock"
-                type="number"
-                min={0}
-                defaultValue={0}
-                {...register("stock_quantity")}
-              />
-            </div>
-          )}
-
-          <div className="space-y-2">
-            <Label htmlFor="item-description">Descrição (opcional)</Label>
-            <Input id="item-description" {...register("description")} />
-          </div>
-
-          <DialogFooter>
-            <Button type="submit" disabled={createItem.isPending}>
-              {createItem.isPending ? "Salvando…" : "Criar item"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 const adjustSchema = z.object({
   delta: z
@@ -300,6 +117,110 @@ function AdjustStockDialog({ item, companyId }: { item: CatalogItemResponse; com
   );
 }
 
+function ItemCard({
+  item,
+  companyId,
+  currency,
+}: {
+  item: CatalogItemResponse;
+  companyId: string;
+  currency: string;
+}) {
+  const stock = item.stock_quantity ?? 0;
+  const belowMin = item.tracks_inventory && item.min_stock !== null && stock <= item.min_stock;
+
+  return (
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex gap-4">
+          {item.images.length > 0 && (
+            <img
+              src={item.images[0]}
+              alt={item.name}
+              className="size-16 shrink-0 rounded-md border object-cover"
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                {item.kind === "product" ? (
+                  <Package className="size-4 shrink-0 text-primary" />
+                ) : (
+                  <Wrench className="size-4 shrink-0 text-primary" />
+                )}
+                <p className="truncate font-medium">{item.name}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
+                <Badge variant="secondary">{item.kind === "product" ? "Produto" : "Serviço"}</Badge>
+                <ProductFormDialog
+                  companyId={companyId}
+                  item={item}
+                  trigger={
+                    <Button variant="ghost" size="icon-sm" aria-label={`Editar ${item.name}`}>
+                      <Pencil />
+                    </Button>
+                  }
+                />
+              </div>
+            </div>
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {[item.sku && `SKU ${item.sku}`, item.category, item.brand]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+              {item.promo_price_cents !== null ? (
+                <>
+                  <p className="text-lg font-semibold">
+                    {formatCents(item.promo_price_cents, currency)}
+                  </p>
+                  <p className="text-sm text-muted-foreground line-through">
+                    {formatCents(item.price_cents, currency)}
+                  </p>
+                </>
+              ) : (
+                <p className="text-lg font-semibold">{formatCents(item.price_cents, currency)}</p>
+              )}
+              {item.margin_pct !== null && (
+                <span className="text-xs text-muted-foreground">
+                  margem {item.margin_pct.toLocaleString("pt-BR")}%
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {(item.short_description || item.description) && (
+          <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+            {item.short_description ?? item.description}
+          </p>
+        )}
+
+        {item.variants.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-1">
+            {item.variants.map((variant) => (
+              <Badge key={variant.name} variant="outline">
+                {variant.name}
+                {item.tracks_inventory ? ` · ${variant.stock_quantity}` : ""}
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        {item.tracks_inventory && (
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <div className="flex flex-wrap items-center gap-1">
+              <Badge variant={stock > 0 ? "success" : "destructive"}>Estoque: {stock}</Badge>
+              {belowMin && <Badge variant="destructive">Abaixo do mínimo</Badge>}
+            </div>
+            <AdjustStockDialog item={item} companyId={companyId} />
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function CatalogPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId ?? "";
@@ -310,9 +231,16 @@ export function CatalogPage() {
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <PageHeader
         title="Produtos & Serviços"
-        description="Catálogo do que a sua empresa vende, com controle de estoque para produtos."
+        description="Catálogo profissional: SKU, imagens, variações, preços e estoque."
       >
-        <NewItemDialog companyId={id} />
+        <ProductFormDialog
+          companyId={id}
+          trigger={
+            <Button>
+              <Plus /> Novo item
+            </Button>
+          }
+        />
       </PageHeader>
 
       {isLoading && <Skeleton className="h-64 w-full" />}
@@ -328,37 +256,7 @@ export function CatalogPage() {
       {(items?.length ?? 0) > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">
           {(items ?? []).map((item) => (
-            <Card key={item.id}>
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    {item.kind === "product" ? (
-                      <Package className="size-4 text-primary" />
-                    ) : (
-                      <Wrench className="size-4 text-primary" />
-                    )}
-                    <p className="font-medium">{item.name}</p>
-                  </div>
-                  <Badge variant="secondary">
-                    {item.kind === "product" ? "Produto" : "Serviço"}
-                  </Badge>
-                </div>
-                <p className="mt-2 text-lg font-semibold">
-                  {formatCents(item.price_cents, currency)}
-                </p>
-                {item.description && (
-                  <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                )}
-                {item.tracks_inventory && (
-                  <div className="mt-3 flex items-center justify-between">
-                    <Badge variant={(item.stock_quantity ?? 0) > 0 ? "success" : "destructive"}>
-                      Estoque: {item.stock_quantity ?? 0}
-                    </Badge>
-                    <AdjustStockDialog item={item} companyId={id} />
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <ItemCard key={item.id} item={item} companyId={id} currency={currency} />
           ))}
         </div>
       )}

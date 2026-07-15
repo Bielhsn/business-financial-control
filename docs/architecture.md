@@ -24,6 +24,24 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 22 (Catálogo 2.0):** o `CatalogItem` foi estendido para ficha profissional de
+produto (SKU, código de barras, marca, fornecedor, categoria/subcategoria, tags,
+descrições curta/completa, custo/promoção, estoque mín/máx/localização, imagens e
+variações) **sem quebrar nada existente**: todos os campos novos têm default no documento
+Beanie (itens antigos carregam sem migração) e são opcionais na API — um serviço simples
+continua sendo nome + preço. Decisões estruturais: variações são **embutidas** no
+documento do item (pydantic embutido, não coleção própria) porque só existem no contexto
+do produto pai; imagens seguem o mesmo padrão do logo da empresa (data URL `image/*`
+validada, ~150 KB, máx. 6 — sem storage externo por enquanto); a margem é **calculada no
+servidor** na resposta (`margin_cents`/`margin_pct`, sobre o preço efetivo = promocional
+quando houver) e o frontend replica a mesma fórmula só para preview ao vivo no
+formulário; unicidade de SKU é verificada por empresa no use case (`find_by_sku`), com
+regras compartilhadas de validação (`application/catalog/validation.py`) entre criação e
+edição — a edição valida a combinação final (valor novo quando enviado, atual caso
+contrário), para promo/custo continuarem coerentes em PATCHes parciais. Ajuste de
+quantidade de estoque continua passando exclusivamente por `adjust-stock` (movimentos
+auditáveis); o formulário de edição não toca em `stock_quantity`.
+
 **Etapa 21 (integrações inteligentes por segmento):** início da Fase 3 ("inteligência por
 segmento"). A decisão estrutural: **nada de mapas fixos segmento → integrações** — isso
 quebraria com segmentos em texto livre ("loja de roupas de pet") e exigiria código novo a

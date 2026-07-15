@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.domain.catalog.entities import CatalogItem, CatalogItemKind, StockMovement
+from app.domain.catalog.entities import CatalogItem, CatalogItemKind, ProductVariant, StockMovement
 
 
 class CatalogItemRepository(Protocol):
@@ -15,9 +15,28 @@ class CatalogItemRepository(Protocol):
         kind: CatalogItemKind,
         tracks_inventory: bool,
         stock_quantity: int | None,
+        sku: str | None = None,
+        barcode: str | None = None,
+        brand: str | None = None,
+        supplier: str | None = None,
+        category: str | None = None,
+        subcategory: str | None = None,
+        short_description: str | None = None,
+        tags: list[str] | None = None,
+        cost_price_cents: int | None = None,
+        promo_price_cents: int | None = None,
+        min_stock: int | None = None,
+        max_stock: int | None = None,
+        stock_location: str | None = None,
+        images: list[str] | None = None,
+        variants: list[ProductVariant] | None = None,
     ) -> CatalogItem: ...
 
     async def get_by_id(self, item_id: str) -> CatalogItem | None: ...
+
+    async def find_by_sku(self, sku: str) -> CatalogItem | None:
+        """Busca por SKU dentro da empresa atual — usada para garantir unicidade."""
+        ...
 
     async def list_all(self, *, only_active: bool = True) -> list[CatalogItem]: ...
 
