@@ -24,6 +24,18 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 23 (IA consultora):** mesma divisão de responsabilidades das etapas 11/18 —
+**a aplicação calcula, a IA narra**. Os sinais de negócio (`BusinessSignal`) são 100%
+determinísticos, computados em `ComputeBusinessSignalsUseCase` com limites simples e
+explicáveis (estoque zerado; estoque ≤ mínimo — usa os campos da Etapa 22; margem < 15%
+sobre o preço efetivo; receita do mês < 70% da média dos meses anteriores; pendências
+vencidas). `GET /advisor/signals` não usa IA — barato, sem efeito colateral, o dashboard
+pode recarregar à vontade. Só `POST /advisor/recommendations` consome tokens: a IA
+recebe os sinais prontos + agregados do dashboard e devolve recomendações priorizadas em
+markdown, com a instrução explícita de nunca recalcular nem inventar sinais. O port
+`InsightsAIPort` ganhou `generate_recommendations`; sem provedor configurado, o endpoint
+responde 503 como os demais recursos de IA.
+
 **Etapa 22 (Catálogo 2.0):** o `CatalogItem` foi estendido para ficha profissional de
 produto (SKU, código de barras, marca, fornecedor, categoria/subcategoria, tags,
 descrições curta/completa, custo/promoção, estoque mín/máx/localização, imagens e

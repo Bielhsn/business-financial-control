@@ -263,6 +263,27 @@ export interface InsightsResponse {
   insights: InsightResponse[];
 }
 
+export type SignalKind =
+  "stock_zero" | "stock_low" | "low_margin" | "revenue_drop" | "overdue_bills";
+
+export type SignalSeverity = "info" | "warning" | "critical";
+
+export interface BusinessSignalResponse {
+  kind: SignalKind;
+  severity: SignalSeverity;
+  title: string;
+  detail: string;
+}
+
+export interface SignalsResponse {
+  signals: BusinessSignalResponse[];
+}
+
+export interface RecommendationsResponse {
+  signals: BusinessSignalResponse[];
+  recommendations: string;
+}
+
 export interface ApiErrorResponse {
   error: string;
   message: string;

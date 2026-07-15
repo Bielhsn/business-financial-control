@@ -1,5 +1,6 @@
 from typing import Protocol
 
+from app.domain.advisor.entities import BusinessSignal
 from app.domain.company.entities import Company
 from app.domain.dashboard.entities import DashboardSummary
 from app.domain.insights.entities import FinancialInsight
@@ -24,4 +25,11 @@ class InsightsAIPort(Protocol):
         self, *, company: Company, summary: DashboardSummary, question: str
     ) -> str:
         """Responde uma pergunta do usuário estritamente a partir dos agregados."""
+        ...
+
+    async def generate_recommendations(
+        self, *, company: Company, summary: DashboardSummary, signals: list[BusinessSignal]
+    ) -> str:
+        """Recomendações acionáveis (markdown), narradas a partir dos sinais já
+        computados pela aplicação — a IA prioriza e explica, nunca calcula."""
         ...

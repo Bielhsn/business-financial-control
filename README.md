@@ -21,7 +21,7 @@ negócio.
 | **Visão** | Ser o sistema operacional de gestão de 1 milhão de PMEs na América Latina. |
 | **Valores** | Clareza acima de complexidade · Inteligência acessível · Dados do cliente são do cliente · Design é respeito |
 
-> **Status:** Fases 1 e 2 concluídas — as 21 etapas do roadmap (0-20) estão entregues
+> **Status:** Fases 1, 2 e 3 concluídas — as 24 etapas do roadmap (0-23) estão entregues
 > com CI verde. Próximos passos em [Funcionalidades futuras](#funcionalidades-futuras).
 
 ## Sumário
@@ -323,7 +323,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | --- | ------------------------------------------------------------------------ | ------------ |
 | 21  | Integrações inteligentes por segmento (IA seleciona do catálogo)         | ✅ Concluída |
 | 22  | Catálogo 2.0 — produto profissional (imagens, variações, SKU, margens)   | ✅ Concluída |
-| 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | ⏳ Próxima   |
+| 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -501,6 +501,12 @@ Detalhes de implementação de cada mecanismo são documentados em
   (cor/tamanho com SKU, preço e estoque próprios), preço de custo e promocional com
   margem calculada no servidor, estoque mínimo/máximo com alerta visual e localização
   física. Tudo opcional: um serviço simples continua sendo só nome + preço.
+
+- IA consultora — o sistema calcula sinais de negócio deterministicamente (estoque
+  zerado, estoque abaixo do mínimo, margem apertada, queda de receita vs. média dos
+  meses anteriores, contas pendentes vencidas) e mostra tudo no dashboard sem custo de
+  IA; com um clique, a IA prioriza os sinais e escreve recomendações práticas para a
+  semana — sempre a partir dos números computados, nunca inventando valores.
 
 ## Funcionalidades futuras
 

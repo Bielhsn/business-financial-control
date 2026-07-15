@@ -5,6 +5,7 @@ from anthropic.types import MessageParam, ToolChoiceToolParam, ToolParam
 
 from app.core.config import Settings
 from app.core.exceptions import AIProviderError
+from app.domain.advisor.entities import BusinessSignal
 from app.domain.blueprint.entities import (
     CustomFieldDefinition,
     CustomFieldType,
@@ -396,6 +397,29 @@ class AnthropicAIProvider:
             "forem suficientes para responder, diga isso explicitamente e sugira o "
             "que registrar no sistema para ter a resposta. Nunca invente valores.\n"
             f"Pergunta do usuário: {question}"
+        )
+        return await self._complete_text(prompt)
+
+    async def generate_recommendations(
+        self, *, company: Company, summary: DashboardSummary, signals: list[BusinessSignal]
+    ) -> str:
+        if signals:
+            signals_block = "\n".join(
+                f"- [{signal.severity.value}] {signal.title}: {signal.detail}" for signal in signals
+            )
+        else:
+            signals_block = "- Nenhum sinal de alerta computado no momento."
+        prompt = _grounding_context(company, summary) + (
+            "Sinais de negócio computados pelo sistema (a fonte da verdade — não "
+            "recalcule nem invente outros):\n"
+            f"{signals_block}\n\n"
+            "Aja como consultor(a) de negócios desta empresa. Escreva de 3 a 5 "
+            "recomendações práticas em português, em lista markdown (uma linha por "
+            "recomendação, começando com '- **Título:**'), priorizando os sinais "
+            "mais graves. Cada recomendação deve dizer o que fazer nesta semana, "
+            "com base apenas nos números e sinais acima — nunca invente valores. "
+            "Se não houver sinais, aponte oportunidades de crescimento com o que "
+            "os números mostram. Responda somente com a lista."
         )
         return await self._complete_text(prompt)
 

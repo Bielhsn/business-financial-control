@@ -25,7 +25,7 @@ import {
 } from "recharts";
 
 import { EmptyState } from "@/components/empty-state";
-import { AskCard, SummaryCard } from "@/features/dashboard/ai-panel";
+import { AdvisorCard, AskCard, SummaryCard } from "@/features/dashboard/ai-panel";
 import { InsightsCard } from "@/features/dashboard/insights-card";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -317,6 +317,8 @@ export function DashboardPage() {
               </CardContent>
             </Card>
           )}
+
+          <AdvisorCard companyId={companyId ?? ""} />
 
           <InsightsCard companyId={companyId ?? ""} start={range.start} end={range.end} />
 

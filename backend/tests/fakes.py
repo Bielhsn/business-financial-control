@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.exceptions import UnauthorizedError
+from app.domain.advisor.entities import BusinessSignal
 from app.domain.audit.entities import AuditEntry
 from app.domain.auth.entities import RefreshToken
 from app.domain.blueprint.entities import (
@@ -292,6 +293,7 @@ class FakeAIProvider:
         self.insight_calls: list[tuple[Company, DashboardSummary]] = []
         self.summary_calls: list[tuple[Company, DashboardSummary]] = []
         self.question_calls: list[tuple[Company, DashboardSummary, str]] = []
+        self.recommendation_calls: list[tuple[Company, DashboardSummary, list[BusinessSignal]]] = []
 
     async def generate_company_blueprint(
         self, *, company: Company, additional_context: str | None
@@ -325,6 +327,12 @@ class FakeAIProvider:
     ) -> str:
         self.question_calls.append((company, summary, question))
         return f"Resposta baseada nos agregados para: {question}"
+
+    async def generate_recommendations(
+        self, *, company: Company, summary: DashboardSummary, signals: list[BusinessSignal]
+    ) -> str:
+        self.recommendation_calls.append((company, summary, signals))
+        return "- **Reponha o estoque:** priorize os produtos zerados nesta semana."
 
 
 class FakeFinancialCategoryRepository:
