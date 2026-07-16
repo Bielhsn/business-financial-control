@@ -12,6 +12,7 @@ from app.core.exceptions import (
     UnauthorizedError,
 )
 from app.core.tenant import CompanyContext, set_current_company_id
+from app.domain.appointment.repository import AppointmentRepository
 from app.domain.audit.repository import AuditLogRepository
 from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
@@ -29,6 +30,7 @@ from app.domain.financial.repository import (
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
+from app.infrastructure.repositories.appointment_repository import BeanieAppointmentRepository
 from app.infrastructure.repositories.audit_log_repository import BeanieAuditLogRepository
 from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
 from app.infrastructure.repositories.client_repository import BeanieClientRepository
@@ -112,6 +114,10 @@ def get_stock_movement_repository() -> StockMovementRepository:
 
 def get_employee_repository() -> EmployeeRepository:
     return BeanieEmployeeRepository()
+
+
+def get_appointment_repository() -> AppointmentRepository:
+    return BeanieAppointmentRepository()
 
 
 def get_ai_provider(settings: Annotated[Settings, Depends(get_settings)]) -> AIProviderPort:

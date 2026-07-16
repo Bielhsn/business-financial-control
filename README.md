@@ -324,6 +324,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 21  | Integrações inteligentes por segmento (IA seleciona do catálogo)         | ✅ Concluída |
 | 22  | Catálogo 2.0 — produto profissional (imagens, variações, SKU, margens)   | ✅ Concluída |
 | 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | ✅ Concluída |
+| 24  | Agenda — agendamentos com receita automática ao concluir                 | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -507,6 +508,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   meses anteriores, contas pendentes vencidas) e mostra tudo no dashboard sem custo de
   IA; com um clique, a IA prioriza os sinais e escreve recomendações práticas para a
   semana — sempre a partir dos números computados, nunca inventando valores.
+
+- Agenda — agendamentos com data/hora, duração, cliente, profissional (funcionário) e
+  serviço do catálogo (nome e preço herdados dele), navegação por dia e status
+  marcado/concluído/cancelado/faltou. Ao concluir um agendamento com preço, um lançamento
+  de receita PAID é gerado automaticamente na categoria "Atendimentos", vinculado ao
+  cliente — de forma idempotente (concluir de novo não duplica a receita). O módulo é
+  ativado pela IA para segmentos de serviço (barbearia, salão, clínica etc.).
 
 ## Funcionalidades futuras
 
