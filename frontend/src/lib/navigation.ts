@@ -41,7 +41,6 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Agenda",
     icon: CalendarDays,
     modules: ["appointments"],
-    comingSoon: true,
   },
   {
     to: "subscriptions",

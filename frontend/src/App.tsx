@@ -39,7 +39,7 @@ const EmployeesPage = lazy(() =>
   import("@/features/employees/employees-page").then((m) => ({ default: m.EmployeesPage })),
 );
 const AgendaPage = lazy(() =>
-  import("@/features/modules/coming-soon-page").then((m) => ({ default: m.AgendaPage })),
+  import("@/features/agenda/agenda-page").then((m) => ({ default: m.AgendaPage })),
 );
 const SubscriptionsPage = lazy(() =>
   import("@/features/modules/coming-soon-page").then((m) => ({ default: m.SubscriptionsPage })),

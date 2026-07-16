@@ -24,6 +24,22 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 24 (Agenda):** o primeiro módulo "ativável por segmento" a ganhar backend
+próprio, saindo do placeholder "em construção". A entidade `Appointment` **reaproveita**
+os cadastros existentes por referência opcional (`client_id`, `employee_id`,
+`catalog_item_id`) em vez de duplicá-los — mas também aceita só um título/nome digitado,
+para quem ainda não cadastrou nada. Quando o agendamento referencia um serviço do
+catálogo, nome e preço são herdados dele (e só serviços, não produtos, podem ser
+agendados). A decisão central é a **integração com o financeiro**: concluir um
+agendamento com preço gera um lançamento de receita PAID vinculado ao cliente, numa
+categoria "Atendimentos" criada sob demanda (`get_by_name_and_type` → create), e o id da
+transação fica em `revenue_transaction_id` — garantindo **idempotência** (concluir de
+novo não duplica a receita). Mudança de status passa por use case próprio
+(`ChangeAppointmentStatusUseCase`), separado do reagendamento/edição
+(`UpdateAppointmentUseCase`), que nunca toca no status nem na receita. No frontend, a
+rota `agenda` deixou de apontar para o `ComingSoonPage` e o item de navegação perdeu a
+flag `comingSoon`; a página lista por dia com navegação e ações de status inline.
+
 **Etapa 23 (IA consultora):** mesma divisão de responsabilidades das etapas 11/18 —
 **a aplicação calcula, a IA narra**. Os sinais de negócio (`BusinessSignal`) são 100%
 determinísticos, computados em `ComputeBusinessSignalsUseCase` com limites simples e

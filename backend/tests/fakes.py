@@ -3,6 +3,7 @@ from typing import Any
 
 from app.core.exceptions import UnauthorizedError
 from app.domain.advisor.entities import BusinessSignal
+from app.domain.appointment.entities import Appointment, AppointmentStatus
 from app.domain.audit.entities import AuditEntry
 from app.domain.auth.entities import RefreshToken
 from app.domain.blueprint.entities import (
@@ -706,3 +707,77 @@ class FakeAuditLogRepository:
         matching = [e for e in self.entries if e.company_id == company_id]
         matching.sort(key=lambda e: e.created_at or datetime.now(UTC), reverse=True)
         return matching[:limit]
+
+
+class FakeAppointmentRepository:
+    def __init__(self) -> None:
+        self._appointments: dict[str, Appointment] = {}
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        title: str,
+        starts_at: datetime,
+        duration_minutes: int,
+        client_id: str | None,
+        client_name: str | None,
+        employee_id: str | None,
+        employee_name: str | None,
+        catalog_item_id: str | None,
+        price_cents: int | None,
+        notes: str | None,
+        created_by: str,
+    ) -> Appointment:
+        appointment_id = str(self._next_id)
+        self._next_id += 1
+        now = datetime.now(UTC)
+        appointment = Appointment(
+            id=appointment_id,
+            company_id="company-1",
+            title=title,
+            starts_at=starts_at,
+            duration_minutes=duration_minutes,
+            status=AppointmentStatus.SCHEDULED,
+            client_id=client_id,
+            client_name=client_name,
+            employee_id=employee_id,
+            employee_name=employee_name,
+            catalog_item_id=catalog_item_id,
+            price_cents=price_cents,
+            notes=notes,
+            revenue_transaction_id=None,
+            created_by=created_by,
+            created_at=now,
+            updated_at=now,
+        )
+        self._appointments[appointment_id] = appointment
+        return appointment
+
+    async def get_by_id(self, appointment_id: str) -> Appointment | None:
+        return self._appointments.get(appointment_id)
+
+    async def list_between(
+        self,
+        *,
+        start: datetime,
+        end: datetime,
+        employee_id: str | None = None,
+    ) -> list[Appointment]:
+        result = [
+            a
+            for a in self._appointments.values()
+            if start <= a.starts_at < end and (employee_id is None or a.employee_id == employee_id)
+        ]
+        result.sort(key=lambda a: a.starts_at)
+        return result
+
+    async def update(self, appointment_id: str, **fields: object) -> Appointment | None:
+        appointment = self._appointments.get(appointment_id)
+        if appointment is None:
+            return None
+        for key, value in fields.items():
+            if key == "status" and isinstance(value, str):
+                value = AppointmentStatus(value)
+            setattr(appointment, key, value)
+        return appointment

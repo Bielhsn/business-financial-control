@@ -263,6 +263,27 @@ export interface InsightsResponse {
   insights: InsightResponse[];
 }
 
+export type AppointmentStatus = "scheduled" | "completed" | "cancelled" | "no_show";
+
+export interface AppointmentResponse {
+  id: string;
+  company_id: string;
+  title: string;
+  starts_at: string;
+  duration_minutes: number;
+  status: AppointmentStatus;
+  client_id: string | null;
+  client_name: string | null;
+  employee_id: string | null;
+  employee_name: string | null;
+  catalog_item_id: string | null;
+  price_cents: number | null;
+  notes: string | null;
+  revenue_transaction_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export type SignalKind =
   "stock_zero" | "stock_low" | "low_margin" | "revenue_drop" | "overdue_bills";
 

@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  CalendarDays,
   FileText,
   FolderKanban,
   Hammer,
@@ -76,19 +75,6 @@ export function ComingSoonPage({
 
 /* Páginas dos módulos ativáveis por segmento que ainda não têm backend próprio.
    Uma rota por módulo mantém URLs estáveis para quando a funcionalidade chegar. */
-
-export function AgendaPage() {
-  return (
-    <ComingSoonPage
-      icon={CalendarDays}
-      title="Agenda"
-      description="Agendamento de horários e atendimentos, com visão por profissional e lembretes."
-      meanwhile="Enquanto a agenda não chega, registre cada atendimento como um lançamento de receita vinculado ao cliente — o histórico e o ticket médio já ficam corretos."
-      meanwhileRoute="transactions"
-      meanwhileLabel="Registrar atendimento"
-    />
-  );
-}
 
 export function SubscriptionsPage() {
   return (
