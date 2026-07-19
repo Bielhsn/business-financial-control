@@ -325,6 +325,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 22  | Catálogo 2.0 — produto profissional (imagens, variações, SKU, margens)   | ✅ Concluída |
 | 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | ✅ Concluída |
 | 24  | Agenda — agendamentos com receita automática ao concluir                 | ✅ Concluída |
+| 25  | Conectores externos (arquitetura modular) + Hotmart → financeiro          | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -515,6 +516,16 @@ Detalhes de implementação de cada mecanismo são documentados em
   de receita PAID é gerado automaticamente na categoria "Atendimentos", vinculado ao
   cliente — de forma idempotente (concluir de novo não duplica a receita). O módulo é
   ativado pela IA para segmentos de serviço (barbearia, salão, clínica etc.).
+
+- Conectores externos (arquitetura modular) — uma porta `Connector` + registro
+  (`CONNECTOR_REGISTRY`) + factory tornam a adição de um provedor uma questão de escrever
+  uma classe e registrar uma linha, sem mexer no motor de sync, na API ou no frontend. As
+  credenciais são validadas na conexão e guardadas **criptografadas** (Fernet). O primeiro
+  conector é a **Hotmart** (OAuth2 client-credentials): sincroniza vendas e reembolsos e os
+  materializa como lançamentos financeiros idempotentes (via `external_ref` — re-sincronizar
+  nunca duplica), alimentando dashboard, fluxo de caixa e relatórios. A página de
+  Integrações permite conectar, sincronizar e desconectar; o formulário de credenciais é
+  gerado dinamicamente a partir do registro.
 
 ## Funcionalidades futuras
 

@@ -12,6 +12,7 @@ from app.infrastructure.database.models.client import ClientDocument
 from app.infrastructure.database.models.company import CompanyDocument
 from app.infrastructure.database.models.company_blueprint import CompanyBlueprintDocument
 from app.infrastructure.database.models.company_membership import CompanyMembershipDocument
+from app.infrastructure.database.models.connection import ConnectionDocument
 from app.infrastructure.database.models.employee import EmployeeDocument
 from app.infrastructure.database.models.financial_category import FinancialCategoryDocument
 from app.infrastructure.database.models.financial_transaction import (
@@ -59,6 +60,7 @@ async def connect_to_mongo() -> None:
             StockMovementDocument,
             EmployeeDocument,
             AppointmentDocument,
+            ConnectionDocument,
         ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)

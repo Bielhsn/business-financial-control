@@ -305,6 +305,43 @@ export interface RecommendationsResponse {
   recommendations: string;
 }
 
+export type ConnectionStatus = "connected" | "error";
+
+export interface CredentialFieldResponse {
+  key: string;
+  label: string;
+  secret: boolean;
+  help_text: string | null;
+}
+
+export interface ConnectorDefinitionResponse {
+  provider: string;
+  name: string;
+  group: string;
+  description: string;
+  credential_fields: CredentialFieldResponse[];
+  capabilities: string[];
+}
+
+export interface ConnectionResponse {
+  id: string;
+  company_id: string;
+  provider: string;
+  status: ConnectionStatus;
+  config: Record<string, string>;
+  last_synced_at: string | null;
+  last_error: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SyncResultResponse {
+  provider: string;
+  imported: number;
+  skipped: number;
+  details: Record<string, number>;
+}
+
 export interface ApiErrorResponse {
   error: string;
   message: string;

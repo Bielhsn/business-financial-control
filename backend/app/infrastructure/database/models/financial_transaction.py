@@ -15,6 +15,7 @@ class FinancialTransactionDocument(Document):
     paid_at: datetime | None = None
     notes: str | None = None
     client_id: str | None = None
+    external_ref: str | None = None
     created_by: str
     created_at: datetime
     updated_at: datetime
@@ -25,4 +26,11 @@ class FinancialTransactionDocument(Document):
             IndexModel([("company_id", 1), ("status", 1)]),
             IndexModel([("company_id", 1), ("type", 1), ("status", 1), ("paid_at", 1)]),
             IndexModel([("company_id", 1), ("client_id", 1), ("status", 1)]),
+            # Unicidade por empresa+referência externa: o sync de integrações é
+            # idempotente e nunca duplica um lançamento já importado.
+            IndexModel(
+                [("company_id", 1), ("external_ref", 1)],
+                unique=True,
+                partialFilterExpression={"external_ref": {"$type": "string"}},
+            ),
         ]

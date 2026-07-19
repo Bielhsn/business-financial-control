@@ -9,6 +9,7 @@ from app.api.v1.routers import (
     catalog,
     clients,
     companies,
+    connectors,
     dashboard,
     employees,
     financial,
@@ -32,3 +33,4 @@ api_router.include_router(audit.router)
 api_router.include_router(notifications.router)
 api_router.include_router(advisor.router)
 api_router.include_router(appointment.router)
+api_router.include_router(connectors.router)
