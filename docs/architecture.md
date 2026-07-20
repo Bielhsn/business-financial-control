@@ -24,6 +24,25 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 25 (Conectores externos + Hotmart):** início da trilha de produção. A
+modularidade vem de três peças desacopladas: (1) a porta `Connector` (domínio) — um
+contrato pequeno (`test_connection` + `fetch_sales`) que todo provedor implementa; (2) o
+`CONNECTOR_REGISTRY` (metadados: nome, grupo, campos de credencial, capacidades) que a API
+e o frontend consomem para renderizar o formulário de conexão dinamicamente; (3) o factory
+que resolve provedor → implementação. Adicionar um provedor = uma classe em
+`infrastructure/connectors/` + uma linha no registro e no factory; **nada** no motor de
+sync, na API ou no frontend muda. Segredos são criptografados em repouso com Fernet
+(`FernetSecretCipher`, chave derivada de `connector_secret_key`/`secret_key`) — o
+repositório só vê texto cifrado; a entidade `Connection` nunca carrega segredos, e a API
+nunca os devolve. O `SyncConnectionUseCase` é agnóstico de provedor: recebe
+`NormalizedSale` e materializa lançamentos financeiros PAID **idempotentes** via
+`external_ref` (`provider:external_id`, com índice único parcial por empresa) — re-sync
+nunca duplica; vendas viram receita, reembolsos viram despesa, cada um em sua categoria
+criada sob demanda. O conector Hotmart faz OAuth2 client-credentials e é testável sem rede
+via `httpx.MockTransport` injetado. O factory é injetável na API (`get_connector_factory`)
+para os testes usarem um `FakeConnector`. Próximas iterações sobre a mesma arquitetura:
+produtos/assinaturas/afiliados da Hotmart, sync agendado e os demais provedores.
+
 **Etapa 24 (Agenda):** o primeiro módulo "ativável por segmento" a ganhar backend
 próprio, saindo do placeholder "em construção". A entidade `Appointment` **reaproveita**
 os cadastros existentes por referência opcional (`client_id`, `employee_id`,

@@ -27,6 +27,7 @@ def _to_entity(document: FinancialTransactionDocument) -> FinancialTransaction:
         created_by=document.created_by,
         created_at=document.created_at,
         updated_at=document.updated_at,
+        external_ref=document.external_ref,
     )
 
 
@@ -46,6 +47,7 @@ class BeanieFinancialTransactionRepository:
         notes: str | None,
         client_id: str | None,
         created_by: str,
+        external_ref: str | None = None,
     ) -> FinancialTransaction:
         now = datetime.now(UTC)
         document = FinancialTransactionDocument(
@@ -60,11 +62,19 @@ class BeanieFinancialTransactionRepository:
             notes=notes,
             client_id=client_id,
             created_by=created_by,
+            external_ref=external_ref,
             created_at=now,
             updated_at=now,
         )
         await document.insert()
         return _to_entity(document)
+
+    async def find_by_external_ref(self, external_ref: str) -> FinancialTransaction | None:
+        document = await FinancialTransactionDocument.find_one(
+            FinancialTransactionDocument.company_id == get_current_company_id(),
+            FinancialTransactionDocument.external_ref == external_ref,
+        )
+        return _to_entity(document) if document else None
 
     async def get_by_id(self, transaction_id: str) -> FinancialTransaction | None:
         if not PydanticObjectId.is_valid(transaction_id):

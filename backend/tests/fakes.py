@@ -22,6 +22,7 @@ from app.domain.catalog.entities import (
 from app.domain.client.entities import Client
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
+from app.domain.connector.entities import Connection, ConnectionStatus, NormalizedSale
 from app.domain.dashboard.entities import DashboardSummary
 from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.employee.entities import Employee
@@ -395,6 +396,7 @@ class FakeFinancialTransactionRepository:
         notes: str | None,
         client_id: str | None = None,
         created_by: str,
+        external_ref: str | None = None,
     ) -> FinancialTransaction:
         transaction_id = str(self._next_id)
         self._next_id += 1
@@ -414,12 +416,19 @@ class FakeFinancialTransactionRepository:
             created_by=created_by,
             created_at=now,
             updated_at=now,
+            external_ref=external_ref,
         )
         self._transactions[transaction_id] = transaction
         return transaction
 
     async def get_by_id(self, transaction_id: str) -> FinancialTransaction | None:
         return self._transactions.get(transaction_id)
+
+    async def find_by_external_ref(self, external_ref: str) -> FinancialTransaction | None:
+        for transaction in self._transactions.values():
+            if transaction.external_ref == external_ref:
+                return transaction
+        return None
 
     async def list_paid_for_client(self, client_id: str) -> list[FinancialTransaction]:
         return [
@@ -781,3 +790,99 @@ class FakeAppointmentRepository:
                 value = AppointmentStatus(value)
             setattr(appointment, key, value)
         return appointment
+
+
+class FakeSecretCipher:
+    """Cifra reversível trivial para testes (não é segura — só inverte a string)."""
+
+    def encrypt(self, plaintext: str) -> str:
+        return "enc:" + plaintext
+
+    def decrypt(self, token: str) -> str:
+        return token.removeprefix("enc:")
+
+
+class FakeConnectionRepository:
+    def __init__(self) -> None:
+        self._connections: dict[str, Connection] = {}
+        self._secrets: dict[str, str] = {}
+        self._next_id = 1
+
+    async def upsert(
+        self, *, provider: str, encrypted_secrets: str, config: dict[str, str]
+    ) -> Connection:
+        now = datetime.now(UTC)
+        self._secrets[provider] = encrypted_secrets
+        existing = self._connections.get(provider)
+        if existing is None:
+            connection = Connection(
+                id=str(self._next_id),
+                company_id="company-1",
+                provider=provider,
+                status=ConnectionStatus.CONNECTED,
+                config=dict(config),
+                last_synced_at=None,
+                last_error=None,
+                created_at=now,
+                updated_at=now,
+            )
+            self._next_id += 1
+        else:
+            connection = existing
+            connection.config = dict(config)
+            connection.status = ConnectionStatus.CONNECTED
+            connection.last_error = None
+            connection.updated_at = now
+        self._connections[provider] = connection
+        return connection
+
+    async def get_by_provider(self, provider: str) -> Connection | None:
+        return self._connections.get(provider)
+
+    async def get_encrypted_secrets(self, provider: str) -> str | None:
+        return self._secrets.get(provider)
+
+    async def list_all(self) -> list[Connection]:
+        return list(self._connections.values())
+
+    async def mark_synced(self, provider: str) -> None:
+        connection = self._connections.get(provider)
+        if connection is not None:
+            connection.last_synced_at = datetime.now(UTC)
+            connection.status = ConnectionStatus.CONNECTED
+            connection.last_error = None
+
+    async def mark_status(
+        self, provider: str, *, status: ConnectionStatus, error: str | None
+    ) -> None:
+        connection = self._connections.get(provider)
+        if connection is not None:
+            connection.status = status
+            connection.last_error = error
+
+    async def delete(self, provider: str) -> bool:
+        if provider in self._connections:
+            del self._connections[provider]
+            self._secrets.pop(provider, None)
+            return True
+        return False
+
+
+class FakeConnector:
+    """Conector fake configurável para testes de aplicação/API (sem rede)."""
+
+    provider = "hotmart"
+
+    def __init__(self, sales: list[NormalizedSale] | None = None) -> None:
+        self._sales = sales or []
+        self.test_calls: list[dict[str, str]] = []
+        self.fetch_calls: list[dict[str, str]] = []
+
+    async def test_connection(self, credentials: dict[str, str]) -> None:
+        self.test_calls.append(credentials)
+
+    async def fetch_sales(
+        self, credentials: dict[str, str], *, since: object = None
+    ) -> list[NormalizedSale]:
+        self.fetch_calls.append(credentials)
+        return self._sales

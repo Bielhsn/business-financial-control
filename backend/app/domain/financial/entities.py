@@ -44,6 +44,9 @@ class FinancialTransaction:
     created_by: str
     created_at: datetime
     updated_at: datetime
+    # Referência externa (ex.: "hotmart:HP123") quando o lançamento veio de uma
+    # integração — garante idempotência do sync (não duplica na re-sincronização).
+    external_ref: str | None = None
 
 
 @dataclass

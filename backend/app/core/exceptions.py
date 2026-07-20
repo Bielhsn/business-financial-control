@@ -75,6 +75,18 @@ class AIProviderError(AppError):
         super().__init__(message, status_code=502, details=details)
 
 
+class ConnectorError(AppError):
+    """Falha ao comunicar com um provedor externo (credenciais inválidas, API
+    fora do ar, resposta inesperada). 502: o erro é do provedor, não do cliente."""
+
+    def __init__(
+        self,
+        message: str = "Falha ao comunicar com o provedor externo.",
+        details: dict[str, object] | None = None,
+    ) -> None:
+        super().__init__(message, status_code=502, details=details)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Centraliza a conversão de exceções em respostas HTTP e logs estruturados."""
 

@@ -43,9 +43,14 @@ class FinancialTransactionRepository(Protocol):
         notes: str | None,
         client_id: str | None,
         created_by: str,
+        external_ref: str | None = None,
     ) -> FinancialTransaction: ...
 
     async def get_by_id(self, transaction_id: str) -> FinancialTransaction | None: ...
+
+    async def find_by_external_ref(self, external_ref: str) -> FinancialTransaction | None:
+        """Localiza um lançamento pela referência externa (idempotência de sync)."""
+        ...
 
     async def list_all(
         self,

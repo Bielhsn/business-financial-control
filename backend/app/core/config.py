@@ -32,6 +32,11 @@ class Settings(BaseSettings):
 
     log_level: str = "INFO"
 
+    # Chave para criptografar segredos de integrações em repouso (Fernet, base64
+    # urlsafe de 32 bytes). Se ausente, é derivada de SECRET_KEY — defina uma
+    # dedicada em produção para poder rotacionar sem invalidar sessões.
+    connector_secret_key: str | None = None
+
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]

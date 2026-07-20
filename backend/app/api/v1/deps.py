@@ -22,6 +22,8 @@ from app.domain.catalog.repository import CatalogItemRepository, StockMovementRe
 from app.domain.client.repository import ClientRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
+from app.domain.connector.ports import Connector, SecretCipher
+from app.domain.connector.repository import ConnectionRepository
 from app.domain.employee.repository import EmployeeRepository
 from app.domain.financial.repository import (
     FinancialCategoryRepository,
@@ -30,6 +32,7 @@ from app.domain.financial.repository import (
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
+from app.infrastructure.connectors.factory import build_connector
 from app.infrastructure.repositories.appointment_repository import BeanieAppointmentRepository
 from app.infrastructure.repositories.audit_log_repository import BeanieAuditLogRepository
 from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
@@ -41,6 +44,7 @@ from app.infrastructure.repositories.company_membership_repository import (
     BeanieCompanyMembershipRepository,
 )
 from app.infrastructure.repositories.company_repository import BeanieCompanyRepository
+from app.infrastructure.repositories.connection_repository import BeanieConnectionRepository
 from app.infrastructure.repositories.employee_repository import BeanieEmployeeRepository
 from app.infrastructure.repositories.financial_category_repository import (
     BeanieFinancialCategoryRepository,
@@ -55,6 +59,7 @@ from app.infrastructure.repositories.stock_movement_repository import (
     BeanieStockMovementRepository,
 )
 from app.infrastructure.repositories.user_repository import BeanieUserRepository
+from app.infrastructure.security.crypto import FernetSecretCipher
 from app.infrastructure.security.password import Argon2PasswordHasher
 from app.infrastructure.security.tokens import JWTTokenService
 
@@ -118,6 +123,19 @@ def get_employee_repository() -> EmployeeRepository:
 
 def get_appointment_repository() -> AppointmentRepository:
     return BeanieAppointmentRepository()
+
+
+def get_connection_repository() -> ConnectionRepository:
+    return BeanieConnectionRepository()
+
+
+def get_secret_cipher(settings: Annotated[Settings, Depends(get_settings)]) -> SecretCipher:
+    return FernetSecretCipher(settings)
+
+
+def get_connector_factory() -> Callable[[str], Connector]:
+    # Injetável para que os testes substituam por um conector fake (sem rede).
+    return build_connector
 
 
 def get_ai_provider(settings: Annotated[Settings, Depends(get_settings)]) -> AIProviderPort:
