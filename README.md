@@ -328,6 +328,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 25  | Conectores externos (arquitetura modular) + Hotmart → financeiro          | ✅ Concluída |
 | 26  | Cadastro de empresa completo + validação/autopreenchimento de CNPJ        | ✅ Concluída |
 | 27  | Autenticação completa (verificação e-mail, reset/troca senha, Google)     | ✅ Concluída |
+| 28  | Convites de equipe (papéis) + LGPD (exportar/excluir dados)               | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -542,6 +543,14 @@ Detalhes de implementação de cada mecanismo são documentados em
   demais sessões) e login com Google (OAuth). Exigir e-mail confirmado no login é uma flag
   (`REQUIRE_EMAIL_VERIFICATION`, desligada por padrão). Códigos ficam com hash e expiração;
   o envio usa uma porta de e-mail (adaptador de console em dev, SMTP/provedor em produção).
+
+- Convites de equipe + LGPD — cada empresa pode ter vários usuários com papéis
+  (proprietário, administrador, gerente, funcionário, visualizador). Proprietários e
+  administradores convidam por e-mail (quem já tem conta entra na hora; quem não tem recebe
+  um convite pendente que vira acesso ao criar a conta e aceitar), alteram papéis e removem
+  membros — sempre preservando ao menos um proprietário. LGPD: o proprietário pode exportar
+  todos os dados da empresa em JSON (sem segredos de integração) e excluir a empresa
+  permanentemente (com confirmação pelo nome), apagando todos os dados relacionados.
 
 ## Funcionalidades futuras
 

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.domain.company.cnpj import is_valid_cnpj, normalize_cnpj
 from app.domain.company.roles import CompanyRole
@@ -132,3 +132,32 @@ class CompanyResponse(BaseModel):
 class CompanyWithRoleResponse(BaseModel):
     company: CompanyResponse
     role: CompanyRole
+
+
+class MemberResponse(BaseModel):
+    user_id: str
+    email: str
+    full_name: str
+    role: CompanyRole
+
+
+class ChangeRoleRequest(BaseModel):
+    role: CompanyRole
+
+
+class InviteMemberRequest(BaseModel):
+    email: EmailStr
+    role: CompanyRole
+
+
+class InvitationResponse(BaseModel):
+    id: str
+    email: str
+    role: CompanyRole
+    status: str
+    created_at: datetime
+    expires_at: datetime
+
+
+class AcceptInvitationRequest(BaseModel):
+    token: str = Field(min_length=1)

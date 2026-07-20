@@ -23,6 +23,8 @@ from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.catalog.repository import CatalogItemRepository, StockMovementRepository
 from app.domain.client.repository import ClientRepository
 from app.domain.company.cnpj_lookup import CnpjLookup
+from app.domain.company.data import CompanyDataEraser, CompanyDataExporter
+from app.domain.company.invitation import InvitationRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.connector.ports import Connector, SecretCipher
@@ -47,6 +49,7 @@ from app.infrastructure.repositories.client_repository import BeanieClientReposi
 from app.infrastructure.repositories.company_blueprint_repository import (
     BeanieCompanyBlueprintRepository,
 )
+from app.infrastructure.repositories.company_data import BeanieCompanyDataService
 from app.infrastructure.repositories.company_membership_repository import (
     BeanieCompanyMembershipRepository,
 )
@@ -59,6 +62,7 @@ from app.infrastructure.repositories.financial_category_repository import (
 from app.infrastructure.repositories.financial_transaction_repository import (
     BeanieFinancialTransactionRepository,
 )
+from app.infrastructure.repositories.invitation_repository import BeanieInvitationRepository
 from app.infrastructure.repositories.refresh_token_repository import (
     BeanieRefreshTokenRepository,
 )
@@ -150,6 +154,18 @@ def get_connector_factory() -> Callable[[str], Connector]:
 
 def get_cnpj_lookup() -> CnpjLookup:
     return BrasilApiCnpjLookup()
+
+
+def get_invitation_repository() -> InvitationRepository:
+    return BeanieInvitationRepository()
+
+
+def get_company_data_exporter() -> CompanyDataExporter:
+    return BeanieCompanyDataService()
+
+
+def get_company_data_eraser() -> CompanyDataEraser:
+    return BeanieCompanyDataService()
 
 
 def get_verification_code_repository() -> VerificationCodeRepository:

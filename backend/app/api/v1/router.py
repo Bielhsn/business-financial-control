@@ -16,6 +16,7 @@ from app.api.v1.routers import (
     financial,
     health,
     insights,
+    invitations,
     notifications,
 )
 
@@ -36,3 +37,4 @@ api_router.include_router(advisor.router)
 api_router.include_router(appointment.router)
 api_router.include_router(connectors.router)
 api_router.include_router(cnpj.router)
+api_router.include_router(invitations.router)

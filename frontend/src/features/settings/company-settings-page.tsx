@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChangePassword } from "@/features/auth/use-auth";
+import { DangerZoneCard } from "@/features/settings/danger-zone-card";
+import { TeamCard } from "@/features/settings/team-card";
 import {
   useCompany,
   useLookupCnpj,
@@ -523,9 +525,13 @@ export function CompanySettingsPage() {
 
       {company && <CompanyProfileCard company={company} />}
 
+      <TeamCard companyId={id} />
+
       <ChangePasswordCard />
 
       <AuditTrailCard companyId={id} />
+
+      {company && <DangerZoneCard company={company} />}
     </div>
   );
 }
