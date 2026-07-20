@@ -22,6 +22,15 @@ class CompanyRepository(Protocol):
         sales_channels: list[str] | None = None,
         sales_mode: str | None = None,
         main_offerings: str | None = None,
+        legal_name: str | None = None,
+        trade_name: str | None = None,
+        cnpj: str | None = None,
+        subsegment: str | None = None,
+        monthly_revenue_cents: int | None = None,
+        phone: str | None = None,
+        email: str | None = None,
+        website: str | None = None,
+        social_links: dict[str, str] | None = None,
     ) -> Company: ...
 
     async def get_by_id(self, company_id: str) -> Company | None: ...

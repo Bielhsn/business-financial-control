@@ -13,6 +13,7 @@ from tests.fakes import (
     FakeAuditLogRepository,
     FakeCatalogItemRepository,
     FakeClientRepository,
+    FakeCnpjLookup,
     FakeCompanyBlueprintRepository,
     FakeCompanyMembershipRepository,
     FakeCompanyRepository,
@@ -126,6 +127,11 @@ def fake_connector() -> FakeConnector:
 
 
 @pytest.fixture
+def fake_cnpj_lookup() -> FakeCnpjLookup:
+    return FakeCnpjLookup()
+
+
+@pytest.fixture
 def client(
     fake_audit_log_repository: FakeAuditLogRepository,
     fake_user_repository: FakeUserRepository,
@@ -146,6 +152,7 @@ def client(
     fake_connection_repository: FakeConnectionRepository,
     fake_secret_cipher: FakeSecretCipher,
     fake_connector: FakeConnector,
+    fake_cnpj_lookup: FakeCnpjLookup,
 ) -> Iterator[TestClient]:
     # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
     # nem de chaves reais de IA — o 503 de "IA não configurada" fica determinístico.
@@ -183,6 +190,7 @@ def client(
     app.dependency_overrides[deps.get_connection_repository] = lambda: fake_connection_repository
     app.dependency_overrides[deps.get_secret_cipher] = lambda: fake_secret_cipher
     app.dependency_overrides[deps.get_connector_factory] = lambda: (lambda provider: fake_connector)
+    app.dependency_overrides[deps.get_cnpj_lookup] = lambda: fake_cnpj_lookup
     limiter.reset()
 
     # Sem "with": não dispara o lifespan (que exigiria um MongoDB real).

@@ -326,6 +326,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 23  | IA consultora (sinais de estoque/vendas/clientes + recomendações)        | ✅ Concluída |
 | 24  | Agenda — agendamentos com receita automática ao concluir                 | ✅ Concluída |
 | 25  | Conectores externos (arquitetura modular) + Hotmart → financeiro          | ✅ Concluída |
+| 26  | Cadastro de empresa completo + validação/autopreenchimento de CNPJ        | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -526,6 +527,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   nunca duplica), alimentando dashboard, fluxo de caixa e relatórios. A página de
   Integrações permite conectar, sincronizar e desconectar; o formulário de credenciais é
   gerado dinamicamente a partir do registro.
+
+- Cadastro de empresa completo + CNPJ — a empresa passa a ter razão social, nome fantasia,
+  CNPJ, subsegmento, faturamento médio mensal, telefone, e-mail, site e redes sociais
+  (tudo opcional, sem quebrar empresas já criadas). Os dígitos do CNPJ são validados
+  localmente (mesmo algoritmo da Receita) e, com um clique em **Buscar**, o sistema
+  consulta a BrasilAPI para **autopreencher** razão social, nome fantasia, contato e situação
+  cadastral (avisando se não estiver ativa). Editável em Configurações → Dados da empresa.
 
 ## Funcionalidades futuras
 

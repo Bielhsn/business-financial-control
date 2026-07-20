@@ -20,6 +20,7 @@ from app.domain.catalog.entities import (
     StockMovement,
 )
 from app.domain.client.entities import Client
+from app.domain.company.cnpj_lookup import CnpjInfo
 from app.domain.company.entities import Company, CompanyMembership
 from app.domain.company.roles import CompanyRole
 from app.domain.connector.entities import Connection, ConnectionStatus, NormalizedSale
@@ -147,6 +148,15 @@ class FakeCompanyRepository:
         sales_channels: list[str] | None = None,
         sales_mode: str | None = None,
         main_offerings: str | None = None,
+        legal_name: str | None = None,
+        trade_name: str | None = None,
+        cnpj: str | None = None,
+        subsegment: str | None = None,
+        monthly_revenue_cents: int | None = None,
+        phone: str | None = None,
+        email: str | None = None,
+        website: str | None = None,
+        social_links: dict[str, str] | None = None,
     ) -> Company:
         company_id = str(self._next_id)
         self._next_id += 1
@@ -167,6 +177,15 @@ class FakeCompanyRepository:
             sales_channels=sales_channels or [],
             sales_mode=sales_mode,
             main_offerings=main_offerings,
+            legal_name=legal_name,
+            trade_name=trade_name,
+            cnpj=cnpj,
+            subsegment=subsegment,
+            monthly_revenue_cents=monthly_revenue_cents,
+            phone=phone,
+            email=email,
+            website=website,
+            social_links=social_links or {},
             is_active=True,
             created_at=now,
             updated_at=now,
@@ -886,3 +905,28 @@ class FakeConnector:
     ) -> list[NormalizedSale]:
         self.fetch_calls.append(credentials)
         return self._sales
+
+
+class FakeCnpjLookup:
+    """Consulta de CNPJ fake para testes de API (sem rede)."""
+
+    def __init__(self, info: CnpjInfo | None = None) -> None:
+        self._info = info
+        self.calls: list[str] = []
+
+    async def fetch(self, cnpj: str) -> CnpjInfo:
+        self.calls.append(cnpj)
+        if self._info is not None:
+            return self._info
+        return CnpjInfo(
+            cnpj=cnpj,
+            legal_name="Empresa Exemplo LTDA",
+            trade_name="Exemplo",
+            status="ATIVA",
+            is_active=True,
+            city="São Paulo",
+            state="SP",
+            email="contato@exemplo.com",
+            phone="1133224455",
+            main_activity="Desenvolvimento de software",
+        )

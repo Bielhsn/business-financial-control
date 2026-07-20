@@ -29,6 +29,17 @@ class Company:
     brand_logo: str | None = None  # data URL (image/*), tamanho limitado no schema
     brand_primary_color: str | None = None  # hex #RRGGBB
     brand_theme: str | None = None  # "light" | "dark" (tema padrão da empresa)
+    # Cadastro fiscal/institucional completo (Etapa 26) — todos opcionais para não
+    # quebrar empresas já criadas; preenchíveis manualmente ou via consulta de CNPJ.
+    legal_name: str | None = None  # Razão Social
+    trade_name: str | None = None  # Nome Fantasia
+    cnpj: str | None = None  # apenas dígitos (14)
+    subsegment: str | None = None
+    monthly_revenue_cents: int | None = None  # faturamento médio mensal
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    social_links: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

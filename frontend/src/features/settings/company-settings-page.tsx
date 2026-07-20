@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Building2, History, Palette, Trash2, Upload } from "lucide-react";
+import { Building2, History, Palette, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -16,8 +17,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCompany, useUpdateCompany } from "@/features/companies/use-companies";
+import {
+  useCompany,
+  useLookupCnpj,
+  useUpdateCompany,
+  type UpdateCompanyInput,
+} from "@/features/companies/use-companies";
+import type { CompanyResponse } from "@/lib/api-types";
 import { api, extractErrorMessage } from "@/lib/api";
+import { centsToInput, parseCurrencyToCents } from "@/lib/money";
 import { readableForeground } from "@/lib/utils";
 
 const MAX_LOGO_BYTES = 150 * 1024;
@@ -87,6 +95,181 @@ function AuditTrailCard({ companyId }: { companyId: string }) {
             ))}
           </ul>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function CompanyProfileCard({ company }: { company: CompanyResponse }) {
+  const updateCompany = useUpdateCompany(company.id);
+  const lookupCnpj = useLookupCnpj();
+
+  const [form, setForm] = useState({
+    legal_name: company.legal_name ?? "",
+    trade_name: company.trade_name ?? "",
+    cnpj: company.cnpj ?? "",
+    subsegment: company.subsegment ?? "",
+    monthly_revenue:
+      company.monthly_revenue_cents != null ? centsToInput(company.monthly_revenue_cents) : "",
+    phone: company.phone ?? "",
+    email: company.email ?? "",
+    website: company.website ?? "",
+  });
+
+  const set = (key: keyof typeof form, value: string) =>
+    setForm((current) => ({ ...current, [key]: value }));
+
+  const handleLookup = () => {
+    const digits = form.cnpj.replace(/\D/g, "");
+    if (digits.length !== 14) {
+      toast.error("Informe um CNPJ com 14 dígitos.");
+      return;
+    }
+    lookupCnpj.mutate(digits, {
+      onSuccess: (info) => {
+        setForm((current) => ({
+          ...current,
+          cnpj: info.cnpj,
+          legal_name: info.legal_name ?? current.legal_name,
+          trade_name: info.trade_name ?? current.trade_name,
+          email: info.email ?? current.email,
+          phone: info.phone ?? current.phone,
+        }));
+        if (info.is_active) {
+          toast.success(`CNPJ ${info.status ?? "encontrado"} — dados preenchidos.`);
+        } else {
+          toast.warning(`Atenção: situação cadastral "${info.status ?? "não ativa"}".`);
+        }
+      },
+      onError: (error) => toast.error(extractErrorMessage(error)),
+    });
+  };
+
+  const handleSave = () => {
+    let revenueCents: number | null = null;
+    if (form.monthly_revenue.trim()) {
+      revenueCents = parseCurrencyToCents(form.monthly_revenue);
+      if (revenueCents === null) {
+        toast.error("Faturamento inválido — use o formato 1.234,56.");
+        return;
+      }
+    }
+    const payload: UpdateCompanyInput = {
+      legal_name: form.legal_name.trim() || null,
+      trade_name: form.trade_name.trim() || null,
+      cnpj: form.cnpj.replace(/\D/g, "") || null,
+      subsegment: form.subsegment.trim() || null,
+      monthly_revenue_cents: revenueCents,
+      phone: form.phone.trim() || null,
+      email: form.email.trim() || null,
+      website: form.website.trim() || null,
+    };
+    updateCompany.mutate(payload, {
+      onSuccess: () => toast.success("Dados da empresa salvos!"),
+      onError: (error) => toast.error(extractErrorMessage(error)),
+    });
+  };
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Building2 className="size-4 text-primary" /> Dados da empresa
+        </CardTitle>
+        <CardDescription>
+          Informações fiscais e de contato. Informe o CNPJ e clique em “Buscar” para preencher
+          automaticamente pela Receita.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="company-cnpj">CNPJ</Label>
+          <div className="flex gap-2">
+            <Input
+              id="company-cnpj"
+              inputMode="numeric"
+              placeholder="00.000.000/0000-00"
+              value={form.cnpj}
+              onChange={(event) => set("cnpj", event.target.value)}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleLookup}
+              disabled={lookupCnpj.isPending}
+            >
+              <Search /> {lookupCnpj.isPending ? "Buscando…" : "Buscar"}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="company-legal-name">Razão Social</Label>
+            <Input
+              id="company-legal-name"
+              value={form.legal_name}
+              onChange={(event) => set("legal_name", event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company-trade-name">Nome Fantasia</Label>
+            <Input
+              id="company-trade-name"
+              value={form.trade_name}
+              onChange={(event) => set("trade_name", event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company-subsegment">Subsegmento</Label>
+            <Input
+              id="company-subsegment"
+              placeholder="Ex.: Cursos online"
+              value={form.subsegment}
+              onChange={(event) => set("subsegment", event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company-revenue">Faturamento médio mensal (R$)</Label>
+            <Input
+              id="company-revenue"
+              inputMode="decimal"
+              placeholder="50.000,00"
+              value={form.monthly_revenue}
+              onChange={(event) => set("monthly_revenue", event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company-phone">Telefone</Label>
+            <Input
+              id="company-phone"
+              value={form.phone}
+              onChange={(event) => set("phone", event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company-email">E-mail</Label>
+            <Input
+              id="company-email"
+              type="email"
+              value={form.email}
+              onChange={(event) => set("email", event.target.value)}
+            />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="company-website">Site</Label>
+            <Input
+              id="company-website"
+              placeholder="https://…"
+              value={form.website}
+              onChange={(event) => set("website", event.target.value)}
+            />
+          </div>
+        </div>
+
+        <Button onClick={handleSave} disabled={updateCompany.isPending}>
+          {updateCompany.isPending ? "Salvando…" : "Salvar dados"}
+        </Button>
       </CardContent>
     </Card>
   );
@@ -272,6 +455,8 @@ export function CompanySettingsPage() {
           </Button>
         </CardContent>
       </Card>
+
+      {company && <CompanyProfileCard company={company} />}
 
       <AuditTrailCard companyId={id} />
     </div>
