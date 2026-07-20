@@ -87,6 +87,18 @@ class ConnectorError(AppError):
         super().__init__(message, status_code=502, details=details)
 
 
+class PlanLimitError(AppError):
+    """Recurso bloqueado pelo plano atual (limite atingido ou funcionalidade não
+    incluída). 402 Payment Required: o frontend usa isto para oferecer upgrade."""
+
+    def __init__(
+        self,
+        message: str = "Seu plano atual não permite esta ação.",
+        details: dict[str, object] | None = None,
+    ) -> None:
+        super().__init__(message, status_code=402, details=details)
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     """Centraliza a conversão de exceções em respostas HTTP e logs estruturados."""
 

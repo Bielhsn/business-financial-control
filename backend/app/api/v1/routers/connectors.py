@@ -12,10 +12,12 @@ from app.api.v1.deps import (
     get_financial_category_repository,
     get_financial_transaction_repository,
     get_secret_cipher,
+    get_subscription_repository,
     require_role,
 )
 from app.application.connector.connect_provider import ConnectProviderUseCase
 from app.application.connector.sync_connection import SyncConnectionUseCase
+from app.application.subscription.gating import ensure_can_add_integration
 from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
@@ -29,6 +31,7 @@ from app.domain.financial.repository import (
     FinancialCategoryRepository,
     FinancialTransactionRepository,
 )
+from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
 from app.schemas.connector import (
     AvailableConnectorsResponse,
@@ -103,7 +106,19 @@ async def connect(
     cipher: Annotated[SecretCipher, Depends(get_secret_cipher)],
     connector_factory: Annotated[Callable[[str], Connector], Depends(get_connector_factory)],
     audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
+    subscription_repository: Annotated[
+        SubscriptionRepository, Depends(get_subscription_repository)
+    ],
 ) -> ConnectionResponse:
+    # Só aplica o limite ao conectar um provedor novo; reconectar/atualizar
+    # credenciais de um já existente não consome uma nova "vaga" de integração.
+    existing = await connection_repository.get_by_provider(payload.provider)
+    if existing is None:
+        await ensure_can_add_integration(
+            subscription_repository,
+            connection_repository,
+            company_id=company_context.company_id,
+        )
     connector = connector_factory(payload.provider)
     use_case = ConnectProviderUseCase(connection_repository, cipher, connector)
     connection = await use_case.execute(provider=payload.provider, credentials=payload.credentials)

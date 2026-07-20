@@ -35,6 +35,7 @@ from app.domain.financial.repository import (
     FinancialTransactionRepository,
 )
 from app.domain.notifications.email import EmailSender
+from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
@@ -68,6 +69,9 @@ from app.infrastructure.repositories.refresh_token_repository import (
 )
 from app.infrastructure.repositories.stock_movement_repository import (
     BeanieStockMovementRepository,
+)
+from app.infrastructure.repositories.subscription_repository import (
+    BeanieSubscriptionRepository,
 )
 from app.infrastructure.repositories.user_repository import BeanieUserRepository
 from app.infrastructure.repositories.verification_code_repository import (
@@ -249,3 +253,7 @@ def require_role(
 
 def get_audit_log_repository() -> AuditLogRepository:
     return BeanieAuditLogRepository()
+
+
+def get_subscription_repository() -> SubscriptionRepository:
+    return BeanieSubscriptionRepository()

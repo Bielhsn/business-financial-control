@@ -395,3 +395,56 @@ export interface ApiErrorResponse {
   message: string;
   details?: Record<string, unknown>;
 }
+
+// Planos e assinatura (Etapa 29)
+export type PlanTier = "starter" | "professional" | "business" | "enterprise";
+export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
+export type BillingCycle = "monthly" | "yearly";
+
+export interface PlanLimitsResponse {
+  max_members: number;
+  max_integrations: number;
+  max_ai_insights_per_month: number;
+  max_catalog_items: number;
+}
+
+export interface PlanResponse {
+  tier: PlanTier;
+  name: string;
+  tagline: string;
+  target_audience: string;
+  price_cents_monthly: number;
+  price_cents_yearly: number;
+  limits: PlanLimitsResponse;
+  features: string[];
+  highlights: string[];
+  is_contact_sales: boolean;
+  badge: string | null;
+}
+
+export interface PlanCatalogResponse {
+  plans: PlanResponse[];
+}
+
+export interface UsageResponse {
+  members: number;
+  integrations: number;
+}
+
+export interface SubscriptionResponse {
+  tier: PlanTier;
+  status: SubscriptionStatus;
+  billing_cycle: BillingCycle;
+  trial_ends_at: string | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  features: string[];
+  limits: PlanLimitsResponse;
+  usage: UsageResponse;
+}
+
+export interface ChangePlanRequest {
+  tier: PlanTier;
+  billing_cycle?: BillingCycle;
+  start_trial?: boolean;
+}

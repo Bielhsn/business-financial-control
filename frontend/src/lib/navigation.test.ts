@@ -8,7 +8,7 @@ function routesOf(modules: string[] | null): string[] {
 
 describe("visibleNavItems", () => {
   it("sempre inclui dashboard e financeiro", () => {
-    expect(routesOf([])).toEqual(["", "transactions", "integrations"]);
+    expect(routesOf([])).toEqual(["", "transactions", "integrations", "plans"]);
   });
 
   it("habilita itens conforme os módulos do blueprint", () => {
@@ -18,6 +18,7 @@ describe("visibleNavItems", () => {
       "clients",
       "agenda",
       "integrations",
+      "plans",
     ]);
   });
 
@@ -34,6 +35,7 @@ describe("visibleNavItems", () => {
       "catalog",
       "employees",
       "integrations",
+      "plans",
     ]);
   });
 

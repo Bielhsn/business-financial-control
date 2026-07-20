@@ -38,6 +38,8 @@ from app.domain.financial.entities import (
 )
 from app.domain.insights.entities import FinancialInsight, InsightKind
 from app.domain.notifications.email import EmailMessage
+from app.domain.subscription.entities import BillingCycle, Subscription, SubscriptionStatus
+from app.domain.subscription.plans import PlanTier
 from app.domain.user.entities import User
 
 
@@ -1114,3 +1116,59 @@ class FakeCompanyDataService:
 
     async def erase(self, company_id: str) -> None:
         self.erased.append(company_id)
+
+
+class FakeSubscriptionRepository:
+    def __init__(self) -> None:
+        self._subscriptions: dict[str, Subscription] = {}
+        self._next_id = 1
+
+    async def get_by_company(self, company_id: str) -> Subscription | None:
+        return self._subscriptions.get(company_id)
+
+    async def upsert(
+        self,
+        *,
+        company_id: str,
+        tier: PlanTier,
+        status: SubscriptionStatus,
+        billing_cycle: BillingCycle,
+        trial_ends_at: datetime | None,
+        current_period_end: datetime | None,
+        cancel_at_period_end: bool,
+    ) -> Subscription:
+        now = datetime.now(UTC)
+        existing = self._subscriptions.get(company_id)
+        if existing is None:
+            subscription_id = str(self._next_id)
+            self._next_id += 1
+            subscription = Subscription(
+                id=subscription_id,
+                company_id=company_id,
+                tier=tier,
+                status=status,
+                billing_cycle=billing_cycle,
+                started_at=now,
+                updated_at=now,
+                trial_ends_at=trial_ends_at,
+                current_period_end=current_period_end,
+                cancel_at_period_end=cancel_at_period_end,
+            )
+        else:
+            subscription = Subscription(
+                id=existing.id,
+                company_id=company_id,
+                tier=tier,
+                status=status,
+                billing_cycle=billing_cycle,
+                started_at=existing.started_at,
+                updated_at=now,
+                trial_ends_at=trial_ends_at,
+                current_period_end=current_period_end,
+                cancel_at_period_end=cancel_at_period_end,
+            )
+        self._subscriptions[company_id] = subscription
+        return subscription
+
+    async def list_all(self) -> list[Subscription]:
+        return list(self._subscriptions.values())

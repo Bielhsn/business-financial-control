@@ -18,6 +18,8 @@ from app.api.v1.routers import (
     insights,
     invitations,
     notifications,
+    plans,
+    subscription,
 )
 
 api_router = APIRouter()
@@ -38,3 +40,5 @@ api_router.include_router(appointment.router)
 api_router.include_router(connectors.router)
 api_router.include_router(cnpj.router)
 api_router.include_router(invitations.router)
+api_router.include_router(plans.router)
+api_router.include_router(subscription.router)
