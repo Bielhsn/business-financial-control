@@ -19,6 +19,7 @@ class ConnectorDefinitionResponse(BaseModel):
     description: str
     credential_fields: list[CredentialFieldResponse]
     capabilities: list[str]
+    auth_type: str = "credentials"
 
 
 class AvailableConnectorsResponse(BaseModel):
@@ -48,3 +49,7 @@ class SyncResultResponse(BaseModel):
     imported: int
     skipped: int
     details: dict[str, int]
+
+
+class OAuthAuthorizeResponse(BaseModel):
+    authorize_url: str

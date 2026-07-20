@@ -19,6 +19,7 @@ from app.api.v1.routers import (
     insights,
     invitations,
     notifications,
+    oauth_callback,
     plans,
     subscription,
 )
@@ -39,6 +40,7 @@ api_router.include_router(notifications.router)
 api_router.include_router(advisor.router)
 api_router.include_router(appointment.router)
 api_router.include_router(connectors.router)
+api_router.include_router(oauth_callback.router)
 api_router.include_router(cnpj.router)
 api_router.include_router(invitations.router)
 api_router.include_router(plans.router)

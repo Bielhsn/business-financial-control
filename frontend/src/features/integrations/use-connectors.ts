@@ -45,6 +45,23 @@ export function useConnectProvider(companyId: string) {
   });
 }
 
+/** Inicia o fluxo OAuth: busca a URL de autorização e redireciona o navegador
+ * para o provedor. `shop` é exigido pelo Shopify. */
+export function useOAuthAuthorize(companyId: string) {
+  return useMutation({
+    mutationFn: async (input: { provider: string; shop?: string }) => {
+      const { data } = await api.get<{ authorize_url: string }>(
+        `/companies/${companyId}/connectors/${input.provider}/oauth/authorize`,
+        { params: input.shop ? { shop: input.shop } : undefined },
+      );
+      return data.authorize_url;
+    },
+    onSuccess: (authorizeUrl) => {
+      window.location.href = authorizeUrl;
+    },
+  });
+}
+
 export function useSyncProvider(companyId: string) {
   const queryClient = useQueryClient();
   return useMutation({

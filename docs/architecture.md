@@ -24,6 +24,28 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 31 (Framework de integrações OAuth2):** a Etapa 25 já deixara a arquitetura de
+conectores modular para o modelo "colar credenciais" (Hotmart). Esta etapa adiciona o segundo
+modelo — **authorization-code (OAuth2)** — sem duplicar nada. A `ConnectorDefinition` ganhou
+`auth_type` ("credentials" | "oauth") e uma `OAuthConfig` opcional (authorize/token URLs,
+scopes e os **nomes** das env vars com client_id/secret — as credenciais em si nunca ficam no
+código nem no registro). Um único `GenericOAuth2Connector` implementa a dança completa (montar
+URL de autorização, trocar código por tokens, refresh) para qualquer provedor descrito por uma
+OAuthConfig; `url_params` preenche placeholders como `{shop}` do Shopify. Adicionar um provedor
+OAuth = uma entrada no registro + as env vars, nada de código novo (Mercado Livre, Shopify e
+iFood já entram assim). O problema clássico "o callback do provedor não carrega o Bearer token"
+é resolvido com um **`state` assinado (HMAC-SHA256)**, curto (10 min), que é ao mesmo tempo
+proteção CSRF e portador do contexto (empresa/usuário/provedor + params): o endpoint de
+`authorize` (autenticado, papéis de gestão, com o mesmo gating de limite de integrações) o
+emite; o `/connectors/oauth/callback` (público, fora do escopo `/companies/{id}`) valida a
+assinatura/expiração, restabelece o tenant via `set_current_company_id`, troca o código e
+guarda os tokens **criptografados** (mesma cifra Fernet dos demais segredos), redirecionando o
+navegador de volta ao frontend com aviso de sucesso/erro. O cliente HTTP é injetável
+(`httpx.MockTransport`), então toda a dança é testada sem rede. O `fetch_sales` de cada API
+OAuth é deixado explicitamente desabilitado (levanta ConnectorError) até haver credenciais
+reais para validar o mapeamento ponta a ponta — o framework fica pronto, a ativação é por
+provedor.
+
 **Etapa 30 (Painel administrativo do SaaS):** o painel do dono da plataforma é a primeira
 funcionalidade **cross-tenant** — ela precisa enxergar todas as empresas de uma vez, o
 oposto do isolamento por `ContextVar` que rege o resto do app. Para não furar o modelo, os

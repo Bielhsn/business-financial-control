@@ -1,7 +1,7 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 
 from app.api.v1.deps import (
     get_audit_log_repository,
@@ -16,9 +16,11 @@ from app.api.v1.deps import (
     require_role,
 )
 from app.application.connector.connect_provider import ConnectProviderUseCase
+from app.application.connector.oauth_flow import build_authorize_url, oauth_redirect_uri
 from app.application.connector.sync_connection import SyncConnectionUseCase
 from app.application.subscription.gating import ensure_can_add_integration
 from app.core.audit import record_audit
+from app.core.config import Settings, get_settings
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
 from app.domain.audit.repository import AuditLogRepository
@@ -33,12 +35,14 @@ from app.domain.financial.repository import (
 )
 from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
+from app.infrastructure.connectors.factory import build_oauth_provider
 from app.schemas.connector import (
     AvailableConnectorsResponse,
     ConnectionResponse,
     ConnectorDefinitionResponse,
     ConnectRequest,
     CredentialFieldResponse,
+    OAuthAuthorizeResponse,
     SyncResultResponse,
 )
 
@@ -82,6 +86,7 @@ async def list_available_connectors(
                     for field in item.credential_fields
                 ],
                 capabilities=list(item.capabilities),
+                auth_type=item.auth_type,
             )
             for item in CONNECTOR_REGISTRY
         ]
@@ -130,6 +135,41 @@ async def connect(
         provider=payload.provider,
     )
     return _to_connection_response(connection)
+
+
+@router.get("/{provider}/oauth/authorize", response_model=OAuthAuthorizeResponse)
+async def oauth_authorize(
+    provider: str,
+    company_context: Annotated[CompanyContext, Depends(require_role(*_MANAGEMENT_ROLES))],
+    current_user: Annotated[User, Depends(get_current_user)],
+    connection_repository: Annotated[ConnectionRepository, Depends(get_connection_repository)],
+    subscription_repository: Annotated[
+        SubscriptionRepository, Depends(get_subscription_repository)
+    ],
+    settings: Annotated[Settings, Depends(get_settings)],
+    shop: Annotated[str | None, Query()] = None,
+) -> OAuthAuthorizeResponse:
+    """Gera a URL de autorização OAuth para o frontend redirecionar. `shop` é
+    exigido pelo Shopify (subdomínio da loja)."""
+    existing = await connection_repository.get_by_provider(provider)
+    if existing is None:
+        await ensure_can_add_integration(
+            subscription_repository,
+            connection_repository,
+            company_id=company_context.company_id,
+        )
+    params = {"shop": shop} if shop else None
+    provider_obj = build_oauth_provider(provider, settings, url_params=params)
+    url = build_authorize_url(
+        provider_obj,
+        secret_key=settings.secret_key,
+        company_id=company_context.company_id,
+        user_id=current_user.id,
+        provider=provider,
+        redirect_uri=oauth_redirect_uri(settings.public_base_url),
+        params=params,
+    )
+    return OAuthAuthorizeResponse(authorize_url=url)
 
 
 @router.post("/{provider}/sync", response_model=SyncResultResponse)

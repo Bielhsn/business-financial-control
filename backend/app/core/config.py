@@ -39,6 +39,19 @@ class Settings(BaseSettings):
     # Google OAuth (login social). Sem client id, o endpoint responde 503.
     google_client_id: str | None = None
 
+    # URL base pública da API — usada para montar o redirect_uri do OAuth das
+    # integrações (o provedor redireciona o navegador de volta para cá).
+    public_base_url: str = "http://localhost:8000"
+
+    # Credenciais dos apps parceiros das integrações OAuth. Ficam vazias até o
+    # dono da plataforma registrar cada app; sem elas, o provedor responde 503.
+    mercadolivre_client_id: str | None = None
+    mercadolivre_client_secret: str | None = None
+    shopify_client_id: str | None = None
+    shopify_client_secret: str | None = None
+    ifood_client_id: str | None = None
+    ifood_client_secret: str | None = None
+
     cors_allowed_origins: str = "http://localhost:5173"
 
     # E-mails com acesso ao painel administrativo do SaaS (super-admin), separados
@@ -70,6 +83,17 @@ class Settings(BaseSettings):
 
     def is_platform_admin(self, email: str) -> bool:
         return email.strip().lower() in self.platform_admin_email_set
+
+    def oauth_client_credentials(
+        self, client_id_env: str, client_secret_env: str
+    ) -> tuple[str, str] | None:
+        """Lê as credenciais de um app parceiro OAuth (ex.: MERCADOLIVRE_CLIENT_ID).
+        Retorna None se qualquer uma estiver ausente."""
+        client_id = getattr(self, client_id_env.lower(), None)
+        client_secret = getattr(self, client_secret_env.lower(), None)
+        if client_id and client_secret:
+            return client_id, client_secret
+        return None
 
     @model_validator(mode="after")
     def _require_strong_secret_in_production(self) -> "Settings":

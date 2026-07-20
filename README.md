@@ -331,6 +331,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 28  | Convites de equipe (papéis) + LGPD (exportar/excluir dados)               | ✅ Concluída |
 | 29  | Planos de assinatura (Starter/Professional/Business/Enterprise) + gating  | ✅ Concluída |
 | 30  | Painel administrativo do SaaS (super-admin: MRR/ARR, churn, segmentação)   | ✅ Concluída |
+| 31  | Framework modular de integrações OAuth2 (Mercado Livre, Shopify, iFood)    | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -576,6 +577,22 @@ Detalhes de implementação de cada mecanismo são documentados em
   erro). A matemática fica num caso de uso puro (fácil de testar); as consultas cruzam os
   tenants numa camada de leitura dedicada. Frontend: rota `/admin` com _stat tiles_ e quebras
   visuais, acessível pelo botão "Painel admin" que só aparece para super-admins.
+
+- Framework de integrações OAuth2 — além do modelo de "colar credenciais" (Hotmart), a
+  arquitetura de conectores agora suporta o fluxo de autorização por redirect (authorization
+  code). Um `GenericOAuth2Connector` faz a dança completa (URL de autorização, troca de código
+  por tokens, refresh) para qualquer provedor descrito por uma `OAuthConfig` no registro —
+  adicionar um provedor OAuth é uma entrada no registro + as credenciais do app parceiro em
+  variáveis de ambiente, sem código novo. Já vêm cadastrados **Mercado Livre, Shopify e
+  iFood**. O contexto (empresa/usuário/provedor) viaja entre o redirect de ida e o callback de
+  volta num `state` assinado (HMAC), que também funciona como proteção CSRF; os tokens ficam
+  criptografados em repouso. O endpoint de callback é público (o provedor redireciona o
+  navegador para ele) e se autentica apenas pelo `state` assinado. Frontend: botão "Conectar"
+  que redireciona ao provedor (com diálogo de loja no caso do Shopify) e retorno com aviso de
+  sucesso/erro. **Importante:** conectar de verdade exige que o dono da plataforma registre os
+  apps parceiros e configure `*_CLIENT_ID`/`*_CLIENT_SECRET`; sem isso o provedor responde 503.
+  O mapeamento das vendas de cada API (`fetch_sales`) é habilitado por provedor quando as
+  credenciais reais permitirem validar ponta a ponta.
 
 ## Funcionalidades futuras
 

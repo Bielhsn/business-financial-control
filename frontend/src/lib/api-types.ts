@@ -369,6 +369,7 @@ export interface ConnectorDefinitionResponse {
   description: string;
   credential_fields: CredentialFieldResponse[];
   capabilities: string[];
+  auth_type: "credentials" | "oauth";
 }
 
 export interface ConnectionResponse {
