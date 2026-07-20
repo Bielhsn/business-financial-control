@@ -1,5 +1,6 @@
 import {
   CalendarDays,
+  Crown,
   FileText,
   FolderKanban,
   LayoutDashboard,
@@ -64,6 +65,7 @@ export const NAV_ITEMS: NavItem[] = [
     comingSoon: true,
   },
   { to: "integrations", label: "Integrações", icon: Plug, modules: [], always: true },
+  { to: "plans", label: "Plano", icon: Crown, modules: [], always: true },
 ];
 
 /** Itens exibidos quando a empresa ainda não gerou blueprint (IA desligada ou pendente):

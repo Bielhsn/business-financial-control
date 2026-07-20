@@ -50,6 +50,9 @@ const AgendaPage = lazy(() =>
 const SubscriptionsPage = lazy(() =>
   import("@/features/modules/coming-soon-page").then((m) => ({ default: m.SubscriptionsPage })),
 );
+const PlansPage = lazy(() =>
+  import("@/features/billing/plans-page").then((m) => ({ default: m.PlansPage })),
+);
 const ProjectsPage = lazy(() =>
   import("@/features/modules/coming-soon-page").then((m) => ({ default: m.ProjectsPage })),
 );
@@ -103,6 +106,7 @@ export function App() {
             <Route path="contracts" element={<ContractsPage />} />
             <Route path="settings" element={<CompanySettingsPage />} />
             <Route path="integrations" element={<IntegrationsPage />} />
+            <Route path="plans" element={<PlansPage />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/companies" replace />} />

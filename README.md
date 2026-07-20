@@ -329,6 +329,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 26  | Cadastro de empresa completo + validação/autopreenchimento de CNPJ        | ✅ Concluída |
 | 27  | Autenticação completa (verificação e-mail, reset/troca senha, Google)     | ✅ Concluída |
 | 28  | Convites de equipe (papéis) + LGPD (exportar/excluir dados)               | ✅ Concluída |
+| 29  | Planos de assinatura (Starter/Professional/Business/Enterprise) + gating  | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -551,6 +552,18 @@ Detalhes de implementação de cada mecanismo são documentados em
   membros — sempre preservando ao menos um proprietário. LGPD: o proprietário pode exportar
   todos os dados da empresa em JSON (sem segredos de integração) e excluir a empresa
   permanentemente (com confirmação pelo nome), apagando todos os dados relacionados.
+
+- Planos de assinatura — catálogo com quatro níveis (Starter grátis, Professional, Business e
+  Enterprise), cada um com preço mensal/anual sugerido, público-alvo, limites (usuários,
+  integrações, insights de IA, itens de catálogo) e funcionalidades incluídas. O catálogo é a
+  fonte única da verdade (`app/domain/subscription/plans.py`) e alimenta a página de preços, o
+  cálculo de direitos (entitlements) e o _gating_. Cada empresa tem uma assinatura própria
+  (ativa, em teste de 14 dias, inadimplente ou cancelada); sem assinatura ou ao cancelar, cai
+  para o Starter. O proprietário faz upgrade/downgrade, inicia teste e cancela pela tela
+  "Plano". Recursos além do plano são bloqueados com HTTP 402 e uma mensagem que convida ao
+  upgrade — por exemplo, conectar mais integrações ou convidar mais membros do que o plano
+  permite. A cobrança real (Stripe) entra numa etapa futura; por ora a troca de plano é
+  registrada imediatamente para alimentar o painel administrativo (MRR, trials, renovações).
 
 ## Funcionalidades futuras
 

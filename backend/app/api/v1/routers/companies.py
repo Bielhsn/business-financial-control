@@ -12,6 +12,7 @@ from app.api.v1.deps import (
     get_current_user,
     get_email_sender,
     get_invitation_repository,
+    get_subscription_repository,
     get_user_repository,
     require_role,
 )
@@ -23,6 +24,7 @@ from app.application.company.team import (
     RemoveMemberUseCase,
 )
 from app.application.company.update_company import UpdateCompanyUseCase
+from app.application.subscription.gating import ensure_can_add_member
 from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
@@ -33,6 +35,7 @@ from app.domain.company.invitation import InvitationRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.notifications.email import EmailSender
+from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.schemas.company import (
@@ -212,7 +215,15 @@ async def invite_member(
     invitation_repository: Annotated[InvitationRepository, Depends(get_invitation_repository)],
     email_sender: Annotated[EmailSender, Depends(get_email_sender)],
     audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
+    subscription_repository: Annotated[
+        SubscriptionRepository, Depends(get_subscription_repository)
+    ],
 ) -> InvitationResponse | None:
+    await ensure_can_add_member(
+        subscription_repository,
+        membership_repository,
+        company_id=company_context.company_id,
+    )
     result = await InviteMemberUseCase(
         user_repository, membership_repository, invitation_repository, email_sender
     ).execute(

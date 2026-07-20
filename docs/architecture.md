@@ -24,6 +24,28 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 29 (Planos de assinatura + gating):** o catálogo de planos é um registro estático
+e imutável em `app/domain/subscription/plans.py` (mesmo padrão do `CONNECTOR_REGISTRY`):
+quatro `PlanDefinition` (Starter/Professional/Business/Enterprise) com preço mensal/anual,
+público-alvo, `PlanLimits` (usuários, integrações, insights de IA, itens de catálogo — `-1`
+= ilimitado) e um conjunto de `Feature`. Isso torna o catálogo a **fonte única da verdade**:
+API, gating e frontend leem tudo daqui; nenhum preço/limite fica hard-coded fora dele. A
+assinatura é **por empresa** (coerente com o tenant), persistida em `SubscriptionDocument`
+(índice único por `company_id`), com `status` (trialing/active/past_due/canceled) e período.
+O coração do gating é `entitlements.py` — lógica **pura, sem I/O**: `resolve_plan` decide o
+plano efetivo (sem assinatura, cancelada ou inadimplente → cai para o Starter; ativa/em
+teste → plano contratado) e as funções `check_*`/`has_feature` respondem se um limite/feature
+é permitido. As checagens que tocam o banco (`application/subscription/gating.py`) apenas
+carregam a assinatura + contam o uso e levantam `PlanLimitError` (HTTP **402 Payment
+Required**, com `details.upgrade_required`) — usada hoje ao conectar integrações (só para um
+provedor **novo**; reconectar não consome vaga) e ao convidar membros. A troca de plano é um
+`upsert` idempotente; começar um teste marca `trialing` com fim em 14 dias. A cobrança real
+(Stripe) fica para uma etapa futura — por ora a troca é registrada na hora para alimentar o
+painel administrativo (MRR/trials/renovações). O catálogo (`GET /plans`) é **público** (serve
+a página de preços pré-login); a assinatura da empresa é escopada e a troca/cancelamento são
+restritos ao `OWNER` e auditados. No frontend, a tela "Plano" mostra o plano atual com barras
+de uso, alterna mensal/anual e oferece upgrade/downgrade/teste/cancelamento.
+
 **Etapa 28 (Equipe + LGPD):** o multi-tenant já tinha `CompanyMembership` (RBAC); esta
 etapa entrega a gestão completa. Convites por e-mail: se o e-mail já tem conta, vira
 membership na hora; senão, cria uma `Invitation` pendente (token opaco, expiração) que o
