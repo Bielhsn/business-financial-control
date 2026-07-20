@@ -24,6 +24,24 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 30 (Painel administrativo do SaaS):** o painel do dono da plataforma é a primeira
+funcionalidade **cross-tenant** — ela precisa enxergar todas as empresas de uma vez, o
+oposto do isolamento por `ContextVar` que rege o resto do app. Para não furar o modelo, os
+dados vêm de uma porta dedicada `AdminMetricsRepository` cujo adaptador Beanie
+(`BeanieAdminMetricsRepository`) consulta as coleções **sem** aplicar escopo de empresa;
+quem chama já passou por `require_platform_admin`. Autorização é por **configuração**, não
+por papel no banco: `PLATFORM_ADMIN_EMAILS` (settings) lista os super-admins, e a dependência
+retorna **404** (não 403) para não revelar sequer a existência do painel a quem não é dono.
+Toda a matemática vive num caso de uso puro (`GetAdminOverviewUseCase`) que recebe listas
+simples (empresas, assinaturas, conexões, totais financeiros) e calcula MRR/ARR (a partir do
+catálogo de planos — assinaturas `active` de plano pago; anual normalizado para mensal),
+trials, churn, segmentação e quebra por plano/status — trivial de testar com fakes, sem
+tocar no Mongo. Os totais financeiros usam uma agregação `$group` por tipo (só lançamentos
+`paid`). A serialização de MRR fica em centavos, como todo dinheiro no sistema. No frontend,
+`/admin` é uma rota fora do `CompanyLayout` (não pertence a nenhuma empresa), auto-protegida:
+consulta `GET /admin/me` e redireciona quem não é super-admin; o link "Painel admin" só
+aparece na tela de empresas para quem tem acesso.
+
 **Etapa 29 (Planos de assinatura + gating):** o catálogo de planos é um registro estático
 e imutável em `app/domain/subscription/plans.py` (mesmo padrão do `CONNECTOR_REGISTRY`):
 quatro `PlanDefinition` (Starter/Professional/Business/Enterprise) com preço mensal/anual,

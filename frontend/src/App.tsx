@@ -69,6 +69,11 @@ const IntegrationsPage = lazy(() =>
     default: m.IntegrationsPage,
   })),
 );
+const AdminDashboardPage = lazy(() =>
+  import("@/features/admin/admin-dashboard-page").then((m) => ({
+    default: m.AdminDashboardPage,
+  })),
+);
 
 function PageFallback() {
   return (
@@ -93,6 +98,7 @@ export function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/companies" element={<CompaniesPage />} />
+          <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />
           <Route path="/c/:companyId" element={<CompanyLayout />}>
             <Route index element={<DashboardPage />} />

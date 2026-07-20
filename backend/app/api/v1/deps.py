@@ -12,6 +12,7 @@ from app.core.exceptions import (
     UnauthorizedError,
 )
 from app.core.tenant import CompanyContext, set_current_company_id
+from app.domain.admin.repository import AdminMetricsRepository
 from app.domain.appointment.repository import AppointmentRepository
 from app.domain.audit.repository import AuditLogRepository
 from app.domain.auth.google import GoogleTokenVerifier
@@ -43,6 +44,9 @@ from app.infrastructure.auth.google import GoogleTokenInfoVerifier
 from app.infrastructure.connectors.factory import build_connector
 from app.infrastructure.email.console import ConsoleEmailSender
 from app.infrastructure.external.brasilapi import BrasilApiCnpjLookup
+from app.infrastructure.repositories.admin_metrics_repository import (
+    BeanieAdminMetricsRepository,
+)
 from app.infrastructure.repositories.appointment_repository import BeanieAppointmentRepository
 from app.infrastructure.repositories.audit_log_repository import BeanieAuditLogRepository
 from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
@@ -257,3 +261,18 @@ def get_audit_log_repository() -> AuditLogRepository:
 
 def get_subscription_repository() -> SubscriptionRepository:
     return BeanieSubscriptionRepository()
+
+
+def get_admin_metrics_repository() -> AdminMetricsRepository:
+    return BeanieAdminMetricsRepository()
+
+
+async def require_platform_admin(
+    current_user: Annotated[User, Depends(get_current_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> User:
+    """Autoriza apenas os e-mails listados em PLATFORM_ADMIN_EMAILS. Retorna 404
+    (não 403) para não revelar a existência do painel a quem não é super-admin."""
+    if not settings.is_platform_admin(current_user.email):
+        raise NotFoundError("Recurso não encontrado.")
+    return current_user

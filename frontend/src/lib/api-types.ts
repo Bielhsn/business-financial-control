@@ -448,3 +448,54 @@ export interface ChangePlanRequest {
   billing_cycle?: BillingCycle;
   start_trial?: boolean;
 }
+
+// Painel administrativo do SaaS (Etapa 30)
+export interface AdminRevenueMetrics {
+  mrr_cents: number;
+  arr_cents: number;
+  active_paying: number;
+  trials: number;
+  platform_gmv_cents: number;
+  platform_expenses_cents: number;
+}
+
+export interface AdminCustomerMetrics {
+  total_companies: number;
+  active_companies: number;
+  inactive_companies: number;
+  new_this_month: number;
+  churned: number;
+  churn_rate_pct: number;
+}
+
+export interface AdminSegmentMetric {
+  segment: string;
+  company_count: number;
+}
+
+export interface AdminPlanBreakdown {
+  tier: PlanTier;
+  subscribers: number;
+  mrr_cents: number;
+}
+
+export interface AdminSubscriptionMetrics {
+  by_status: Record<string, number>;
+  by_plan: AdminPlanBreakdown[];
+  past_due: number;
+}
+
+export interface AdminSystemMetrics {
+  total_users: number;
+  total_companies: number;
+  total_connections: number;
+  connections_with_error: number;
+}
+
+export interface AdminOverviewResponse {
+  revenue: AdminRevenueMetrics;
+  customers: AdminCustomerMetrics;
+  segments: AdminSegmentMetric[];
+  subscriptions: AdminSubscriptionMetrics;
+  system: AdminSystemMetrics;
+}

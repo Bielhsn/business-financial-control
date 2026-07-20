@@ -8,6 +8,7 @@ from app.core.config import Settings, get_settings
 from app.core.rate_limit import limiter
 from app.main import app
 from tests.fakes import (
+    FakeAdminMetricsRepository,
     FakeAIProvider,
     FakeAppointmentRepository,
     FakeAuditLogRepository,
@@ -168,6 +169,11 @@ def fake_subscription_repository() -> FakeSubscriptionRepository:
 
 
 @pytest.fixture
+def fake_admin_metrics_repository() -> FakeAdminMetricsRepository:
+    return FakeAdminMetricsRepository()
+
+
+@pytest.fixture
 def client(
     fake_audit_log_repository: FakeAuditLogRepository,
     fake_user_repository: FakeUserRepository,
@@ -195,6 +201,7 @@ def client(
     fake_invitation_repository: FakeInvitationRepository,
     fake_company_data_service: FakeCompanyDataService,
     fake_subscription_repository: FakeSubscriptionRepository,
+    fake_admin_metrics_repository: FakeAdminMetricsRepository,
 ) -> Iterator[TestClient]:
     # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
     # nem de chaves reais de IA — o 503 de "IA não configurada" fica determinístico.
@@ -243,6 +250,9 @@ def client(
     app.dependency_overrides[deps.get_company_data_eraser] = lambda: fake_company_data_service
     app.dependency_overrides[deps.get_subscription_repository] = (
         lambda: fake_subscription_repository
+    )
+    app.dependency_overrides[deps.get_admin_metrics_repository] = (
+        lambda: fake_admin_metrics_repository
     )
     limiter.reset()
 
