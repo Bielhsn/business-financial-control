@@ -20,6 +20,7 @@ from app.domain.blueprint.ports import AIProviderPort
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.catalog.repository import CatalogItemRepository, StockMovementRepository
 from app.domain.client.repository import ClientRepository
+from app.domain.company.cnpj_lookup import CnpjLookup
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.connector.ports import Connector, SecretCipher
@@ -33,6 +34,7 @@ from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
 from app.infrastructure.connectors.factory import build_connector
+from app.infrastructure.external.brasilapi import BrasilApiCnpjLookup
 from app.infrastructure.repositories.appointment_repository import BeanieAppointmentRepository
 from app.infrastructure.repositories.audit_log_repository import BeanieAuditLogRepository
 from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
@@ -136,6 +138,10 @@ def get_secret_cipher(settings: Annotated[Settings, Depends(get_settings)]) -> S
 def get_connector_factory() -> Callable[[str], Connector]:
     # Injetável para que os testes substituam por um conector fake (sem rede).
     return build_connector
+
+
+def get_cnpj_lookup() -> CnpjLookup:
+    return BrasilApiCnpjLookup()
 
 
 def get_ai_provider(settings: Annotated[Settings, Depends(get_settings)]) -> AIProviderPort:

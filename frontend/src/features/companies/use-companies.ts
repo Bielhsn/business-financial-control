@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
 import type {
+  CnpjLookupResponse,
   CompanyResponse,
   CompanyWithRoleResponse,
   CreateCompanyRequest,
@@ -32,6 +33,26 @@ export interface UpdateCompanyInput {
   brand_logo?: string | null;
   brand_primary_color?: string | null;
   brand_theme?: "light" | "dark" | null;
+  legal_name?: string | null;
+  trade_name?: string | null;
+  cnpj?: string | null;
+  subsegment?: string | null;
+  monthly_revenue_cents?: number | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  social_links?: Record<string, string>;
+}
+
+/** Consulta um CNPJ (apenas dígitos) na Receita via backend, para autopreencher. */
+export function useLookupCnpj() {
+  return useMutation({
+    mutationFn: async (cnpj: string) => {
+      const digits = cnpj.replace(/\D/g, "");
+      const { data } = await api.get<CnpjLookupResponse>(`/cnpj/${digits}`);
+      return data;
+    },
+  });
 }
 
 export function useUpdateCompany(companyId: string) {

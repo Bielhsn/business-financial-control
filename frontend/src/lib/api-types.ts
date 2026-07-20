@@ -35,9 +35,31 @@ export interface CompanyResponse {
   brand_logo: string | null;
   brand_primary_color: string | null;
   brand_theme: "light" | "dark" | null;
+  legal_name: string | null;
+  trade_name: string | null;
+  cnpj: string | null;
+  subsegment: string | null;
+  monthly_revenue_cents: number | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  social_links: Record<string, string>;
   is_active: boolean;
   created_at: string;
   updated_at: string;
+}
+
+export interface CnpjLookupResponse {
+  cnpj: string;
+  legal_name: string | null;
+  trade_name: string | null;
+  status: string | null;
+  is_active: boolean;
+  city: string | null;
+  state: string | null;
+  email: string | null;
+  phone: string | null;
+  main_activity: string | null;
 }
 
 export interface CompanyWithRoleResponse {
@@ -60,6 +82,15 @@ export interface CreateCompanyRequest {
   sales_channels: string[];
   sales_mode: string | null;
   main_offerings: string | null;
+  legal_name?: string | null;
+  trade_name?: string | null;
+  cnpj?: string | null;
+  subsegment?: string | null;
+  monthly_revenue_cents?: number | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  social_links?: Record<string, string>;
 }
 
 export type FinancialCategoryType = "income" | "expense";

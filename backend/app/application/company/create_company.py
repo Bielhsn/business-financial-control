@@ -1,3 +1,5 @@
+from app.core.exceptions import ValidationError
+from app.domain.company.cnpj import is_valid_cnpj, normalize_cnpj
 from app.domain.company.entities import Company
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
@@ -38,7 +40,22 @@ class CreateCompanyUseCase:
         sales_channels: list[str] | None = None,
         sales_mode: str | None = None,
         main_offerings: str | None = None,
+        legal_name: str | None = None,
+        trade_name: str | None = None,
+        cnpj: str | None = None,
+        subsegment: str | None = None,
+        monthly_revenue_cents: int | None = None,
+        phone: str | None = None,
+        email: str | None = None,
+        website: str | None = None,
+        social_links: dict[str, str] | None = None,
     ) -> Company:
+        normalized_cnpj: str | None = None
+        if cnpj and cnpj.strip():
+            normalized_cnpj = normalize_cnpj(cnpj)
+            if not is_valid_cnpj(normalized_cnpj):
+                raise ValidationError("CNPJ inválido.")
+
         company = await self._company_repository.create(
             name=name.strip(),
             segment=segment.strip(),
@@ -54,6 +71,15 @@ class CreateCompanyUseCase:
             sales_channels=[c.strip() for c in (sales_channels or []) if c.strip()],
             sales_mode=sales_mode.strip() if sales_mode else None,
             main_offerings=main_offerings.strip() if main_offerings else None,
+            legal_name=legal_name.strip() if legal_name else None,
+            trade_name=trade_name.strip() if trade_name else None,
+            cnpj=normalized_cnpj,
+            subsegment=subsegment.strip() if subsegment else None,
+            monthly_revenue_cents=monthly_revenue_cents,
+            phone=phone.strip() if phone else None,
+            email=email.strip() if email else None,
+            website=website.strip() if website else None,
+            social_links={k: v.strip() for k, v in (social_links or {}).items() if v.strip()},
         )
 
         try:

@@ -24,6 +24,20 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 26 (Cadastro completo + CNPJ):** a entidade `Company` ganhou campos
+fiscais/institucionais (razão social, nome fantasia, CNPJ, subsegmento, faturamento médio
+mensal em cents, telefone, e-mail, site, redes sociais) — todos opcionais com default, para
+não exigir migração das empresas existentes. A validação de CNPJ é uma **função pura**
+(`domain/company/cnpj.py`) com o algoritmo de dígitos verificadores da Receita, reutilizada
+tanto nos schemas Pydantic (rejeita CNPJ inválido no create/update) quanto no endpoint de
+consulta. A consulta externa segue o mesmo padrão de porta/adaptador dos conectores: porta
+`CnpjLookup` (domínio) + adaptador `BrasilApiCnpjLookup` (httpx, testável via
+`MockTransport`), injetável na API (`get_cnpj_lookup`) para os testes usarem um fake. O
+endpoint `GET /cnpj/{cnpj}` valida os dígitos **localmente antes** de gastar a chamada
+externa (recebe só dígitos — o frontend normaliza), retorna dados para autopreenchimento e
+a situação cadastral. O CNPJ é sempre persistido normalizado (só dígitos). No frontend, a
+edição vive em Configurações → Dados da empresa, com botão "Buscar" que autopreenche.
+
 **Etapa 25 (Conectores externos + Hotmart):** início da trilha de produção. A
 modularidade vem de três peças desacopladas: (1) a porta `Connector` (domínio) — um
 contrato pequeno (`test_connection` + `fetch_sales`) que todo provedor implementa; (2) o

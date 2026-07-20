@@ -3,7 +3,17 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.domain.company.cnpj import is_valid_cnpj, normalize_cnpj
 from app.domain.company.roles import CompanyRole
+
+
+def _validate_optional_cnpj(value: str | None) -> str | None:
+    if value is None or value.strip() == "":
+        return None
+    normalized = normalize_cnpj(value)
+    if not is_valid_cnpj(normalized):
+        raise ValueError("CNPJ inválido.")
+    return normalized
 
 
 class CreateCompanyRequest(BaseModel):
@@ -23,6 +33,20 @@ class CreateCompanyRequest(BaseModel):
     )
     sales_mode: str | None = Field(default=None, max_length=200)
     main_offerings: str | None = Field(default=None, max_length=1000)
+    legal_name: str | None = Field(default=None, max_length=200)
+    trade_name: str | None = Field(default=None, max_length=200)
+    cnpj: str | None = Field(default=None, max_length=20)
+    subsegment: str | None = Field(default=None, max_length=200)
+    monthly_revenue_cents: int | None = Field(default=None, ge=0)
+    phone: str | None = Field(default=None, max_length=40)
+    email: str | None = Field(default=None, max_length=200)
+    website: str | None = Field(default=None, max_length=300)
+    social_links: dict[str, str] = Field(default_factory=dict)
+
+    @field_validator("cnpj")
+    @classmethod
+    def _validate_cnpj(cls, value: str | None) -> str | None:
+        return _validate_optional_cnpj(value)
 
 
 class UpdateCompanyRequest(BaseModel):
@@ -47,6 +71,15 @@ class UpdateCompanyRequest(BaseModel):
     brand_logo: str | None = Field(default=None, max_length=200_000)
     brand_primary_color: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
     brand_theme: str | None = Field(default=None, pattern=r"^(light|dark)$")
+    legal_name: str | None = Field(default=None, max_length=200)
+    trade_name: str | None = Field(default=None, max_length=200)
+    cnpj: str | None = Field(default=None, max_length=20)
+    subsegment: str | None = Field(default=None, max_length=200)
+    monthly_revenue_cents: int | None = Field(default=None, ge=0)
+    phone: str | None = Field(default=None, max_length=40)
+    email: str | None = Field(default=None, max_length=200)
+    website: str | None = Field(default=None, max_length=300)
+    social_links: dict[str, str] | None = None
 
     @field_validator("brand_logo")
     @classmethod
@@ -54,6 +87,11 @@ class UpdateCompanyRequest(BaseModel):
         if value is not None and not value.startswith("data:image/"):
             raise ValueError("O logo deve ser uma imagem (data URL image/*).")
         return value
+
+    @field_validator("cnpj")
+    @classmethod
+    def _validate_cnpj(cls, value: str | None) -> str | None:
+        return _validate_optional_cnpj(value)
 
 
 class CompanyResponse(BaseModel):
@@ -77,6 +115,15 @@ class CompanyResponse(BaseModel):
     brand_logo: str | None
     brand_primary_color: str | None
     brand_theme: str | None
+    legal_name: str | None
+    trade_name: str | None
+    cnpj: str | None
+    subsegment: str | None
+    monthly_revenue_cents: int | None
+    phone: str | None
+    email: str | None
+    website: str | None
+    social_links: dict[str, str]
     is_active: bool
     created_at: datetime
     updated_at: datetime

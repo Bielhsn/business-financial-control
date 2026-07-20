@@ -8,6 +8,7 @@ from app.api.v1.routers import (
     blueprint,
     catalog,
     clients,
+    cnpj,
     companies,
     connectors,
     dashboard,
@@ -34,3 +35,4 @@ api_router.include_router(notifications.router)
 api_router.include_router(advisor.router)
 api_router.include_router(appointment.router)
 api_router.include_router(connectors.router)
+api_router.include_router(cnpj.router)

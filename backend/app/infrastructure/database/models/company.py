@@ -21,6 +21,15 @@ class CompanyDocument(Document):
     brand_logo: str | None = None
     brand_primary_color: str | None = None
     brand_theme: str | None = None
+    legal_name: str | None = None
+    trade_name: str | None = None
+    cnpj: str | None = None
+    subsegment: str | None = None
+    monthly_revenue_cents: int | None = None
+    phone: str | None = None
+    email: str | None = None
+    website: str | None = None
+    social_links: dict[str, str] = {}
     is_active: bool = True
     created_at: datetime
     updated_at: datetime
