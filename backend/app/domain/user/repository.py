@@ -8,4 +8,13 @@ class UserRepository(Protocol):
 
     async def get_by_id(self, user_id: str) -> User | None: ...
 
-    async def create(self, *, email: str, hashed_password: str, full_name: str) -> User: ...
+    async def create(
+        self,
+        *,
+        email: str,
+        hashed_password: str,
+        full_name: str,
+        is_verified: bool = True,
+    ) -> User: ...
+
+    async def update(self, user_id: str, **fields: object) -> User | None: ...

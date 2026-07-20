@@ -37,6 +37,62 @@ export function useRegister() {
   });
 }
 
+export function useGoogleLogin() {
+  const setSession = useAuthStore((s) => s.setSession);
+  return useMutation({
+    mutationFn: async (idToken: string) => {
+      const { data } = await api.post<TokenResponse>("/auth/google", { id_token: idToken });
+      return data;
+    },
+    onSuccess: (data) => {
+      setSession({ accessToken: data.access_token, refreshToken: data.refresh_token });
+    },
+  });
+}
+
+export function useForgotPassword() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      await api.post("/auth/forgot-password", { email });
+    },
+  });
+}
+
+export function useResetPassword() {
+  return useMutation({
+    mutationFn: async (input: { email: string; code: string; new_password: string }) => {
+      await api.post("/auth/reset-password", input);
+    },
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: async (input: { current_password: string; new_password: string }) => {
+      await api.post("/auth/change-password", input);
+    },
+  });
+}
+
+export function useRequestEmailVerification() {
+  return useMutation({
+    mutationFn: async () => {
+      await api.post("/auth/request-verification");
+    },
+  });
+}
+
+export function useVerifyEmail() {
+  return useMutation({
+    mutationFn: async (code: string) => {
+      await api.post("/auth/verify-email", { code });
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["auth", "me"] });
+    },
+  });
+}
+
 export function useLogout() {
   const clearSession = useAuthStore((s) => s.clearSession);
   return useMutation({

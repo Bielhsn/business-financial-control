@@ -19,15 +19,18 @@ from tests.fakes import (
     FakeCompanyRepository,
     FakeConnectionRepository,
     FakeConnector,
+    FakeEmailSender,
     FakeEmployeeRepository,
     FakeFinancialCategoryRepository,
     FakeFinancialTransactionRepository,
+    FakeGoogleTokenVerifier,
     FakePasswordHasher,
     FakeRefreshTokenRepository,
     FakeSecretCipher,
     FakeStockMovementRepository,
     FakeTokenService,
     FakeUserRepository,
+    FakeVerificationCodeRepository,
 )
 
 
@@ -132,6 +135,21 @@ def fake_cnpj_lookup() -> FakeCnpjLookup:
 
 
 @pytest.fixture
+def fake_verification_code_repository() -> FakeVerificationCodeRepository:
+    return FakeVerificationCodeRepository()
+
+
+@pytest.fixture
+def fake_email_sender() -> FakeEmailSender:
+    return FakeEmailSender()
+
+
+@pytest.fixture
+def fake_google_verifier() -> FakeGoogleTokenVerifier:
+    return FakeGoogleTokenVerifier()
+
+
+@pytest.fixture
 def client(
     fake_audit_log_repository: FakeAuditLogRepository,
     fake_user_repository: FakeUserRepository,
@@ -153,6 +171,9 @@ def client(
     fake_secret_cipher: FakeSecretCipher,
     fake_connector: FakeConnector,
     fake_cnpj_lookup: FakeCnpjLookup,
+    fake_verification_code_repository: FakeVerificationCodeRepository,
+    fake_email_sender: FakeEmailSender,
+    fake_google_verifier: FakeGoogleTokenVerifier,
 ) -> Iterator[TestClient]:
     # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
     # nem de chaves reais de IA — o 503 de "IA não configurada" fica determinístico.
@@ -191,6 +212,11 @@ def client(
     app.dependency_overrides[deps.get_secret_cipher] = lambda: fake_secret_cipher
     app.dependency_overrides[deps.get_connector_factory] = lambda: (lambda provider: fake_connector)
     app.dependency_overrides[deps.get_cnpj_lookup] = lambda: fake_cnpj_lookup
+    app.dependency_overrides[deps.get_verification_code_repository] = (
+        lambda: fake_verification_code_repository
+    )
+    app.dependency_overrides[deps.get_email_sender] = lambda: fake_email_sender
+    app.dependency_overrides[deps.get_google_verifier] = lambda: fake_google_verifier
     limiter.reset()
 
     # Sem "with": não dispara o lifespan (que exigiria um MongoDB real).

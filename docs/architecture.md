@@ -24,6 +24,23 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 27 (Autenticação completa):** o `User` ganhou `is_verified` (default True, para
+não invalidar contas/testes existentes). A exigência de e-mail confirmado no login fica
+atrás da flag `require_email_verification` (default False) — assim a suíte inteira e o dev
+seguem logando, e produção liga a política sem mudança de código. Códigos de verificação
+(6 dígitos) e de reset de senha compartilham um mecanismo único (`VerificationCode` com
+`purpose`), com **hash determinístico HMAC-SHA256** (permite consultar por hash sem guardar
+o código em claro) e expiração via índice TTL do Mongo. O envio usa a porta `EmailSender`
+(adaptador de console em dev; SMTP/provedor real pluga sem tocar nos use cases). Reset e
+troca de senha **revogam todos os refresh tokens** do usuário (encerram sessões antigas).
+`forgot-password` responde de forma idêntica exista ou não a conta (anti-enumeração).
+Google OAuth segue o mesmo padrão porta/adaptador: `GoogleTokenVerifier` (domínio) +
+`GoogleTokenInfoVerifier` (valida o id_token e confere a audiência, testável via
+`MockTransport`), com find-or-create por e-mail; contas via Google já entram verificadas.
+Todos os endpoints têm rate limit. No frontend: "esqueci minha senha" → código → nova
+senha, alterar senha em Configurações, e botão "Entrar com Google" que só aparece quando
+`VITE_GOOGLE_CLIENT_ID` está configurado.
+
 **Etapa 26 (Cadastro completo + CNPJ):** a entidade `Company` ganhou campos
 fiscais/institucionais (razão social, nome fantasia, CNPJ, subsegmento, faturamento médio
 mensal em cents, telefone, e-mail, site, redes sociais) — todos opcionais com default, para

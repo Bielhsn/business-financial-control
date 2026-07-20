@@ -6,6 +6,8 @@ from app.domain.advisor.entities import BusinessSignal
 from app.domain.appointment.entities import Appointment, AppointmentStatus
 from app.domain.audit.entities import AuditEntry
 from app.domain.auth.entities import RefreshToken
+from app.domain.auth.google import GoogleIdentity
+from app.domain.auth.verification import VerificationCode, VerificationPurpose
 from app.domain.blueprint.entities import (
     CompanyBlueprint,
     CustomFieldDefinition,
@@ -34,6 +36,7 @@ from app.domain.financial.entities import (
     TransactionStatus,
 )
 from app.domain.insights.entities import FinancialInsight, InsightKind
+from app.domain.notifications.email import EmailMessage
 from app.domain.user.entities import User
 
 
@@ -48,7 +51,14 @@ class FakeUserRepository:
     async def get_by_id(self, user_id: str) -> User | None:
         return self._users_by_id.get(user_id)
 
-    async def create(self, *, email: str, hashed_password: str, full_name: str) -> User:
+    async def create(
+        self,
+        *,
+        email: str,
+        hashed_password: str,
+        full_name: str,
+        is_verified: bool = True,
+    ) -> User:
         user_id = str(self._next_id)
         self._next_id += 1
         now = datetime.now(UTC)
@@ -58,10 +68,20 @@ class FakeUserRepository:
             hashed_password=hashed_password,
             full_name=full_name,
             is_active=True,
+            is_verified=is_verified,
             created_at=now,
             updated_at=now,
         )
         self._users_by_id[user_id] = user
+        return user
+
+    async def update(self, user_id: str, **fields: object) -> User | None:
+        user = self._users_by_id.get(user_id)
+        if user is None:
+            return None
+        for key, value in fields.items():
+            setattr(user, key, value)
+        user.updated_at = datetime.now(UTC)
         return user
 
 
@@ -930,3 +950,79 @@ class FakeCnpjLookup:
             phone="1133224455",
             main_activity="Desenvolvimento de software",
         )
+
+
+class FakeVerificationCodeRepository:
+    def __init__(self) -> None:
+        self._codes: dict[str, VerificationCode] = {}
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        user_id: str,
+        purpose: VerificationPurpose,
+        code_hash: str,
+        expires_at: datetime,
+    ) -> VerificationCode:
+        code_id = str(self._next_id)
+        self._next_id += 1
+        code = VerificationCode(
+            id=code_id,
+            user_id=user_id,
+            purpose=purpose,
+            code_hash=code_hash,
+            expires_at=expires_at,
+            used=False,
+            created_at=datetime.now(UTC),
+        )
+        self._codes[code_id] = code
+        return code
+
+    async def get_active(
+        self, *, user_id: str, purpose: VerificationPurpose, code_hash: str
+    ) -> VerificationCode | None:
+        for code in self._codes.values():
+            if (
+                code.user_id == user_id
+                and code.purpose == purpose
+                and code.code_hash == code_hash
+                and not code.used
+                and code.expires_at >= datetime.now(UTC)
+            ):
+                return code
+        return None
+
+    async def mark_used(self, code_id: str) -> None:
+        code = self._codes.get(code_id)
+        if code is not None:
+            code.used = True
+
+    async def invalidate_for(self, *, user_id: str, purpose: VerificationPurpose) -> None:
+        for code in self._codes.values():
+            if code.user_id == user_id and code.purpose == purpose:
+                code.used = True
+
+
+class FakeEmailSender:
+    def __init__(self) -> None:
+        self.sent: list[EmailMessage] = []
+
+    async def send(self, message: EmailMessage) -> None:
+        self.sent.append(message)
+
+
+class FakeGoogleTokenVerifier:
+    """Mapeia id_token -> identidade (configurável); token desconhecido = inválido."""
+
+    def __init__(self, identities: dict[str, GoogleIdentity] | None = None) -> None:
+        self._identities = identities or {}
+
+    def register(self, id_token: str, identity: GoogleIdentity) -> None:
+        self._identities[id_token] = identity
+
+    async def verify(self, id_token: str) -> GoogleIdentity:
+        identity = self._identities.get(id_token)
+        if identity is None:
+            raise UnauthorizedError("Token do Google inválido ou expirado.")
+        return identity

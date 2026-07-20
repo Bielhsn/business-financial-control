@@ -11,3 +11,6 @@ class User:
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    # E-mail confirmado. Default True para não invalidar contas já existentes; o
+    # registro cria como False quando require_email_verification está ligado.
+    is_verified: bool = True

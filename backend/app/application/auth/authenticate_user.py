@@ -33,6 +33,11 @@ class AuthenticateUserUseCase:
         if not self._password_hasher.verify(password, user.hashed_password):
             raise UnauthorizedError(_INVALID_CREDENTIALS_MESSAGE)
 
+        # Só bloqueia por e-mail não verificado quando a política está ligada
+        # (produção); em dev/testes fica desligada para não travar o fluxo.
+        if self._settings.require_email_verification and not user.is_verified:
+            raise UnauthorizedError("Confirme seu e-mail para acessar. Enviamos um código.")
+
         return await issue_token_pair(
             user_id=user.id,
             refresh_token_repository=self._refresh_token_repository,

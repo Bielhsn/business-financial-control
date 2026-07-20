@@ -14,8 +14,10 @@ from app.core.exceptions import (
 from app.core.tenant import CompanyContext, set_current_company_id
 from app.domain.appointment.repository import AppointmentRepository
 from app.domain.audit.repository import AuditLogRepository
+from app.domain.auth.google import GoogleTokenVerifier
 from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
+from app.domain.auth.verification import VerificationCodeRepository
 from app.domain.blueprint.ports import AIProviderPort
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.catalog.repository import CatalogItemRepository, StockMovementRepository
@@ -30,10 +32,13 @@ from app.domain.financial.repository import (
     FinancialCategoryRepository,
     FinancialTransactionRepository,
 )
+from app.domain.notifications.email import EmailSender
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
+from app.infrastructure.auth.google import GoogleTokenInfoVerifier
 from app.infrastructure.connectors.factory import build_connector
+from app.infrastructure.email.console import ConsoleEmailSender
 from app.infrastructure.external.brasilapi import BrasilApiCnpjLookup
 from app.infrastructure.repositories.appointment_repository import BeanieAppointmentRepository
 from app.infrastructure.repositories.audit_log_repository import BeanieAuditLogRepository
@@ -61,6 +66,9 @@ from app.infrastructure.repositories.stock_movement_repository import (
     BeanieStockMovementRepository,
 )
 from app.infrastructure.repositories.user_repository import BeanieUserRepository
+from app.infrastructure.repositories.verification_code_repository import (
+    BeanieVerificationCodeRepository,
+)
 from app.infrastructure.security.crypto import FernetSecretCipher
 from app.infrastructure.security.password import Argon2PasswordHasher
 from app.infrastructure.security.tokens import JWTTokenService
@@ -142,6 +150,25 @@ def get_connector_factory() -> Callable[[str], Connector]:
 
 def get_cnpj_lookup() -> CnpjLookup:
     return BrasilApiCnpjLookup()
+
+
+def get_verification_code_repository() -> VerificationCodeRepository:
+    return BeanieVerificationCodeRepository()
+
+
+def get_email_sender(settings: Annotated[Settings, Depends(get_settings)]) -> EmailSender:
+    # Só o adaptador de console por ora; SMTP/provedor real pluga aqui via settings.
+    return ConsoleEmailSender()
+
+
+def get_google_verifier(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> GoogleTokenVerifier:
+    if not settings.google_client_id:
+        raise AIProviderNotConfiguredError(
+            "Login com Google indisponível: defina GOOGLE_CLIENT_ID."
+        )
+    return GoogleTokenInfoVerifier(client_id=settings.google_client_id)
 
 
 def get_ai_provider(settings: Annotated[Settings, Depends(get_settings)]) -> AIProviderPort:

@@ -9,6 +9,7 @@ class UserDocument(Document):
     hashed_password: str
     full_name: str
     is_active: bool = True
+    is_verified: bool = True
     created_at: datetime
     updated_at: datetime
 

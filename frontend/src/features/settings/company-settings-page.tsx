@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Building2, History, Palette, Search, Trash2, Upload } from "lucide-react";
+import { Building2, History, KeyRound, Palette, Search, Trash2, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useChangePassword } from "@/features/auth/use-auth";
 import {
   useCompany,
   useLookupCnpj,
@@ -275,6 +276,70 @@ function CompanyProfileCard({ company }: { company: CompanyResponse }) {
   );
 }
 
+function ChangePasswordCard() {
+  const changePassword = useChangePassword();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+
+  const handleSave = () => {
+    if (next.length < 8) {
+      toast.error("A nova senha deve ter ao menos 8 caracteres.");
+      return;
+    }
+    changePassword.mutate(
+      { current_password: current, new_password: next },
+      {
+        onSuccess: () => {
+          toast.success("Senha alterada! As outras sessões foram encerradas.");
+          setCurrent("");
+          setNext("");
+        },
+        onError: (error) => toast.error(extractErrorMessage(error)),
+      },
+    );
+  };
+
+  return (
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <KeyRound className="size-4 text-primary" /> Alterar senha
+        </CardTitle>
+        <CardDescription>
+          Ao alterar a senha, as sessões nos outros dispositivos são encerradas por segurança.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="current-password">Senha atual</Label>
+            <Input
+              id="current-password"
+              type="password"
+              autoComplete="current-password"
+              value={current}
+              onChange={(event) => setCurrent(event.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new-password">Nova senha</Label>
+            <Input
+              id="new-password"
+              type="password"
+              autoComplete="new-password"
+              value={next}
+              onChange={(event) => setNext(event.target.value)}
+            />
+          </div>
+        </div>
+        <Button onClick={handleSave} disabled={changePassword.isPending || !current || !next}>
+          {changePassword.isPending ? "Alterando…" : "Alterar senha"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 const PRESET_COLORS = ["#B45309", "#4F46E5", "#0D9488", "#DC2626", "#DB2777", "#0F766E"];
 
 export function CompanySettingsPage() {
@@ -457,6 +522,8 @@ export function CompanySettingsPage() {
       </Card>
 
       {company && <CompanyProfileCard company={company} />}
+
+      <ChangePasswordCard />
 
       <AuditTrailCard companyId={id} />
     </div>
