@@ -1,6 +1,6 @@
 import { FileSpreadsheet, Plug, Sparkles, Upload, Wand2 } from "lucide-react";
-import { useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -162,6 +162,25 @@ export function IntegrationsPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId ?? "";
   const { data: blueprint } = useBlueprint(id);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Retorno do fluxo OAuth: mostra o resultado e limpa a URL.
+  useEffect(() => {
+    const connected = searchParams.get("connected");
+    const failed = searchParams.get("integration_error");
+    if (!connected && !failed) {
+      return;
+    }
+    if (connected) {
+      toast.success(`Integração ${connected} conectada com sucesso!`);
+    } else {
+      toast.error("Não foi possível concluir a conexão. Tente novamente.");
+    }
+    const next = new URLSearchParams(searchParams);
+    next.delete("connected");
+    next.delete("integration_error");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, setSearchParams]);
 
   // Integrações recomendadas pela IA no blueprint (específicas do segmento);
   // o restante do catálogo fica disponível, mas em segundo plano.

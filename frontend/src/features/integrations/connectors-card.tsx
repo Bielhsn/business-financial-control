@@ -21,6 +21,7 @@ import {
   useConnectProvider,
   useConnections,
   useDisconnectProvider,
+  useOAuthAuthorize,
   useSyncProvider,
 } from "@/features/integrations/use-connectors";
 import { extractErrorMessage } from "@/lib/api";
@@ -95,6 +96,81 @@ function ConnectDialog({
         <DialogFooter>
           <Button onClick={submit} disabled={connect.isPending}>
             {connect.isPending ? "Conectando…" : "Conectar e validar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function OAuthConnectButton({
+  companyId,
+  connector,
+}: {
+  companyId: string;
+  connector: ConnectorDefinitionResponse;
+}) {
+  const [open, setOpen] = useState(false);
+  const [shop, setShop] = useState("");
+  const authorize = useOAuthAuthorize(companyId);
+  const needsShop = connector.provider === "shopify";
+
+  const start = (payload: { provider: string; shop?: string }) =>
+    authorize.mutate(payload, {
+      // onSuccess redireciona o navegador; só tratamos erro aqui.
+      onError: (error) => toast.error(extractErrorMessage(error)),
+    });
+
+  if (!needsShop) {
+    return (
+      <Button
+        size="sm"
+        onClick={() => start({ provider: connector.provider })}
+        disabled={authorize.isPending}
+      >
+        <Link2 /> {authorize.isPending ? "Redirecionando…" : "Conectar"}
+      </Button>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm">
+          <Link2 /> Conectar
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Conectar {connector.name}</DialogTitle>
+          <DialogDescription>
+            Informe o endereço da sua loja para autorizar o acesso.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="shop-domain">Loja</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id="shop-domain"
+              placeholder="minha-loja"
+              value={shop}
+              onChange={(event) => setShop(event.target.value.trim())}
+            />
+            <span className="text-sm text-muted-foreground">.myshopify.com</span>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            onClick={() => {
+              if (!shop) {
+                toast.error("Informe o endereço da loja.");
+                return;
+              }
+              start({ provider: connector.provider, shop });
+            }}
+            disabled={authorize.isPending}
+          >
+            {authorize.isPending ? "Redirecionando…" : "Autorizar"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -213,7 +289,11 @@ export function ConnectorsCard({ companyId }: { companyId: string }) {
                 <p className="text-sm font-medium">{connector.name}</p>
                 <p className="text-xs text-muted-foreground">{connector.description}</p>
               </div>
-              <ConnectDialog companyId={companyId} connector={connector} />
+              {connector.auth_type === "oauth" ? (
+                <OAuthConnectButton companyId={companyId} connector={connector} />
+              ) : (
+                <ConnectDialog companyId={companyId} connector={connector} />
+              )}
             </div>
           );
         })}
