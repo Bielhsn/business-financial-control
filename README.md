@@ -327,6 +327,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 24  | Agenda — agendamentos com receita automática ao concluir                 | ✅ Concluída |
 | 25  | Conectores externos (arquitetura modular) + Hotmart → financeiro          | ✅ Concluída |
 | 26  | Cadastro de empresa completo + validação/autopreenchimento de CNPJ        | ✅ Concluída |
+| 27  | Autenticação completa (verificação e-mail, reset/troca senha, Google)     | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -534,6 +535,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   localmente (mesmo algoritmo da Receita) e, com um clique em **Buscar**, o sistema
   consulta a BrasilAPI para **autopreencher** razão social, nome fantasia, contato e situação
   cadastral (avisando se não estiver ativa). Editável em Configurações → Dados da empresa.
+
+- Autenticação completa — além de login/registro com JWT + refresh e Argon2 (já existentes),
+  a plataforma passa a ter verificação de e-mail por código de 6 dígitos, recuperação de
+  senha ("esqueci minha senha" → código → nova senha), alteração de senha (encerrando as
+  demais sessões) e login com Google (OAuth). Exigir e-mail confirmado no login é uma flag
+  (`REQUIRE_EMAIL_VERIFICATION`, desligada por padrão). Códigos ficam com hash e expiração;
+  o envio usa uma porta de e-mail (adaptador de console em dev, SMTP/provedor em produção).
 
 ## Funcionalidades futuras
 

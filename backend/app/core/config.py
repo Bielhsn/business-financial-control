@@ -24,6 +24,21 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
 
+    # Autenticação (Etapa 27). require_email_verification desligado por padrão para
+    # não travar dev/testes; em produção, ligue para exigir e-mail confirmado no login.
+    require_email_verification: bool = False
+    verification_code_ttl_minutes: int = 15
+    password_reset_ttl_minutes: int = 30
+    # Provedor de e-mail: "console" (dev — imprime o código no log) ou "smtp".
+    email_provider: str = "console"
+    email_from: str = "Aurum OS <no-reply@aurum.local>"
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_user: str | None = None
+    smtp_password: str | None = None
+    # Google OAuth (login social). Sem client id, o endpoint responde 503.
+    google_client_id: str | None = None
+
     cors_allowed_origins: str = "http://localhost:5173"
 
     ai_provider: str = "anthropic"

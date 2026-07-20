@@ -21,9 +21,9 @@ async def _register_user(
     email: str = "ana@example.com",
     password: str = "s3cr3t!!",
 ) -> User:
-    return await RegisterUserUseCase(user_repository, password_hasher).execute(
-        email=email, password=password, full_name="Ana Silva"
-    )
+    return await RegisterUserUseCase(
+        user_repository, password_hasher, Settings(_env_file=None)
+    ).execute(email=email, password=password, full_name="Ana Silva")
 
 
 def _use_case(

@@ -10,4 +10,5 @@ class UserResponse(BaseModel):
     email: str
     full_name: str
     is_active: bool
+    is_verified: bool
     created_at: datetime

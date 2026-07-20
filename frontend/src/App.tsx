@@ -15,6 +15,12 @@ const LoginPage = lazy(() =>
 const RegisterPage = lazy(() =>
   import("@/features/auth/register-page").then((m) => ({ default: m.RegisterPage })),
 );
+const ForgotPasswordPage = lazy(() =>
+  import("@/features/auth/forgot-password-page").then((m) => ({ default: m.ForgotPasswordPage })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("@/features/auth/reset-password-page").then((m) => ({ default: m.ResetPasswordPage })),
+);
 const CompaniesPage = lazy(() =>
   import("@/features/companies/companies-page").then((m) => ({ default: m.CompaniesPage })),
 );
@@ -80,6 +86,8 @@ export function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/companies" element={<CompaniesPage />} />
           <Route path="/onboarding" element={<OnboardingPage />} />

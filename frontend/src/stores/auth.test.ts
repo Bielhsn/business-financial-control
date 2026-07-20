@@ -22,6 +22,7 @@ describe("auth store", () => {
       email: "a@b.com",
       full_name: "A",
       is_active: true,
+      is_verified: true,
       created_at: new Date().toISOString(),
     });
 

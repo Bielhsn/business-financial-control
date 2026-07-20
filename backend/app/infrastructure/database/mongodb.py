@@ -21,6 +21,7 @@ from app.infrastructure.database.models.financial_transaction import (
 from app.infrastructure.database.models.refresh_token import RefreshTokenDocument
 from app.infrastructure.database.models.stock_movement import StockMovementDocument
 from app.infrastructure.database.models.user import UserDocument
+from app.infrastructure.database.models.verification_code import VerificationCodeDocument
 
 logger = get_logger(__name__)
 
@@ -61,6 +62,7 @@ async def connect_to_mongo() -> None:
             EmployeeDocument,
             AppointmentDocument,
             ConnectionDocument,
+            VerificationCodeDocument,
         ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)
