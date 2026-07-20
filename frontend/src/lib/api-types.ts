@@ -50,6 +50,22 @@ export interface CompanyResponse {
   updated_at: string;
 }
 
+export interface MemberResponse {
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: CompanyRole;
+}
+
+export interface InvitationResponse {
+  id: string;
+  email: string;
+  role: CompanyRole;
+  status: string;
+  created_at: string;
+  expires_at: string;
+}
+
 export interface CnpjLookupResponse {
   cnpj: string;
   legal_name: string | null;

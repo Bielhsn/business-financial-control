@@ -50,6 +50,22 @@ class BeanieCompanyMembershipRepository:
         ).to_list()
         return [_to_entity(document) for document in documents]
 
+    async def list_for_company(self, company_id: str) -> list[CompanyMembership]:
+        documents = await CompanyMembershipDocument.find(
+            CompanyMembershipDocument.company_id == company_id
+        ).to_list()
+        return [_to_entity(document) for document in documents]
+
+    async def update_role(self, membership_id: str, role: CompanyRole) -> CompanyMembership | None:
+        if not PydanticObjectId.is_valid(membership_id):
+            return None
+        document = await CompanyMembershipDocument.get(PydanticObjectId(membership_id))
+        if document is None:
+            return None
+        document.role = role.value
+        await document.save()
+        return _to_entity(document)
+
     async def delete(self, membership_id: str) -> None:
         if not PydanticObjectId.is_valid(membership_id):
             return

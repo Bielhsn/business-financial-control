@@ -24,6 +24,7 @@ from app.domain.catalog.entities import (
 from app.domain.client.entities import Client
 from app.domain.company.cnpj_lookup import CnpjInfo
 from app.domain.company.entities import Company, CompanyMembership
+from app.domain.company.invitation import Invitation, InvitationStatus
 from app.domain.company.roles import CompanyRole
 from app.domain.connector.entities import Connection, ConnectionStatus, NormalizedSale
 from app.domain.dashboard.entities import DashboardSummary
@@ -266,6 +267,16 @@ class FakeCompanyMembershipRepository:
 
     async def list_for_user(self, user_id: str) -> list[CompanyMembership]:
         return [m for m in self._memberships.values() if m.user_id == user_id]
+
+    async def list_for_company(self, company_id: str) -> list[CompanyMembership]:
+        return [m for m in self._memberships.values() if m.company_id == company_id]
+
+    async def update_role(self, membership_id: str, role: CompanyRole) -> CompanyMembership | None:
+        membership = self._memberships.get(membership_id)
+        if membership is None:
+            return None
+        membership.role = role
+        return membership
 
     async def delete(self, membership_id: str) -> None:
         self._memberships.pop(membership_id, None)
@@ -1026,3 +1037,80 @@ class FakeGoogleTokenVerifier:
         if identity is None:
             raise UnauthorizedError("Token do Google inválido ou expirado.")
         return identity
+
+
+class FakeInvitationRepository:
+    def __init__(self) -> None:
+        self._invitations: dict[str, Invitation] = {}
+        self._next_id = 1
+
+    async def create(
+        self,
+        *,
+        company_id: str,
+        email: str,
+        role: CompanyRole,
+        token: str,
+        invited_by: str,
+        expires_at: datetime,
+    ) -> Invitation:
+        invitation_id = str(self._next_id)
+        self._next_id += 1
+        invitation = Invitation(
+            id=invitation_id,
+            company_id=company_id,
+            email=email,
+            role=role,
+            token=token,
+            status=InvitationStatus.PENDING,
+            invited_by=invited_by,
+            expires_at=expires_at,
+            created_at=datetime.now(UTC),
+        )
+        self._invitations[invitation_id] = invitation
+        return invitation
+
+    async def list_pending_for_company(self, company_id: str) -> list[Invitation]:
+        return [
+            i
+            for i in self._invitations.values()
+            if i.company_id == company_id and i.status == InvitationStatus.PENDING
+        ]
+
+    async def get_by_token(self, token: str) -> Invitation | None:
+        return next((i for i in self._invitations.values() if i.token == token), None)
+
+    async def get_pending_for_email(self, *, company_id: str, email: str) -> Invitation | None:
+        return next(
+            (
+                i
+                for i in self._invitations.values()
+                if i.company_id == company_id
+                and i.email == email
+                and i.status == InvitationStatus.PENDING
+            ),
+            None,
+        )
+
+    async def mark_accepted(self, invitation_id: str) -> None:
+        invitation = self._invitations.get(invitation_id)
+        if invitation is not None:
+            invitation.status = InvitationStatus.ACCEPTED
+
+    async def mark_revoked(self, invitation_id: str) -> None:
+        invitation = self._invitations.get(invitation_id)
+        if invitation is not None:
+            invitation.status = InvitationStatus.REVOKED
+
+
+class FakeCompanyDataService:
+    """Exporter + eraser em memória para testes (registra a empresa apagada)."""
+
+    def __init__(self) -> None:
+        self.erased: list[str] = []
+
+    async def export(self, company_id: str) -> dict[str, object]:
+        return {"company": {"id": company_id}, "financial_transactions": []}
+
+    async def erase(self, company_id: str) -> None:
+        self.erased.append(company_id)

@@ -15,6 +15,7 @@ from tests.fakes import (
     FakeClientRepository,
     FakeCnpjLookup,
     FakeCompanyBlueprintRepository,
+    FakeCompanyDataService,
     FakeCompanyMembershipRepository,
     FakeCompanyRepository,
     FakeConnectionRepository,
@@ -24,6 +25,7 @@ from tests.fakes import (
     FakeFinancialCategoryRepository,
     FakeFinancialTransactionRepository,
     FakeGoogleTokenVerifier,
+    FakeInvitationRepository,
     FakePasswordHasher,
     FakeRefreshTokenRepository,
     FakeSecretCipher,
@@ -150,6 +152,16 @@ def fake_google_verifier() -> FakeGoogleTokenVerifier:
 
 
 @pytest.fixture
+def fake_invitation_repository() -> FakeInvitationRepository:
+    return FakeInvitationRepository()
+
+
+@pytest.fixture
+def fake_company_data_service() -> FakeCompanyDataService:
+    return FakeCompanyDataService()
+
+
+@pytest.fixture
 def client(
     fake_audit_log_repository: FakeAuditLogRepository,
     fake_user_repository: FakeUserRepository,
@@ -174,6 +186,8 @@ def client(
     fake_verification_code_repository: FakeVerificationCodeRepository,
     fake_email_sender: FakeEmailSender,
     fake_google_verifier: FakeGoogleTokenVerifier,
+    fake_invitation_repository: FakeInvitationRepository,
+    fake_company_data_service: FakeCompanyDataService,
 ) -> Iterator[TestClient]:
     # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
     # nem de chaves reais de IA — o 503 de "IA não configurada" fica determinístico.
@@ -217,6 +231,9 @@ def client(
     )
     app.dependency_overrides[deps.get_email_sender] = lambda: fake_email_sender
     app.dependency_overrides[deps.get_google_verifier] = lambda: fake_google_verifier
+    app.dependency_overrides[deps.get_invitation_repository] = lambda: fake_invitation_repository
+    app.dependency_overrides[deps.get_company_data_exporter] = lambda: fake_company_data_service
+    app.dependency_overrides[deps.get_company_data_eraser] = lambda: fake_company_data_service
     limiter.reset()
 
     # Sem "with": não dispara o lifespan (que exigiria um MongoDB real).

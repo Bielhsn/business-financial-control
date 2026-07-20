@@ -24,6 +24,21 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 28 (Equipe + LGPD):** o multi-tenant já tinha `CompanyMembership` (RBAC); esta
+etapa entrega a gestão completa. Convites por e-mail: se o e-mail já tem conta, vira
+membership na hora; senão, cria uma `Invitation` pendente (token opaco, expiração) que o
+convidado aceita depois de registrar — o aceite valida que o e-mail do usuário logado casa
+com o do convite. Um invariante central é protegido em um único ponto
+(`_assert_not_last_owner`): nunca é possível remover ou rebaixar o **último proprietário**,
+então a empresa jamais fica sem dono. LGPD via duas portas (`CompanyDataExporter`,
+`CompanyDataEraser`) com um único adaptador Beanie: o export percorre todas as coleções por
+`company_id` e serializa (removendo `encrypted_secrets` — segredos nunca saem); o erase
+apaga em cascata todas as coleções escopadas + memberships + convites + a própria empresa.
+Export e exclusão são restritos ao `OWNER` e auditados (a exclusão é auditada **antes** de
+apagar). No frontend, tudo vive em Configurações: card Equipe (convidar, papéis, remover,
+convites pendentes) e "Dados e privacidade" (exportar JSON; excluir empresa com confirmação
+digitando o nome).
+
 **Etapa 27 (Autenticação completa):** o `User` ganhou `is_verified` (default True, para
 não invalidar contas/testes existentes). A exigência de e-mail confirmado no login fica
 atrás da flag `require_email_verification` (default False) — assim a suíte inteira e o dev
