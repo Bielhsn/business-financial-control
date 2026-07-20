@@ -1,11 +1,12 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Building2, Plus } from "lucide-react";
+import { ArrowRight, Building2, Plus, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useIsPlatformAdmin } from "@/features/admin/use-admin";
 import { useMyCompanies } from "@/features/companies/use-companies";
 import type { CompanyRole } from "@/lib/api-types";
 
@@ -19,21 +20,31 @@ const ROLE_LABELS: Record<CompanyRole, string> = {
 
 export function CompaniesPage() {
   const { data: companies, isLoading } = useMyCompanies();
+  const { data: isPlatformAdmin } = useIsPlatformAdmin();
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Minhas empresas</h1>
           <p className="text-sm text-muted-foreground">
             Escolha uma empresa para abrir o painel ou cadastre uma nova.
           </p>
         </div>
-        <Button asChild>
-          <Link to="/onboarding">
-            <Plus /> Nova empresa
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {isPlatformAdmin && (
+            <Button asChild variant="outline">
+              <Link to="/admin">
+                <ShieldCheck /> Painel admin
+              </Link>
+            </Button>
+          )}
+          <Button asChild>
+            <Link to="/onboarding">
+              <Plus /> Nova empresa
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {isLoading && (

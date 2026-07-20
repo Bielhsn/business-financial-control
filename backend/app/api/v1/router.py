@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.routers import (
+    admin,
     advisor,
     appointment,
     audit,
@@ -42,3 +43,4 @@ api_router.include_router(cnpj.router)
 api_router.include_router(invitations.router)
 api_router.include_router(plans.router)
 api_router.include_router(subscription.router)
+api_router.include_router(admin.router)

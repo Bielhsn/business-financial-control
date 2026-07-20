@@ -41,6 +41,10 @@ class Settings(BaseSettings):
 
     cors_allowed_origins: str = "http://localhost:5173"
 
+    # E-mails com acesso ao painel administrativo do SaaS (super-admin), separados
+    # por vírgula. Vazio = ninguém tem acesso (seguro por padrão).
+    platform_admin_emails: str = ""
+
     ai_provider: str = "anthropic"
     anthropic_api_key: str | None = None
     ai_model: str = "claude-sonnet-5"
@@ -55,6 +59,17 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_allowed_origins.split(",") if origin.strip()]
+
+    @property
+    def platform_admin_email_set(self) -> frozenset[str]:
+        return frozenset(
+            email.strip().lower()
+            for email in self.platform_admin_emails.split(",")
+            if email.strip()
+        )
+
+    def is_platform_admin(self, email: str) -> bool:
+        return email.strip().lower() in self.platform_admin_email_set
 
     @model_validator(mode="after")
     def _require_strong_secret_in_production(self) -> "Settings":

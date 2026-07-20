@@ -330,6 +330,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 27  | Autenticação completa (verificação e-mail, reset/troca senha, Google)     | ✅ Concluída |
 | 28  | Convites de equipe (papéis) + LGPD (exportar/excluir dados)               | ✅ Concluída |
 | 29  | Planos de assinatura (Starter/Professional/Business/Enterprise) + gating  | ✅ Concluída |
+| 30  | Painel administrativo do SaaS (super-admin: MRR/ARR, churn, segmentação)   | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -564,6 +565,17 @@ Detalhes de implementação de cada mecanismo são documentados em
   upgrade — por exemplo, conectar mais integrações ou convidar mais membros do que o plano
   permite. A cobrança real (Stripe) entra numa etapa futura; por ora a troca de plano é
   registrada imediatamente para alimentar o painel administrativo (MRR, trials, renovações).
+
+- Painel administrativo do SaaS (super-admin) — visão de dono da plataforma, restrita aos
+  e-mails em `PLATFORM_ADMIN_EMAILS` (quem não é super-admin recebe 404, sem saber que o painel
+  existe). Reúne, cruzando todos os tenants: **receita** (MRR/ARR calculados das assinaturas
+  ativas via catálogo de planos, assinantes pagantes, trials, além do volume transacionado
+  pelas empresas); **clientes** (total/ativas/inativas, novas no mês, cancelamentos e taxa de
+  churn); **segmentação** (empresas por segmento); **assinaturas** (por plano com MRR, por
+  status, inadimplentes); e **sistema** (usuários, empresas, integrações conectadas e com
+  erro). A matemática fica num caso de uso puro (fácil de testar); as consultas cruzam os
+  tenants numa camada de leitura dedicada. Frontend: rota `/admin` com _stat tiles_ e quebras
+  visuais, acessível pelo botão "Painel admin" que só aparece para super-admins.
 
 ## Funcionalidades futuras
 

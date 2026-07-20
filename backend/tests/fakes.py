@@ -2,6 +2,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.exceptions import UnauthorizedError
+from app.domain.admin.metrics import CompanySummary, ConnectionSummary, FinancialTotals
 from app.domain.advisor.entities import BusinessSignal
 from app.domain.appointment.entities import Appointment, AppointmentStatus
 from app.domain.audit.entities import AuditEntry
@@ -1172,3 +1173,26 @@ class FakeSubscriptionRepository:
 
     async def list_all(self) -> list[Subscription]:
         return list(self._subscriptions.values())
+
+
+class FakeAdminMetricsRepository:
+    """Métricas cross-tenant em memória — seeds ajustáveis pelos testes."""
+
+    def __init__(self) -> None:
+        self.companies: list[CompanySummary] = []
+        self.users = 0
+        self.connections: list[ConnectionSummary] = []
+        self.income_cents = 0
+        self.expense_cents = 0
+
+    async def list_companies(self) -> list[CompanySummary]:
+        return list(self.companies)
+
+    async def count_users(self) -> int:
+        return self.users
+
+    async def list_connections(self) -> list[ConnectionSummary]:
+        return list(self.connections)
+
+    async def financial_totals(self) -> FinancialTotals:
+        return FinancialTotals(income_cents=self.income_cents, expense_cents=self.expense_cents)
