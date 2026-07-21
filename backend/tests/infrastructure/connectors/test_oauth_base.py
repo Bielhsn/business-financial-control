@@ -78,6 +78,22 @@ async def test_exchange_code_parses_tokens() -> None:
     assert tokens.is_expired() is False
 
 
+async def test_exchange_code_parses_camelcase_tokens() -> None:
+    # O iFood responde em camelCase (accessToken/refreshToken/expiresIn).
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={"accessToken": "acc", "refreshToken": "ref", "expiresIn": 21600},
+        )
+
+    tokens = await _connector(httpx.MockTransport(handler)).exchange_code(
+        code="abc", redirect_uri="https://app.test/cb"
+    )
+    assert tokens.access_token == "acc"
+    assert tokens.refresh_token == "ref"
+    assert tokens.expires_at is not None
+
+
 async def test_refresh_uses_refresh_grant() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         body = request.content.decode()

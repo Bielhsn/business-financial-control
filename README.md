@@ -340,6 +340,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 37  | Índice de saúde do negócio (score 0–100 ponderado e explicável)             | ✅ Concluída |
 | 38  | Chaves de API + API pública (acesso programático do plano Enterprise)       | ✅ Concluída |
 | 39  | Containerização e deploy de produção (Docker, nginx, compose, guia)         | ✅ Concluída |
+| 40  | Sincronização real de vendas do iFood (fetch_sales + parser + testes)       | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -601,6 +602,15 @@ Detalhes de implementação de cada mecanismo são documentados em
   apps parceiros e configure `*_CLIENT_ID`/`*_CLIENT_SECRET`; sem isso o provedor responde 503.
   O mapeamento das vendas de cada API (`fetch_sales`) é habilitado por provedor quando as
   credenciais reais permitirem validar ponta a ponta.
+- Sincronização real de vendas do iFood — o `IFoodConnector` usa o token OAuth já autorizado
+  pelo lojista para listar as vendas na API do iFood (Merchant + Financial) e traduzi-las para
+  o formato normalizado que alimenta financeiro, dashboard e análise por plataforma. O mesmo
+  motor de sync idempotente já existente é reutilizado (nenhuma mudança nele). O mapeamento fica
+  isolado em funções puras cobertas por testes com payloads no formato documentado da API, para
+  que a ativação com uma conta real de lojista seja apenas uma validação de formato. O parser de
+  token OAuth também passou a aceitar o camelCase que o iFood usa (`accessToken`/`expiresIn`).
+  **Pré-requisito para ligar:** registrar o app no portal do iFood (exige CNPJ) e preencher
+  `IFOOD_CLIENT_ID`/`IFOOD_CLIENT_SECRET` + `PUBLIC_BASE_URL`.
 
 - Análise de vendas por plataforma — durante a sincronização, cada venda normalizada é guardada
   com detalhe (produto, horário, comprador) numa base própria, além de virar lançamento

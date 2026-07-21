@@ -51,6 +51,25 @@ docker compose -f infra/docker-compose.prod.yml up -d --build
 - Verifique a saúde da API: `http://SEU_SERVIDOR/api/v1/health` → `{"status":"ok","database":"ok"}`.
 - Logs: `docker compose -f infra/docker-compose.prod.yml logs -f backend`.
 
+## 3.1. Criar a conta de dono (super-admin)
+
+Com a stack no ar, crie a sua conta de dono já pronta para logar. Rode o script
+de bootstrap uma vez (escolha uma senha forte — ela não fica gravada em lugar
+nenhum, só é mostrada no terminal):
+
+```bash
+docker compose -f infra/docker-compose.prod.yml exec \
+    -e ADMIN_PASSWORD='sua-senha-forte' \
+    backend python -m scripts.create_admin --email voce@suaempresa.com
+```
+
+- Se a conta não existe, ela é criada **verificada** (loga direto).
+- Se já existe, o script garante que está ativa/verificada e troca a senha.
+
+Para liberar o **painel super-admin** (`/admin`, com MRR/ARR, churn, etc.),
+inclua o mesmo e-mail em `PLATFORM_ADMIN_EMAILS` no `backend/.env` e reinicie o
+backend. O script avisa se isso ainda não está configurado.
+
 ## 4. Atualizações
 
 ```bash
