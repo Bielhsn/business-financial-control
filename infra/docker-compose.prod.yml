@@ -1,0 +1,87 @@
+# Stack de produção do Aurum OS.
+#
+# Diferenças frente ao docker-compose.yml (desenvolvimento):
+# - Banco e cache NÃO expõem portas ao host (só a rede interna do compose).
+# - Backend roda com múltiplos workers e SEM montar o código-fonte (usa a imagem).
+# - Frontend (nginx) é o único ponto de entrada público, servindo o SPA e fazendo
+#   proxy de /api para o backend.
+# - Healthchecks e políticas de restart em todos os serviços.
+#
+# Uso:
+#   1. Preencha backend/.env (baseie-se em backend/.env.example) com segredos fortes.
+#   2. docker compose -f infra/docker-compose.prod.yml up -d --build
+#
+# Veja docs/DEPLOY.md para o passo a passo completo.
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      # Sobrescreve os hosts para os nomes de serviço da rede interna.
+      MONGODB_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379/0
+      ENVIRONMENT: production
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --workers
+      - "4"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  mongo_data:
+  redis_data:

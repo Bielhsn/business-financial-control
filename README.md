@@ -339,6 +339,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 36  | Central de alertas acionáveis (recomendações determinísticas no dashboard)  | ✅ Concluída |
 | 37  | Índice de saúde do negócio (score 0–100 ponderado e explicável)             | ✅ Concluída |
 | 38  | Chaves de API + API pública (acesso programático do plano Enterprise)       | ✅ Concluída |
+| 39  | Containerização e deploy de produção (Docker, nginx, compose, guia)         | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -643,6 +644,15 @@ Detalhes de implementação de cada mecanismo são documentados em
   frase explicando o porquê; fatores sem dados são ignorados (não punem uma empresa nova, que
   fica neutra em 50). O card traz um medidor circular colorido por faixa (excelente/bom/atenção/
   crítico) e a quebra por fator. Cálculo puro e testável.
+
+- Deploy de produção — a stack sobe com um comando via Docker Compose
+  ([`infra/docker-compose.prod.yml`](infra/docker-compose.prod.yml)): **frontend** (nginx
+  servindo o SPA e fazendo proxy de `/api`), **backend** (FastAPI com múltiplos workers),
+  **MongoDB** e **Redis** — só o frontend fica exposto; banco e cache ficam na rede interna,
+  com healthchecks e políticas de restart em todos. Há Dockerfile do frontend (build Vite →
+  nginx), `.dockerignore` nos dois lados, um workflow que valida o build das imagens a cada
+  push/PR e um guia passo a passo em [`docs/DEPLOY.md`](docs/DEPLOY.md) (segredos, HTTPS,
+  backups e checklist). Nenhum segredo fica no repositório.
 
 - Chaves de API e API pública — torna real a funcionalidade de acesso programático do plano
   Enterprise. O proprietário/administrador gera chaves (`aur_…`) nas Configurações; a chave crua
