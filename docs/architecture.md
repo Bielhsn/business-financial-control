@@ -24,6 +24,16 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 37 (Índice de saúde do negócio):** condensa os sinais num único número explicável, sem
+IA opaca. `compute_health_score` é puro: cada fator (margem, tendência de caixa, reembolsos,
+metas, integrações) vira um score 0–100 com um `detail` textual e um peso; o índice é a média
+**ponderada apenas dos fatores com dados** — assim uma empresa nova fica neutra (50), nunca
+"crítica" por falta de histórico. As faixas (excelente/bom/atenção/crítico) e a normalização de
+cada fator ficam em um só lugar, cobertas por teste. `GetHealthScoreUseCase` reúne os números
+reaproveitando forecast/análise/metas + repositórios, sem duplicar regra. Fica em
+`GET /companies/{id}/analytics/health`; no dashboard, um medidor circular (SVG, cor por faixa) e
+a quebra por fator com a explicação de cada score.
+
 **Etapa 36 (Central de alertas acionáveis):** o "recomendações por IA" do pedido é entregue como
 composição **determinística** — mais confiável e testável que texto gerado. A decisão vive numa
 função pura (`compute_alerts`) que recebe primitivos (integrações com erro, metas fora do ritmo,

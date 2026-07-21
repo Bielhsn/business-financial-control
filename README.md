@@ -337,6 +337,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 34  | Metas financeiras mensais (faturamento e resultado) com acompanhamento      | ✅ Concluída |
 | 35  | Exportação de relatórios em CSV (lançamentos e vendas por plataforma)       | ✅ Concluída |
 | 36  | Central de alertas acionáveis (recomendações determinísticas no dashboard)  | ✅ Concluída |
+| 37  | Índice de saúde do negócio (score 0–100 ponderado e explicável)             | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -634,6 +635,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   atingidos (info, com atalho para upgrade). Cada alerta traz um link "Resolver" para a tela
   certa. As regras vivem num cálculo puro e ordenado por severidade; nada aparece quando está
   tudo saudável.
+
+- Índice de saúde do negócio — um número único (0–100) e **explicável** no dashboard, média
+  ponderada de cinco fatores: margem do mês, tendência de caixa (do forecast), taxa de
+  reembolso, cumprimento de metas e integrações saudáveis. Cada fator mostra seu score e uma
+  frase explicando o porquê; fatores sem dados são ignorados (não punem uma empresa nova, que
+  fica neutra em 50). O card traz um medidor circular colorido por faixa (excelente/bom/atenção/
+  crítico) e a quebra por fator. Cálculo puro e testável.
 
 ## Funcionalidades futuras
 

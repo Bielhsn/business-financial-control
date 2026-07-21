@@ -449,6 +449,23 @@ export interface CashflowForecastResponse {
   history: MonthPoint[];
 }
 
+// Índice de saúde do negócio (Etapa 37)
+export type HealthRating = "excellent" | "good" | "attention" | "critical";
+
+export interface HealthFactor {
+  key: string;
+  label: string;
+  score: number;
+  weight: number;
+  detail: string;
+}
+
+export interface HealthScoreResponse {
+  score: number;
+  rating: HealthRating;
+  factors: HealthFactor[];
+}
+
 // Alertas acionáveis (Etapa 36)
 export type AlertSeverity = "critical" | "warning" | "info";
 
