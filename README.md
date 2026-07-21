@@ -336,6 +336,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 33  | Previsão de fluxo de caixa (run-rate + tendência dos meses fechados)        | ✅ Concluída |
 | 34  | Metas financeiras mensais (faturamento e resultado) com acompanhamento      | ✅ Concluída |
 | 35  | Exportação de relatórios em CSV (lançamentos e vendas por plataforma)       | ✅ Concluída |
+| 36  | Central de alertas acionáveis (recomendações determinísticas no dashboard)  | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -626,6 +627,13 @@ Detalhes de implementação de cada mecanismo são documentados em
   baixe todas as vendas sincronizadas (data, plataforma, produto, valor, venda/reembolso,
   cliente). O CSV usa vírgula decimal (pt-BR) e BOM UTF-8 para abrir corretamente no Excel com
   acentos. A geração é pura (fácil de testar) e o download passa pelo token de autenticação.
+
+- Central de alertas acionáveis — o dashboard mostra um bloco de recomendações **determinísticas**
+  que compõem sinais já existentes: integração com erro (crítico), projeção de caixa negativa
+  (crítico), meta abaixo do ritmo (aviso), taxa de reembolso alta (aviso) e limites de plano
+  atingidos (info, com atalho para upgrade). Cada alerta traz um link "Resolver" para a tela
+  certa. As regras vivem num cálculo puro e ordenado por severidade; nada aparece quando está
+  tudo saudável.
 
 ## Funcionalidades futuras
 

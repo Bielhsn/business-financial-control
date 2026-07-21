@@ -449,6 +449,17 @@ export interface CashflowForecastResponse {
   history: MonthPoint[];
 }
 
+// Alertas acionáveis (Etapa 36)
+export type AlertSeverity = "critical" | "warning" | "info";
+
+export interface AlertResponse {
+  code: string;
+  severity: AlertSeverity;
+  title: string;
+  message: string;
+  action: string | null;
+}
+
 // Metas financeiras (Etapa 34)
 export type GoalMetric = "monthly_income" | "monthly_net";
 
