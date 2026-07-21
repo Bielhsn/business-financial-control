@@ -1,0 +1,48 @@
+name: Docker images
+
+# Valida que as imagens de produção do backend e do frontend compilam.
+# O push para um registry fica comentado — descomente e configure os secrets
+# (REGISTRY, REGISTRY_USER, REGISTRY_TOKEN) quando definir onde hospedar.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infra/**"
+      - ".github/workflows/docker.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infra/**"
+      - ".github/workflows/docker.yml"
+
+jobs:
+  build-images:
+    name: Build (backend + frontend)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          tags: aurum-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          tags: aurum-frontend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
