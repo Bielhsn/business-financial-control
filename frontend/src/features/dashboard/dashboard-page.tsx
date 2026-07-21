@@ -26,6 +26,7 @@ import {
 
 import { EmptyState } from "@/components/empty-state";
 import { AdvisorCard, AskCard, SummaryCard } from "@/features/dashboard/ai-panel";
+import { AlertsBanner } from "@/features/dashboard/alerts-banner";
 import { ForecastCard } from "@/features/dashboard/forecast-card";
 import { GoalsCard } from "@/features/dashboard/goals-card";
 import { InsightsCard } from "@/features/dashboard/insights-card";
@@ -269,6 +270,8 @@ export function DashboardPage() {
           transition={{ duration: 0.25 }}
           className="space-y-6"
         >
+          <AlertsBanner companyId={companyId ?? ""} />
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
               title="Receita"

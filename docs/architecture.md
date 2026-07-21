@@ -24,6 +24,18 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 36 (Central de alertas acionáveis):** o "recomendações por IA" do pedido é entregue como
+composição **determinística** — mais confiável e testável que texto gerado. A decisão vive numa
+função pura (`compute_alerts`) que recebe primitivos (integrações com erro, metas fora do ritmo,
+projeção de caixa, pedidos/reembolsos, uso × limites do plano) e devolve alertas tipados
+(crítico/aviso/info), ordenados por severidade — nada aparece no estado saudável. Um orquestrador
+(`GetAlertsUseCase`) reúne esses números reaproveitando os use cases já existentes (forecast,
+metas, análise de vendas) + repositórios (conexões, assinatura, membros), sem duplicar regra. O
+endpoint `GET /companies/{id}/alerts` segue o acesso normal à empresa; no dashboard, um banner no
+topo lista os alertas com um atalho "Resolver" para a tela correspondente (integrações, plano,
+financeiro). Como a lógica é pura, adicionar uma nova regra é uma linha isolada, coberta por
+teste.
+
 **Etapa 35 (Relatórios em CSV):** a geração de CSV é **pura** (`csv_export.py`): recebe as
 entidades já carregadas e devolve a string, usando o módulo `csv` da stdlib (aspas automáticas
 quando o valor tem vírgula) — nada de I/O, trivial de testar. O router monta a resposta com
