@@ -334,6 +334,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 31  | Framework modular de integrações OAuth2 (Mercado Livre, Shopify, iFood)    | ✅ Concluída |
 | 32  | Análise de vendas por plataforma (ticket médio, top produtos, pico, etc.)  | ✅ Concluída |
 | 33  | Previsão de fluxo de caixa (run-rate + tendência dos meses fechados)        | ✅ Concluída |
+| 34  | Metas financeiras mensais (faturamento e resultado) com acompanhamento      | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -612,6 +613,12 @@ Detalhes de implementação de cada mecanismo são documentados em
   dashboard (realizado × projetado × próximo mês, mini-gráfico do histórico e a tendência),
   visível assim que há movimento financeiro — atende ao "IA para previsões" sem depender de
   serviço externo.
+
+- Metas financeiras — o dono/gestor define metas mensais de **faturamento** (receitas) e de
+  **resultado** (receitas − despesas). O card no dashboard mostra, para cada meta, o realizado
+  no mês, a barra de progresso, a projeção pelo mesmo _run-rate_ do forecast e se está "no
+  caminho" ou "abaixo do ritmo". CRUD escopado por empresa (uma meta por métrica), restrito a
+  papéis de gestão; o cálculo de progresso é puro e testável.
 
 ## Funcionalidades futuras
 

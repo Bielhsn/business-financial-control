@@ -24,6 +24,16 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 34 (Metas financeiras):** metas mensais por métrica (`GoalMetric`: faturamento ou
+resultado), uma por empresa+métrica (índice único), escopadas por tenant. O acompanhamento
+reaproveita o **mesmo run-rate** do forecast (Etapa 33) para projetar o fechamento do mês,
+mantendo a leitura consistente entre "previsão" e "meta". O cálculo de progresso
+(`compute_goal_progress`) é puro — recebe realizado (receita e líquido do mês corrente) + a
+meta e devolve realizado/projetado/percentual/on-track; o use case só soma os lançamentos pagos
+do mês. Definir/remover meta é restrito a papéis de gestão; consultar segue o acesso normal à
+empresa. No dashboard, um card ao lado da previsão mostra a barra de progresso, a projeção e se
+está "no caminho".
+
 **Etapa 33 (Previsão de fluxo de caixa):** o pedido de "IA para previsões" é atendido com um
 modelo **determinístico e explicável** em vez de caixa preta — mais confiável e testável para
 dinheiro. O `GetCashflowForecastUseCase` busca os lançamentos pagos dos últimos ~6 meses numa
