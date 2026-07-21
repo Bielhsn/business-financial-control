@@ -2,12 +2,21 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
 
-from app.api.v1.deps import get_company_context, get_platform_sale_repository
+from app.api.v1.deps import (
+    get_company_context,
+    get_financial_transaction_repository,
+    get_platform_sale_repository,
+)
+from app.application.forecast.cashflow import GetCashflowForecastUseCase
 from app.application.platform_sales.analytics import GetSalesAnalyticsUseCase
 from app.core.tenant import CompanyContext
+from app.domain.financial.repository import FinancialTransactionRepository
+from app.domain.forecast.entities import CashflowForecast
 from app.domain.platform_sales.entities import SalesAnalytics
 from app.domain.platform_sales.repository import PlatformSaleRepository
 from app.schemas.analytics import (
+    CashflowForecastResponse,
+    MonthPointResponse,
     PeakHourResponse,
     PlatformMetricResponse,
     SalesAnalyticsResponse,
@@ -59,3 +68,35 @@ async def sales_analytics(
     use_case = GetSalesAnalyticsUseCase(platform_sale_repository)
     analytics = await use_case.execute(days=days)
     return _to_response(analytics)
+
+
+def _to_forecast_response(forecast: CashflowForecast) -> CashflowForecastResponse:
+    return CashflowForecastResponse(
+        current_month_actual_net_cents=forecast.current_month_actual_net_cents,
+        current_month_projected_net_cents=forecast.current_month_projected_net_cents,
+        next_month_projected_net_cents=forecast.next_month_projected_net_cents,
+        trend_pct=forecast.trend_pct,
+        method=forecast.method,
+        history=[
+            MonthPointResponse(
+                year=point.year,
+                month=point.month,
+                income_cents=point.income_cents,
+                expense_cents=point.expense_cents,
+                net_cents=point.net_cents,
+            )
+            for point in forecast.history
+        ],
+    )
+
+
+@router.get("/forecast", response_model=CashflowForecastResponse)
+async def cashflow_forecast(
+    company_context: Annotated[CompanyContext, Depends(get_company_context)],
+    transaction_repository: Annotated[
+        FinancialTransactionRepository, Depends(get_financial_transaction_repository)
+    ],
+) -> CashflowForecastResponse:
+    use_case = GetCashflowForecastUseCase(transaction_repository)
+    forecast = await use_case.execute()
+    return _to_forecast_response(forecast)

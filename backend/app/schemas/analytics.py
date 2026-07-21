@@ -33,3 +33,20 @@ class SalesAnalyticsResponse(BaseModel):
     by_platform: list[PlatformMetricResponse]
     top_products: list[TopProductResponse]
     peak_hours: list[PeakHourResponse]
+
+
+class MonthPointResponse(BaseModel):
+    year: int
+    month: int
+    income_cents: int
+    expense_cents: int
+    net_cents: int
+
+
+class CashflowForecastResponse(BaseModel):
+    current_month_actual_net_cents: int
+    current_month_projected_net_cents: int
+    next_month_projected_net_cents: int
+    trend_pct: float | None
+    method: str
+    history: list[MonthPointResponse]

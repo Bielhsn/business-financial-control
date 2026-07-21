@@ -26,6 +26,7 @@ import {
 
 import { EmptyState } from "@/components/empty-state";
 import { AdvisorCard, AskCard, SummaryCard } from "@/features/dashboard/ai-panel";
+import { ForecastCard } from "@/features/dashboard/forecast-card";
 import { InsightsCard } from "@/features/dashboard/insights-card";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -321,6 +322,8 @@ export function DashboardPage() {
           <AdvisorCard companyId={companyId ?? ""} />
 
           <InsightsCard companyId={companyId ?? ""} start={range.start} end={range.end} />
+
+          <ForecastCard companyId={companyId ?? ""} />
 
           <div className="grid gap-6 lg:grid-cols-2">
             <SummaryCard companyId={companyId ?? ""} start={range.start} end={range.end} />

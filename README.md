@@ -333,6 +333,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 30  | Painel administrativo do SaaS (super-admin: MRR/ARR, churn, segmentação)   | ✅ Concluída |
 | 31  | Framework modular de integrações OAuth2 (Mercado Livre, Shopify, iFood)    | ✅ Concluída |
 | 32  | Análise de vendas por plataforma (ticket médio, top produtos, pico, etc.)  | ✅ Concluída |
+| 33  | Previsão de fluxo de caixa (run-rate + tendência dos meses fechados)        | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -603,6 +604,14 @@ Detalhes de implementação de cada mecanismo são documentados em
   médio e reembolsos de cada conector). Toda a matemática vive num cálculo puro (fácil de
   testar); o card só aparece quando há vendas sincronizadas. É a base analítica que se enriquece
   automaticamente conforme novos conectores passam a sincronizar.
+
+- Previsão de fluxo de caixa — projeção **determinística e explicável** (sem caixa preta) do
+  resultado (receitas − despesas): o mês corrente é projetado por _run-rate_ (líquido realizado
+  ÷ dias decorridos × dias do mês) e os próximos meses pela média dos meses fechados, com uma
+  tendência (%) comparando a metade antiga e a recente do histórico. Aparece como card no
+  dashboard (realizado × projetado × próximo mês, mini-gráfico do histórico e a tendência),
+  visível assim que há movimento financeiro — atende ao "IA para previsões" sem depender de
+  serviço externo.
 
 ## Funcionalidades futuras
 
