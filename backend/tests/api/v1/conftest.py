@@ -31,6 +31,7 @@ from tests.fakes import (
     FakeInvitationRepository,
     FakePasswordHasher,
     FakePlatformSaleRepository,
+    FakeRecurringTransactionRepository,
     FakeRefreshTokenRepository,
     FakeSecretCipher,
     FakeStockMovementRepository,
@@ -187,6 +188,11 @@ def fake_goal_repository() -> FakeGoalRepository:
 
 
 @pytest.fixture
+def fake_recurring_repository() -> FakeRecurringTransactionRepository:
+    return FakeRecurringTransactionRepository()
+
+
+@pytest.fixture
 def fake_api_key_repository() -> FakeApiKeyRepository:
     return FakeApiKeyRepository()
 
@@ -222,6 +228,7 @@ def client(
     fake_admin_metrics_repository: FakeAdminMetricsRepository,
     fake_platform_sale_repository: FakePlatformSaleRepository,
     fake_goal_repository: FakeGoalRepository,
+    fake_recurring_repository: FakeRecurringTransactionRepository,
     fake_api_key_repository: FakeApiKeyRepository,
 ) -> Iterator[TestClient]:
     # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
@@ -279,6 +286,7 @@ def client(
         lambda: fake_platform_sale_repository
     )
     app.dependency_overrides[deps.get_goal_repository] = lambda: fake_goal_repository
+    app.dependency_overrides[deps.get_recurring_repository] = lambda: fake_recurring_repository
     app.dependency_overrides[deps.get_api_key_repository] = lambda: fake_api_key_repository
     limiter.reset()
 

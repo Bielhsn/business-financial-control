@@ -43,6 +43,7 @@ from app.domain.goals.entities import FinancialGoal, GoalMetric
 from app.domain.insights.entities import FinancialInsight, InsightKind
 from app.domain.notifications.email import EmailMessage
 from app.domain.platform_sales.entities import PlatformSale
+from app.domain.recurring.entities import RecurrenceFrequency, RecurringTransaction
 from app.domain.subscription.entities import BillingCycle, Subscription, SubscriptionStatus
 from app.domain.subscription.plans import PlanTier
 from app.domain.user.entities import User
@@ -1323,3 +1324,73 @@ class FakeAdminMetricsRepository:
 
     async def financial_totals(self) -> FinancialTotals:
         return FinancialTotals(income_cents=self.income_cents, expense_cents=self.expense_cents)
+
+
+class FakeRecurringTransactionRepository:
+    """Recorrências em memória, escopadas pela empresa do contexto atual."""
+
+    def __init__(self, items: list[RecurringTransaction] | None = None) -> None:
+        self._items: dict[str, RecurringTransaction] = {i.id: i for i in (items or [])}
+        self._next_id = len(self._items) + 1
+
+    async def list_all(self) -> list[RecurringTransaction]:
+        return list(self._items.values())
+
+    async def get_by_id(self, recurring_id: str) -> RecurringTransaction | None:
+        return self._items.get(recurring_id)
+
+    async def create(
+        self,
+        *,
+        category_id: str,
+        type: FinancialCategoryType,
+        amount_cents: int,
+        description: str,
+        frequency: RecurrenceFrequency,
+        anchor_day: int,
+        next_run_date: datetime,
+        notes: str | None,
+        client_id: str | None,
+        created_by: str,
+    ) -> RecurringTransaction:
+        now = datetime.now(UTC)
+        recurring_id = str(self._next_id)
+        self._next_id += 1
+        try:
+            company_id = get_current_company_id()
+        except Exception:
+            company_id = "company-1"
+        item = RecurringTransaction(
+            id=recurring_id,
+            company_id=company_id,
+            category_id=category_id,
+            type=type,
+            amount_cents=amount_cents,
+            description=description,
+            frequency=frequency,
+            anchor_day=anchor_day,
+            next_run_date=next_run_date,
+            active=True,
+            notes=notes,
+            client_id=client_id,
+            created_by=created_by,
+            created_at=now,
+            updated_at=now,
+        )
+        self._items[recurring_id] = item
+        return item
+
+    async def update(self, recurring_id: str, **fields: object) -> RecurringTransaction | None:
+        item = self._items.get(recurring_id)
+        if item is None:
+            return None
+        for name, value in fields.items():
+            setattr(item, name, value)
+        item.updated_at = datetime.now(UTC)
+        return item
+
+    async def delete(self, recurring_id: str) -> bool:
+        return self._items.pop(recurring_id, None) is not None
+
+    async def list_due(self, as_of: datetime) -> list[RecurringTransaction]:
+        return [i for i in self._items.values() if i.active and i.next_run_date <= as_of]

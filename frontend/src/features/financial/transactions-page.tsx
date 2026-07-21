@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useSeedCategoriesFromBlueprint } from "@/features/blueprint/use-blueprint";
 import { useClients } from "@/features/clients/use-clients";
 import { ExportReportButton } from "@/features/reports/export-report-button";
+import { RecurringCard } from "@/features/financial/recurring-card";
 import {
   useCancelTransaction,
   useCategories,
@@ -571,6 +572,10 @@ export function TransactionsPage() {
           </CardContent>
         </Card>
       )}
+
+      <div className="mt-6">
+        <RecurringCard companyId={id} />
+      </div>
 
       <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
         <Wallet className="size-3.5" />

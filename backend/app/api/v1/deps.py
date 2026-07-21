@@ -39,6 +39,7 @@ from app.domain.financial.repository import (
 from app.domain.goals.repository import GoalRepository
 from app.domain.notifications.email import EmailSender
 from app.domain.platform_sales.repository import PlatformSaleRepository
+from app.domain.recurring.repository import RecurringTransactionRepository
 from app.domain.subscription.entitlements import has_feature
 from app.domain.subscription.plans import Feature
 from app.domain.subscription.repository import SubscriptionRepository
@@ -77,6 +78,9 @@ from app.infrastructure.repositories.goal_repository import BeanieGoalRepository
 from app.infrastructure.repositories.invitation_repository import BeanieInvitationRepository
 from app.infrastructure.repositories.platform_sale_repository import (
     BeaniePlatformSaleRepository,
+)
+from app.infrastructure.repositories.recurring_transaction_repository import (
+    BeanieRecurringTransactionRepository,
 )
 from app.infrastructure.repositories.refresh_token_repository import (
     BeanieRefreshTokenRepository,
@@ -169,6 +173,10 @@ def get_platform_sale_repository() -> PlatformSaleRepository:
 
 def get_goal_repository() -> GoalRepository:
     return BeanieGoalRepository()
+
+
+def get_recurring_repository() -> RecurringTransactionRepository:
+    return BeanieRecurringTransactionRepository()
 
 
 def get_secret_cipher(settings: Annotated[Settings, Depends(get_settings)]) -> SecretCipher:
