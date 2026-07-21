@@ -237,6 +237,9 @@ class FakeCompanyRepository:
     async def delete(self, company_id: str) -> None:
         self._companies.pop(company_id, None)
 
+    async def list_all_ids(self) -> list[str]:
+        return list(self._companies.keys())
+
 
 class FakeCompanyMembershipRepository:
     def __init__(self) -> None:
@@ -1333,8 +1336,17 @@ class FakeRecurringTransactionRepository:
         self._items: dict[str, RecurringTransaction] = {i.id: i for i in (items or [])}
         self._next_id = len(self._items) + 1
 
+    def _scoped(self, items: list[RecurringTransaction]) -> list[RecurringTransaction]:
+        # Filtra pela empresa do contexto quando há um; sem contexto (testes de
+        # unidade do gerador) devolve tudo.
+        try:
+            company_id = get_current_company_id()
+        except Exception:
+            return items
+        return [item for item in items if item.company_id == company_id]
+
     async def list_all(self) -> list[RecurringTransaction]:
-        return list(self._items.values())
+        return self._scoped(list(self._items.values()))
 
     async def get_by_id(self, recurring_id: str) -> RecurringTransaction | None:
         return self._items.get(recurring_id)
@@ -1393,4 +1405,5 @@ class FakeRecurringTransactionRepository:
         return self._items.pop(recurring_id, None) is not None
 
     async def list_due(self, as_of: datetime) -> list[RecurringTransaction]:
-        return [i for i in self._items.values() if i.active and i.next_run_date <= as_of]
+        due = [i for i in self._items.values() if i.active and i.next_run_date <= as_of]
+        return self._scoped(due)
