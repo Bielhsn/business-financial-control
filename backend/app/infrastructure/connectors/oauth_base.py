@@ -113,12 +113,14 @@ class GenericOAuth2Connector:
 
 
 def _parse_token_payload(payload: dict[str, object]) -> OAuthTokens:
-    access_token = payload.get("access_token")
+    # Aceita tanto snake_case (OAuth2 padrão) quanto camelCase — o iFood, por
+    # exemplo, responde `accessToken`/`refreshToken`/`expiresIn`.
+    access_token = _first(payload, "access_token", "accessToken")
     if not isinstance(access_token, str):
         raise ConnectorError("Resposta de token sem access_token.")
-    refresh_token = payload.get("refresh_token")
+    refresh_token = _first(payload, "refresh_token", "refreshToken")
     expires_at: datetime | None = None
-    expires_in = payload.get("expires_in")
+    expires_in = _first(payload, "expires_in", "expiresIn")
     if isinstance(expires_in, int | float):
         expires_at = datetime.now(UTC) + timedelta(seconds=int(expires_in))
     scope = payload.get("scope")
@@ -128,3 +130,11 @@ def _parse_token_payload(payload: dict[str, object]) -> OAuthTokens:
         expires_at=expires_at,
         scope=scope if isinstance(scope, str) else None,
     )
+
+
+def _first(payload: dict[str, object], *keys: str) -> object:
+    for key in keys:
+        value = payload.get(key)
+        if value is not None:
+            return value
+    return None

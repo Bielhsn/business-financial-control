@@ -6,12 +6,18 @@ from app.domain.connector.oauth import OAuthProvider
 from app.domain.connector.ports import Connector
 from app.domain.connector.registry import get_connector_definition
 from app.infrastructure.connectors.hotmart import HotmartConnector
+from app.infrastructure.connectors.ifood import IFoodConnector
 from app.infrastructure.connectors.oauth_base import GenericOAuth2Connector
 
 # Mapa provedor → construtor do conector. Adicionar um provedor = uma linha aqui
 # (mais a definição no CONNECTOR_REGISTRY). O restante do sistema não muda.
+#
+# Conectores OAuth (ex.: iFood) autorizam a loja pelo fluxo genérico de OAuth e
+# leem as vendas com o token guardado — por isso aparecem aqui (para o motor de
+# sync) além do registro OAuth no CONNECTOR_REGISTRY.
 _BUILDERS: dict[str, type[Connector]] = {
     "hotmart": HotmartConnector,
+    "ifood": IFoodConnector,
 }
 
 

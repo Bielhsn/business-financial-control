@@ -120,10 +120,13 @@ emite; o `/connectors/oauth/callback` (público, fora do escopo `/companies/{id}
 assinatura/expiração, restabelece o tenant via `set_current_company_id`, troca o código e
 guarda os tokens **criptografados** (mesma cifra Fernet dos demais segredos), redirecionando o
 navegador de volta ao frontend com aviso de sucesso/erro. O cliente HTTP é injetável
-(`httpx.MockTransport`), então toda a dança é testada sem rede. O `fetch_sales` de cada API
-OAuth é deixado explicitamente desabilitado (levanta ConnectorError) até haver credenciais
-reais para validar o mapeamento ponta a ponta — o framework fica pronto, a ativação é por
-provedor.
+(`httpx.MockTransport`), então toda a dança é testada sem rede. O `fetch_sales` do
+`GenericOAuth2Connector` é deixado explicitamente desabilitado (levanta ConnectorError) até
+haver um conector concreto por provedor — o framework fica pronto, a ativação é por provedor.
+O **iFood** já tem esse conector concreto (`IFoodConnector`): usa o token OAuth guardado para
+ler as vendas (Merchant + Financial API) e as traduz para `NormalizedSale` via funções puras
+cobertas por testes; o mesmo motor de sync idempotente é reutilizado. Só falta o dono da
+plataforma registrar o app parceiro (que exige CNPJ) e preencher as credenciais para ligar.
 
 **Etapa 30 (Painel administrativo do SaaS):** o painel do dono da plataforma é a primeira
 funcionalidade **cross-tenant** — ela precisa enxergar todas as empresas de uma vez, o
