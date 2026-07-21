@@ -28,6 +28,7 @@ from tests.fakes import (
     FakeGoogleTokenVerifier,
     FakeInvitationRepository,
     FakePasswordHasher,
+    FakePlatformSaleRepository,
     FakeRefreshTokenRepository,
     FakeSecretCipher,
     FakeStockMovementRepository,
@@ -174,6 +175,11 @@ def fake_admin_metrics_repository() -> FakeAdminMetricsRepository:
 
 
 @pytest.fixture
+def fake_platform_sale_repository() -> FakePlatformSaleRepository:
+    return FakePlatformSaleRepository()
+
+
+@pytest.fixture
 def client(
     fake_audit_log_repository: FakeAuditLogRepository,
     fake_user_repository: FakeUserRepository,
@@ -202,6 +208,7 @@ def client(
     fake_company_data_service: FakeCompanyDataService,
     fake_subscription_repository: FakeSubscriptionRepository,
     fake_admin_metrics_repository: FakeAdminMetricsRepository,
+    fake_platform_sale_repository: FakePlatformSaleRepository,
 ) -> Iterator[TestClient]:
     # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
     # nem de chaves reais de IA — o 503 de "IA não configurada" fica determinístico.
@@ -253,6 +260,9 @@ def client(
     )
     app.dependency_overrides[deps.get_admin_metrics_repository] = (
         lambda: fake_admin_metrics_repository
+    )
+    app.dependency_overrides[deps.get_platform_sale_repository] = (
+        lambda: fake_platform_sale_repository
     )
     limiter.reset()
 

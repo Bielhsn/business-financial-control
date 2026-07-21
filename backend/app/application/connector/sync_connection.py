@@ -14,6 +14,7 @@ from app.domain.financial.repository import (
     FinancialCategoryRepository,
     FinancialTransactionRepository,
 )
+from app.domain.platform_sales.repository import PlatformSaleRepository
 
 
 class SyncConnectionUseCase:
@@ -28,12 +29,14 @@ class SyncConnectionUseCase:
         transaction_repository: FinancialTransactionRepository,
         cipher: SecretCipher,
         connector: Connector,
+        platform_sale_repository: PlatformSaleRepository,
     ) -> None:
         self._connection_repository = connection_repository
         self._category_repository = category_repository
         self._transaction_repository = transaction_repository
         self._cipher = cipher
         self._connector = connector
+        self._platform_sale_repository = platform_sale_repository
 
     async def execute(self, *, provider: str, created_by: str) -> SyncResult:
         connection = await self._connection_repository.get_by_provider(provider)
@@ -64,6 +67,19 @@ class SyncConnectionUseCase:
         result = SyncResult()
 
         for sale in sales:
+            # Guarda a venda detalhada para análise (idempotente por si só),
+            # independentemente do lançamento financeiro.
+            await self._platform_sale_repository.upsert(
+                provider=provider,
+                external_id=sale.external_id,
+                product=sale.description,
+                amount_cents=sale.amount_cents,
+                occurred_at=sale.occurred_at,
+                is_refund=sale.is_refund,
+                buyer_name=sale.buyer_name,
+                buyer_email=sale.buyer_email,
+            )
+
             external_ref = f"{provider}:{sale.external_id}"
             existing = await self._transaction_repository.find_by_external_ref(external_ref)
             if existing is not None:

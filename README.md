@@ -332,6 +332,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 29  | Planos de assinatura (Starter/Professional/Business/Enterprise) + gating  | ✅ Concluída |
 | 30  | Painel administrativo do SaaS (super-admin: MRR/ARR, churn, segmentação)   | ✅ Concluída |
 | 31  | Framework modular de integrações OAuth2 (Mercado Livre, Shopify, iFood)    | ✅ Concluída |
+| 32  | Análise de vendas por plataforma (ticket médio, top produtos, pico, etc.)  | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -593,6 +594,15 @@ Detalhes de implementação de cada mecanismo são documentados em
   apps parceiros e configure `*_CLIENT_ID`/`*_CLIENT_SECRET`; sem isso o provedor responde 503.
   O mapeamento das vendas de cada API (`fetch_sales`) é habilitado por provedor quando as
   credenciais reais permitirem validar ponta a ponta.
+
+- Análise de vendas por plataforma — durante a sincronização, cada venda normalizada é guardada
+  com detalhe (produto, horário, comprador) numa base própria, além de virar lançamento
+  financeiro. Em cima disso, a tela de Integrações mostra indicadores consolidados dos últimos
+  30 dias: **faturamento líquido, ticket médio, pedidos, reembolsos, clientes únicos, produtos
+  mais vendidos, horários de pico** e uma quebra **por plataforma** (líquido, pedidos, ticket
+  médio e reembolsos de cada conector). Toda a matemática vive num cálculo puro (fácil de
+  testar); o card só aparece quando há vendas sincronizadas. É a base analítica que se enriquece
+  automaticamente conforme novos conectores passam a sincronizar.
 
 ## Funcionalidades futuras
 
