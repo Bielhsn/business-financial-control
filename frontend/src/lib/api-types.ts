@@ -432,6 +432,23 @@ export interface SalesAnalyticsResponse {
   peak_hours: PeakHour[];
 }
 
+export interface MonthPoint {
+  year: number;
+  month: number;
+  income_cents: number;
+  expense_cents: number;
+  net_cents: number;
+}
+
+export interface CashflowForecastResponse {
+  current_month_actual_net_cents: number;
+  current_month_projected_net_cents: number;
+  next_month_projected_net_cents: number;
+  trend_pct: number | null;
+  method: string;
+  history: MonthPoint[];
+}
+
 // Planos e assinatura (Etapa 29)
 export type PlanTier = "starter" | "professional" | "business" | "enterprise";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";

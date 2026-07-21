@@ -24,6 +24,17 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 33 (Previsão de fluxo de caixa):** o pedido de "IA para previsões" é atendido com um
+modelo **determinístico e explicável** em vez de caixa preta — mais confiável e testável para
+dinheiro. O `GetCashflowForecastUseCase` busca os lançamentos pagos dos últimos ~6 meses numa
+única janela (`list_paid_between`), agrupa por mês (`MonthPoint`) e delega a `compute_forecast`,
+que é puro: o mês corrente é projetado por **run-rate** (líquido realizado ÷ dias decorridos ×
+dias do mês; guarda contra dia 0), os próximos meses pela **média dos meses fechados** (janela
+curta) e a **tendência** compara a média da metade antiga com a da recente do histórico. Separar
+o cálculo puro do acesso a dados torna cada regra trivial de testar. Exposto em
+`GET /companies/{id}/analytics/forecast`; no dashboard, um card mostra realizado × projetado ×
+próximo mês, a tendência e um mini-gráfico do histórico, aparecendo assim que há movimento.
+
 **Etapa 32 (Análise de vendas por plataforma):** o sync já transformava cada `NormalizedSale`
 em lançamento financeiro (valor), mas isso perde o detalhe necessário para análise (produto,
 horário, comprador). Esta etapa adiciona uma **segunda materialização** da mesma venda: uma
