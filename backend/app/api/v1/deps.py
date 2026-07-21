@@ -36,6 +36,7 @@ from app.domain.financial.repository import (
     FinancialTransactionRepository,
 )
 from app.domain.notifications.email import EmailSender
+from app.domain.platform_sales.repository import PlatformSaleRepository
 from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
@@ -68,6 +69,9 @@ from app.infrastructure.repositories.financial_transaction_repository import (
     BeanieFinancialTransactionRepository,
 )
 from app.infrastructure.repositories.invitation_repository import BeanieInvitationRepository
+from app.infrastructure.repositories.platform_sale_repository import (
+    BeaniePlatformSaleRepository,
+)
 from app.infrastructure.repositories.refresh_token_repository import (
     BeanieRefreshTokenRepository,
 )
@@ -149,6 +153,10 @@ def get_appointment_repository() -> AppointmentRepository:
 
 def get_connection_repository() -> ConnectionRepository:
     return BeanieConnectionRepository()
+
+
+def get_platform_sale_repository() -> PlatformSaleRepository:
+    return BeaniePlatformSaleRepository()
 
 
 def get_secret_cipher(settings: Annotated[Settings, Depends(get_settings)]) -> SecretCipher:

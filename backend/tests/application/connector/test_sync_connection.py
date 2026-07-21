@@ -12,6 +12,7 @@ from tests.fakes import (
     FakeConnector,
     FakeFinancialCategoryRepository,
     FakeFinancialTransactionRepository,
+    FakePlatformSaleRepository,
     FakeSecretCipher,
 )
 
@@ -78,7 +79,7 @@ async def test_sync_imports_sales_and_refunds_into_financial() -> None:
     categories = FakeFinancialCategoryRepository()
     transactions = FakeFinancialTransactionRepository()
     result = await SyncConnectionUseCase(
-        connections, categories, transactions, cipher, connector
+        connections, categories, transactions, cipher, connector, FakePlatformSaleRepository()
     ).execute(provider="hotmart", created_by="user-1")
 
     assert result.imported == 2
@@ -101,7 +102,9 @@ async def test_sync_is_idempotent() -> None:
     await _connect(connections, connector, cipher)
     categories = FakeFinancialCategoryRepository()
     transactions = FakeFinancialTransactionRepository()
-    use_case = SyncConnectionUseCase(connections, categories, transactions, cipher, connector)
+    use_case = SyncConnectionUseCase(
+        connections, categories, transactions, cipher, connector, FakePlatformSaleRepository()
+    )
 
     first = await use_case.execute(provider="hotmart", created_by="u")
     second = await use_case.execute(provider="hotmart", created_by="u")
@@ -127,7 +130,7 @@ async def test_sync_marks_connection_error_on_connector_failure() -> None:
 
     with pytest.raises(ConnectorError):
         await SyncConnectionUseCase(
-            connections, categories, transactions, cipher, connector
+            connections, categories, transactions, cipher, connector, FakePlatformSaleRepository()
         ).execute(provider="hotmart", created_by="u")
 
     connection = await connections.get_by_provider("hotmart")
@@ -143,7 +146,9 @@ async def test_sync_reuses_category_across_runs() -> None:
     await _connect(connections, connector, cipher)
     categories = FakeFinancialCategoryRepository()
     transactions = FakeFinancialTransactionRepository()
-    use_case = SyncConnectionUseCase(connections, categories, transactions, cipher, connector)
+    use_case = SyncConnectionUseCase(
+        connections, categories, transactions, cipher, connector, FakePlatformSaleRepository()
+    )
 
     await use_case.execute(provider="hotmart", created_by="u")
     connector._sales = [_sale("HP9", 20000)]  # nova venda, mesma categoria

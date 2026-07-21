@@ -24,6 +24,20 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 32 (Análise de vendas por plataforma):** o sync já transformava cada `NormalizedSale`
+em lançamento financeiro (valor), mas isso perde o detalhe necessário para análise (produto,
+horário, comprador). Esta etapa adiciona uma **segunda materialização** da mesma venda: uma
+coleção `platform_sales` (escopada por empresa, índice único `company_id+provider+external_id`
+para idempotência) que guarda o detalhe. O `SyncConnectionUseCase` grava nas duas — cada uma
+idempotente por si — sem acoplar uma à outra. As métricas ficam num cálculo **puro**
+(`compute_analytics`): recebe a lista de vendas e devolve faturamento bruto/líquido, ticket
+médio, pedidos, reembolsos (separados do bruto, não entram no ticket), clientes únicos
+(deduplicados por e-mail/nome), produtos mais vendidos (por receita), horários de pico (por
+hora UTC) e a quebra por plataforma — trivial de testar sem banco. A rota
+`GET /companies/{id}/analytics/sales?days=N` expõe isso; no frontend, um card na tela de
+Integrações aparece só quando há vendas sincronizadas. É a fundação analítica que se enriquece
+sozinha quando os conectores OAuth ganharem `fetch_sales`.
+
 **Etapa 31 (Framework de integrações OAuth2):** a Etapa 25 já deixara a arquitetura de
 conectores modular para o modelo "colar credenciais" (Hotmart). Esta etapa adiciona o segundo
 modelo — **authorization-code (OAuth2)** — sem duplicar nada. A `ConnectorDefinition` ganhou

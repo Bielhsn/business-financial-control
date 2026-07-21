@@ -397,6 +397,41 @@ export interface ApiErrorResponse {
   details?: Record<string, unknown>;
 }
 
+// Análise de vendas por plataforma (Etapa 32)
+export interface PlatformMetric {
+  provider: string;
+  gross_cents: number;
+  refunds_cents: number;
+  net_cents: number;
+  orders: number;
+  refunds: number;
+  avg_ticket_cents: number;
+}
+
+export interface TopProduct {
+  product: string;
+  quantity: number;
+  revenue_cents: number;
+}
+
+export interface PeakHour {
+  hour: number;
+  orders: number;
+}
+
+export interface SalesAnalyticsResponse {
+  total_gross_cents: number;
+  total_refunds_cents: number;
+  total_net_cents: number;
+  total_orders: number;
+  total_refunds: number;
+  avg_ticket_cents: number;
+  unique_buyers: number;
+  by_platform: PlatformMetric[];
+  top_products: TopProduct[];
+  peak_hours: PeakHour[];
+}
+
 // Planos e assinatura (Etapa 29)
 export type PlanTier = "starter" | "professional" | "business" | "enterprise";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { ConnectorsCard } from "@/features/integrations/connectors-card";
+import { SalesAnalyticsCard } from "@/features/integrations/sales-analytics-card";
 import { useImportTransactions } from "@/features/integrations/use-import-transactions";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { extractErrorMessage } from "@/lib/api";
@@ -200,6 +201,8 @@ export function IntegrationsPage() {
 
       <div className="space-y-6">
         <ConnectorsCard companyId={id} />
+
+        <SalesAnalyticsCard companyId={id} />
 
         <CsvImportCard companyId={id} />
 

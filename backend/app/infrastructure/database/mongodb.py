@@ -19,6 +19,7 @@ from app.infrastructure.database.models.financial_transaction import (
     FinancialTransactionDocument,
 )
 from app.infrastructure.database.models.invitation import InvitationDocument
+from app.infrastructure.database.models.platform_sale import PlatformSaleDocument
 from app.infrastructure.database.models.refresh_token import RefreshTokenDocument
 from app.infrastructure.database.models.stock_movement import StockMovementDocument
 from app.infrastructure.database.models.subscription import SubscriptionDocument
@@ -67,6 +68,7 @@ async def connect_to_mongo() -> None:
             VerificationCodeDocument,
             InvitationDocument,
             SubscriptionDocument,
+            PlatformSaleDocument,
         ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)

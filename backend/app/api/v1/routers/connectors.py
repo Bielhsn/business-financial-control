@@ -11,6 +11,7 @@ from app.api.v1.deps import (
     get_current_user,
     get_financial_category_repository,
     get_financial_transaction_repository,
+    get_platform_sale_repository,
     get_secret_cipher,
     get_subscription_repository,
     require_role,
@@ -33,6 +34,7 @@ from app.domain.financial.repository import (
     FinancialCategoryRepository,
     FinancialTransactionRepository,
 )
+from app.domain.platform_sales.repository import PlatformSaleRepository
 from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
 from app.infrastructure.connectors.factory import build_oauth_provider
@@ -187,6 +189,9 @@ async def sync(
     cipher: Annotated[SecretCipher, Depends(get_secret_cipher)],
     connector_factory: Annotated[Callable[[str], Connector], Depends(get_connector_factory)],
     audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
+    platform_sale_repository: Annotated[
+        PlatformSaleRepository, Depends(get_platform_sale_repository)
+    ],
 ) -> SyncResultResponse:
     connector = connector_factory(provider)
     use_case = SyncConnectionUseCase(
@@ -195,6 +200,7 @@ async def sync(
         transaction_repository,
         cipher,
         connector,
+        platform_sale_repository,
     )
     result = await use_case.execute(provider=provider, created_by=current_user.id)
     await record_audit(

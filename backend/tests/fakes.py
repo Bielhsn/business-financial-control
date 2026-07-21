@@ -39,6 +39,7 @@ from app.domain.financial.entities import (
 )
 from app.domain.insights.entities import FinancialInsight, InsightKind
 from app.domain.notifications.email import EmailMessage
+from app.domain.platform_sales.entities import PlatformSale
 from app.domain.subscription.entities import BillingCycle, Subscription, SubscriptionStatus
 from app.domain.subscription.plans import PlanTier
 from app.domain.user.entities import User
@@ -1173,6 +1174,54 @@ class FakeSubscriptionRepository:
 
     async def list_all(self) -> list[Subscription]:
         return list(self._subscriptions.values())
+
+
+class FakePlatformSaleRepository:
+    def __init__(self) -> None:
+        self._sales: dict[tuple[str, str], PlatformSale] = {}
+        self._next_id = 1
+
+    async def upsert(
+        self,
+        *,
+        provider: str,
+        external_id: str,
+        product: str,
+        amount_cents: int,
+        occurred_at: datetime,
+        is_refund: bool,
+        buyer_name: str | None,
+        buyer_email: str | None,
+    ) -> bool:
+        key = (provider, external_id)
+        if key in self._sales:
+            return False
+        sale = PlatformSale(
+            id=str(self._next_id),
+            company_id="company-1",
+            provider=provider,
+            external_id=external_id,
+            product=product,
+            amount_cents=amount_cents,
+            occurred_at=occurred_at,
+            is_refund=is_refund,
+            buyer_name=buyer_name,
+            buyer_email=buyer_email,
+            created_at=datetime.now(UTC),
+        )
+        self._sales[key] = sale
+        self._next_id += 1
+        return True
+
+    async def list_since(self, since: datetime | None) -> list[PlatformSale]:
+        sales = list(self._sales.values())
+        if since is None:
+            return sales
+        return [s for s in sales if _as_aware(s.occurred_at) >= since]
+
+
+def _as_aware(moment: datetime) -> datetime:
+    return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
 
 
 class FakeAdminMetricsRepository:
