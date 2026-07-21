@@ -449,6 +449,20 @@ export interface CashflowForecastResponse {
   history: MonthPoint[];
 }
 
+// Chaves de API (Etapa 38)
+export interface ApiKeyResponse {
+  id: string;
+  name: string;
+  prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+  revoked: boolean;
+}
+
+export interface CreatedApiKeyResponse extends ApiKeyResponse {
+  raw_key: string;
+}
+
 // Índice de saúde do negócio (Etapa 37)
 export type HealthRating = "excellent" | "good" | "attention" | "critical";
 

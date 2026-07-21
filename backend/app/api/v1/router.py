@@ -5,6 +5,7 @@ from app.api.v1.routers import (
     advisor,
     alerts,
     analytics,
+    api_keys,
     appointment,
     audit,
     auth,
@@ -24,6 +25,7 @@ from app.api.v1.routers import (
     notifications,
     oauth_callback,
     plans,
+    public_api,
     reports,
     subscription,
 )
@@ -54,3 +56,5 @@ api_router.include_router(analytics.router)
 api_router.include_router(alerts.router)
 api_router.include_router(goals.router)
 api_router.include_router(reports.router)
+api_router.include_router(api_keys.router)
+api_router.include_router(public_api.router)

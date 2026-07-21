@@ -2,8 +2,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.exceptions import UnauthorizedError
+from app.core.tenant import get_current_company_id
 from app.domain.admin.metrics import CompanySummary, ConnectionSummary, FinancialTotals
 from app.domain.advisor.entities import BusinessSignal
+from app.domain.apikey.entities import ApiKey
 from app.domain.appointment.entities import Appointment, AppointmentStatus
 from app.domain.audit.entities import AuditEntry
 from app.domain.auth.entities import RefreshToken
@@ -1175,6 +1177,55 @@ class FakeSubscriptionRepository:
 
     async def list_all(self) -> list[Subscription]:
         return list(self._subscriptions.values())
+
+
+class FakeApiKeyRepository:
+    def __init__(self) -> None:
+        self._keys: dict[str, ApiKey] = {}
+        self._by_hash: dict[str, str] = {}
+        self._next_id = 1
+
+    async def create(self, *, name: str, prefix: str, hashed_key: str) -> ApiKey:
+        key_id = str(self._next_id)
+        self._next_id += 1
+        try:
+            company_id = get_current_company_id()
+        except RuntimeError:
+            company_id = "company-1"
+        key = ApiKey(
+            id=key_id,
+            company_id=company_id,
+            name=name,
+            prefix=prefix,
+            created_at=datetime.now(UTC),
+            last_used_at=None,
+            revoked=False,
+        )
+        self._keys[key_id] = key
+        self._by_hash[hashed_key] = key_id
+        return key
+
+    async def list_for_company(self) -> list[ApiKey]:
+        return list(self._keys.values())
+
+    async def get_active_by_hash(self, hashed_key: str) -> ApiKey | None:
+        key_id = self._by_hash.get(hashed_key)
+        if key_id is None:
+            return None
+        key = self._keys.get(key_id)
+        return key if key and not key.revoked else None
+
+    async def revoke(self, key_id: str) -> bool:
+        key = self._keys.get(key_id)
+        if key is None:
+            return False
+        key.revoked = True
+        return True
+
+    async def touch_last_used(self, key_id: str) -> None:
+        key = self._keys.get(key_id)
+        if key is not None:
+            key.last_used_at = datetime.now(UTC)
 
 
 class FakeGoalRepository:

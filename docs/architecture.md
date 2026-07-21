@@ -24,6 +24,19 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 38 (Chaves de API + API pública):** fecha a lacuna entre a promessa do plano (a feature
+`API_ACCESS`) e a realidade. A chave crua (`aur_` + token) é mostrada **uma única vez**; o
+repositório guarda só o **hash HMAC-SHA256** (consulta por igualdade, mesmo padrão dos códigos de
+verificação) e um prefixo curto para exibição — a chave nunca é recuperável. A autenticação é um
+segundo caminho, paralelo ao Bearer de sessão: `APIKeyHeader(X-API-Key)` → hash → busca
+**cross-tenant** por hash (a requisição só traz a chave) → `set_current_company_id` → e então uma
+checagem de que o plano da empresa **ainda** inclui `API_ACCESS` (downgrade revoga o acesso sem
+precisar apagar chaves). A gestão (criar/listar/revogar) é escopada por empresa, restrita a
+OWNER/ADMIN, e a criação passa pelo mesmo gating de feature (402 quando o plano não inclui). A API
+pública vive em `/api/v1/public/v1/*`, autenticada só pela chave, e reaproveita os use cases
+existentes (health score, totais do mês) — nenhuma regra nova de negócio. No frontend, um card em
+Configurações cria a chave e a exibe uma vez com botão de copiar.
+
 **Etapa 37 (Índice de saúde do negócio):** condensa os sinais num único número explicável, sem
 IA opaca. `compute_health_score` é puro: cada fator (margem, tendência de caixa, reembolsos,
 metas, integrações) vira um score 0–100 com um `detail` textual e um peso; o índice é a média
