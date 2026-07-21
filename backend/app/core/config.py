@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     # por vírgula. Vazio = ninguém tem acesso (seguro por padrão).
     platform_admin_emails: str = ""
 
+    # Senha opcional lida pelo script scripts/create_admin.py (variável de
+    # ambiente ADMIN_PASSWORD). Nunca é usada pela API — só pelo bootstrap do
+    # dono da plataforma. Fica None em operação normal.
+    admin_password: str | None = None
+
     ai_provider: str = "anthropic"
     anthropic_api_key: str | None = None
     ai_model: str = "claude-sonnet-5"
