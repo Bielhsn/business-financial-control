@@ -137,6 +137,33 @@ export interface FinancialTransactionResponse {
   updated_at: string;
 }
 
+export type RecurrenceFrequency = "weekly" | "monthly" | "yearly";
+
+export interface RecurringResponse {
+  id: string;
+  category_id: string;
+  type: FinancialCategoryType;
+  amount_cents: number;
+  description: string;
+  frequency: RecurrenceFrequency;
+  anchor_day: number;
+  next_run_date: string;
+  active: boolean;
+  notes: string | null;
+  client_id: string | null;
+  last_run_at: string | null;
+}
+
+export interface CreateRecurringRequest {
+  category_id: string;
+  type: FinancialCategoryType;
+  amount_cents: number;
+  description: string;
+  frequency: RecurrenceFrequency;
+  start_date: string;
+  notes?: string | null;
+}
+
 export type KPIMetric =
   | "total_revenue"
   | "total_expenses"

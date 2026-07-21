@@ -341,6 +341,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 38  | Chaves de API + API pública (acesso programático do plano Enterprise)       | ✅ Concluída |
 | 39  | Containerização e deploy de produção (Docker, nginx, compose, guia)         | ✅ Concluída |
 | 40  | Sincronização real de vendas do iFood (fetch_sales + parser + testes)       | ✅ Concluída |
+| 41  | Lançamentos recorrentes (aluguel, salários, assinaturas) com geração automática | ✅ Concluída |
 
 ## Funcionalidades atuais
 
