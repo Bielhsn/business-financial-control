@@ -16,6 +16,7 @@ from app.api.v1.routers import (
     dashboard,
     employees,
     financial,
+    goals,
     health,
     insights,
     invitations,
@@ -48,3 +49,4 @@ api_router.include_router(plans.router)
 api_router.include_router(subscription.router)
 api_router.include_router(admin.router)
 api_router.include_router(analytics.router)
+api_router.include_router(goals.router)

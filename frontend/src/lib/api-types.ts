@@ -449,6 +449,18 @@ export interface CashflowForecastResponse {
   history: MonthPoint[];
 }
 
+// Metas financeiras (Etapa 34)
+export type GoalMetric = "monthly_income" | "monthly_net";
+
+export interface GoalProgressResponse {
+  metric: GoalMetric;
+  target_cents: number;
+  actual_cents: number;
+  projected_cents: number;
+  progress_pct: number;
+  on_track: boolean;
+}
+
 // Planos e assinatura (Etapa 29)
 export type PlanTier = "starter" | "professional" | "business" | "enterprise";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";

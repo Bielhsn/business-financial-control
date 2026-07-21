@@ -25,6 +25,7 @@ from tests.fakes import (
     FakeEmployeeRepository,
     FakeFinancialCategoryRepository,
     FakeFinancialTransactionRepository,
+    FakeGoalRepository,
     FakeGoogleTokenVerifier,
     FakeInvitationRepository,
     FakePasswordHasher,
@@ -180,6 +181,11 @@ def fake_platform_sale_repository() -> FakePlatformSaleRepository:
 
 
 @pytest.fixture
+def fake_goal_repository() -> FakeGoalRepository:
+    return FakeGoalRepository()
+
+
+@pytest.fixture
 def client(
     fake_audit_log_repository: FakeAuditLogRepository,
     fake_user_repository: FakeUserRepository,
@@ -209,6 +215,7 @@ def client(
     fake_subscription_repository: FakeSubscriptionRepository,
     fake_admin_metrics_repository: FakeAdminMetricsRepository,
     fake_platform_sale_repository: FakePlatformSaleRepository,
+    fake_goal_repository: FakeGoalRepository,
 ) -> Iterator[TestClient]:
     # Settings padrão (sem ler .env): os testes nunca dependem do ambiente local
     # nem de chaves reais de IA — o 503 de "IA não configurada" fica determinístico.
@@ -264,6 +271,7 @@ def client(
     app.dependency_overrides[deps.get_platform_sale_repository] = (
         lambda: fake_platform_sale_repository
     )
+    app.dependency_overrides[deps.get_goal_repository] = lambda: fake_goal_repository
     limiter.reset()
 
     # Sem "with": não dispara o lifespan (que exigiria um MongoDB real).

@@ -18,6 +18,7 @@ from app.infrastructure.database.models.financial_category import FinancialCateg
 from app.infrastructure.database.models.financial_transaction import (
     FinancialTransactionDocument,
 )
+from app.infrastructure.database.models.goal import GoalDocument
 from app.infrastructure.database.models.invitation import InvitationDocument
 from app.infrastructure.database.models.platform_sale import PlatformSaleDocument
 from app.infrastructure.database.models.refresh_token import RefreshTokenDocument
@@ -69,6 +70,7 @@ async def connect_to_mongo() -> None:
             InvitationDocument,
             SubscriptionDocument,
             PlatformSaleDocument,
+            GoalDocument,
         ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)

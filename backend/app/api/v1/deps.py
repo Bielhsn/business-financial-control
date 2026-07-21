@@ -35,6 +35,7 @@ from app.domain.financial.repository import (
     FinancialCategoryRepository,
     FinancialTransactionRepository,
 )
+from app.domain.goals.repository import GoalRepository
 from app.domain.notifications.email import EmailSender
 from app.domain.platform_sales.repository import PlatformSaleRepository
 from app.domain.subscription.repository import SubscriptionRepository
@@ -68,6 +69,7 @@ from app.infrastructure.repositories.financial_category_repository import (
 from app.infrastructure.repositories.financial_transaction_repository import (
     BeanieFinancialTransactionRepository,
 )
+from app.infrastructure.repositories.goal_repository import BeanieGoalRepository
 from app.infrastructure.repositories.invitation_repository import BeanieInvitationRepository
 from app.infrastructure.repositories.platform_sale_repository import (
     BeaniePlatformSaleRepository,
@@ -157,6 +159,10 @@ def get_connection_repository() -> ConnectionRepository:
 
 def get_platform_sale_repository() -> PlatformSaleRepository:
     return BeaniePlatformSaleRepository()
+
+
+def get_goal_repository() -> GoalRepository:
+    return BeanieGoalRepository()
 
 
 def get_secret_cipher(settings: Annotated[Settings, Depends(get_settings)]) -> SecretCipher:

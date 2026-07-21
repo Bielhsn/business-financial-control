@@ -37,6 +37,7 @@ from app.domain.financial.entities import (
     FinancialTransaction,
     TransactionStatus,
 )
+from app.domain.goals.entities import FinancialGoal, GoalMetric
 from app.domain.insights.entities import FinancialInsight, InsightKind
 from app.domain.notifications.email import EmailMessage
 from app.domain.platform_sales.entities import PlatformSale
@@ -1174,6 +1175,32 @@ class FakeSubscriptionRepository:
 
     async def list_all(self) -> list[Subscription]:
         return list(self._subscriptions.values())
+
+
+class FakeGoalRepository:
+    def __init__(self) -> None:
+        self._goals: dict[GoalMetric, FinancialGoal] = {}
+        self._next_id = 1
+
+    async def list_all(self) -> list[FinancialGoal]:
+        return list(self._goals.values())
+
+    async def set(self, *, metric: GoalMetric, target_cents: int) -> FinancialGoal:
+        existing = self._goals.get(metric)
+        goal = FinancialGoal(
+            id=existing.id if existing else str(self._next_id),
+            company_id="company-1",
+            metric=metric,
+            target_cents=target_cents,
+            updated_at=datetime.now(UTC),
+        )
+        if existing is None:
+            self._next_id += 1
+        self._goals[metric] = goal
+        return goal
+
+    async def delete(self, metric: GoalMetric) -> bool:
+        return self._goals.pop(metric, None) is not None
 
 
 class FakePlatformSaleRepository:
