@@ -2,7 +2,7 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated
 
 from fastapi import Depends
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.security import APIKeyHeader, HTTPAuthorizationCredentials, HTTPBearer
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import (
@@ -13,6 +13,7 @@ from app.core.exceptions import (
 )
 from app.core.tenant import CompanyContext, set_current_company_id
 from app.domain.admin.repository import AdminMetricsRepository
+from app.domain.apikey.entities import ApiKeyRepository, hash_api_key
 from app.domain.appointment.repository import AppointmentRepository
 from app.domain.audit.repository import AuditLogRepository
 from app.domain.auth.google import GoogleTokenVerifier
@@ -38,6 +39,8 @@ from app.domain.financial.repository import (
 from app.domain.goals.repository import GoalRepository
 from app.domain.notifications.email import EmailSender
 from app.domain.platform_sales.repository import PlatformSaleRepository
+from app.domain.subscription.entitlements import has_feature
+from app.domain.subscription.plans import Feature
 from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
@@ -49,6 +52,7 @@ from app.infrastructure.external.brasilapi import BrasilApiCnpjLookup
 from app.infrastructure.repositories.admin_metrics_repository import (
     BeanieAdminMetricsRepository,
 )
+from app.infrastructure.repositories.api_key_repository import BeanieApiKeyRepository
 from app.infrastructure.repositories.appointment_repository import BeanieAppointmentRepository
 from app.infrastructure.repositories.audit_log_repository import BeanieAuditLogRepository
 from app.infrastructure.repositories.catalog_item_repository import BeanieCatalogItemRepository
@@ -95,6 +99,8 @@ _password_hasher = Argon2PasswordHasher()
 # auto_error=False: preferimos levantar UnauthorizedError (401) nós mesmos, em vez do
 # 403 que o HTTPBearer retorna por padrão quando o header Authorization está ausente.
 _bearer_scheme = HTTPBearer(auto_error=False)
+# Autenticação programática (API pública) via header X-API-Key.
+_api_key_scheme = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 def get_user_repository() -> UserRepository:
@@ -275,6 +281,39 @@ def get_audit_log_repository() -> AuditLogRepository:
 
 def get_subscription_repository() -> SubscriptionRepository:
     return BeanieSubscriptionRepository()
+
+
+def get_api_key_repository() -> ApiKeyRepository:
+    return BeanieApiKeyRepository()
+
+
+async def get_api_key_company(
+    api_key: Annotated[str | None, Depends(_api_key_scheme)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    api_key_repository: Annotated[ApiKeyRepository, Depends(get_api_key_repository)],
+    subscription_repository: Annotated[
+        SubscriptionRepository, Depends(get_subscription_repository)
+    ],
+) -> str:
+    """Autentica a API pública pela chave (X-API-Key) e devolve a empresa dona.
+
+    Também estabelece o contexto de tenant. O acesso exige que o plano da empresa
+    ainda inclua API (downgrade revoga o acesso automaticamente)."""
+    if not api_key:
+        raise UnauthorizedError("Chave de API não fornecida.")
+
+    hashed = hash_api_key(api_key, secret=settings.secret_key)
+    key = await api_key_repository.get_active_by_hash(hashed)
+    if key is None:
+        raise UnauthorizedError("Chave de API inválida ou revogada.")
+
+    set_current_company_id(key.company_id)
+    subscription = await subscription_repository.get_by_company(key.company_id)
+    if not has_feature(subscription, Feature.API_ACCESS):
+        raise ForbiddenError("O plano atual não inclui acesso à API.")
+
+    await api_key_repository.touch_last_used(key.id)
+    return key.company_id
 
 
 def get_admin_metrics_repository() -> AdminMetricsRepository:

@@ -338,6 +338,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 35  | Exportação de relatórios em CSV (lançamentos e vendas por plataforma)       | ✅ Concluída |
 | 36  | Central de alertas acionáveis (recomendações determinísticas no dashboard)  | ✅ Concluída |
 | 37  | Índice de saúde do negócio (score 0–100 ponderado e explicável)             | ✅ Concluída |
+| 38  | Chaves de API + API pública (acesso programático do plano Enterprise)       | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -642,6 +643,15 @@ Detalhes de implementação de cada mecanismo são documentados em
   frase explicando o porquê; fatores sem dados são ignorados (não punem uma empresa nova, que
   fica neutra em 50). O card traz um medidor circular colorido por faixa (excelente/bom/atenção/
   crítico) e a quebra por fator. Cálculo puro e testável.
+
+- Chaves de API e API pública — torna real a funcionalidade de acesso programático do plano
+  Enterprise. O proprietário/administrador gera chaves (`aur_…`) nas Configurações; a chave crua
+  aparece **uma única vez** (só o hash HMAC e um prefixo curto ficam guardados). A API pública
+  (`GET /api/v1/public/v1/summary`) autentica pelo header `X-API-Key` e devolve um resumo da
+  empresa (receita/despesa/resultado do mês + índice de saúde). O acesso é **gated pelo plano**:
+  criar exige a funcionalidade `API_ACCESS`, e cada requisição revalida que a empresa ainda tem
+  o recurso — um downgrade revoga o acesso automaticamente. Chaves podem ser revogadas a
+  qualquer momento.
 
 ## Funcionalidades futuras
 

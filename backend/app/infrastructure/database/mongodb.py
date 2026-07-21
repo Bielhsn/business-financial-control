@@ -5,6 +5,7 @@ from pymongo import AsyncMongoClient
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.infrastructure.database.models.api_key import ApiKeyDocument
 from app.infrastructure.database.models.appointment import AppointmentDocument
 from app.infrastructure.database.models.audit_log import AuditLogDocument
 from app.infrastructure.database.models.catalog_item import CatalogItemDocument
@@ -71,6 +72,7 @@ async def connect_to_mongo() -> None:
             SubscriptionDocument,
             PlatformSaleDocument,
             GoalDocument,
+            ApiKeyDocument,
         ],
     )
     logger.info("mongodb_connected", database=settings.mongodb_db_name)

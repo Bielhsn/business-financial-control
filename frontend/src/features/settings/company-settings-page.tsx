@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChangePassword } from "@/features/auth/use-auth";
+import { ApiKeysCard } from "@/features/settings/api-keys-card";
 import { DangerZoneCard } from "@/features/settings/danger-zone-card";
 import { TeamCard } from "@/features/settings/team-card";
 import {
@@ -526,6 +527,8 @@ export function CompanySettingsPage() {
       {company && <CompanyProfileCard company={company} />}
 
       <TeamCard companyId={id} />
+
+      <ApiKeysCard companyId={id} />
 
       <ChangePasswordCard />
 
