@@ -24,6 +24,15 @@ O domínio depende apenas de interfaces (`Protocol`/ABC); a infraestrutura as im
 Isso permite testar regras de negócio sem banco/IA reais e trocar adapters (ex.: provedor
 de IA) sem alterar casos de uso — inversão de dependência (SOLID).
 
+**Etapa 35 (Relatórios em CSV):** a geração de CSV é **pura** (`csv_export.py`): recebe as
+entidades já carregadas e devolve a string, usando o módulo `csv` da stdlib (aspas automáticas
+quando o valor tem vírgula) — nada de I/O, trivial de testar. O router monta a resposta com
+`text/csv; charset=utf-8`, `Content-Disposition: attachment` e um **BOM UTF-8** prefixado para o
+Excel abrir os acentos corretamente; valores monetários saem com vírgula decimal (pt-BR). O
+acesso segue o escopo normal da empresa (não-membro recebe 404). No frontend, o download passa
+pelo `axios` (com o token de auth, `responseType: "blob"`) e dispara via blob — um botão reusável
+`ExportReportButton` serve tanto o Financeiro (lançamentos) quanto a Análise de vendas.
+
 **Etapa 34 (Metas financeiras):** metas mensais por métrica (`GoalMetric`: faturamento ou
 resultado), uma por empresa+métrica (índice único), escopadas por tenant. O acompanhamento
 reaproveita o **mesmo run-rate** do forecast (Etapa 33) para projetar o fechamento do mês,

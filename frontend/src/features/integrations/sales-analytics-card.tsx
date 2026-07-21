@@ -3,6 +3,7 @@ import { BarChart3, Clock, Package, RefreshCcw, TrendingUp, Users } from "lucide
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSalesAnalytics } from "@/features/integrations/use-sales-analytics";
+import { ExportReportButton } from "@/features/reports/export-report-button";
 import type { SalesAnalyticsResponse } from "@/lib/api-types";
 import { formatCents } from "@/lib/utils";
 
@@ -30,13 +31,16 @@ export function SalesAnalyticsCard({ companyId }: { companyId: string }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <BarChart3 className="size-4 text-primary" /> Análise de vendas (últimos 30 dias)
-        </CardTitle>
-        <CardDescription>
-          Indicadores consolidados das plataformas conectadas — atualizados a cada sincronização.
-        </CardDescription>
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-2">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <BarChart3 className="size-4 text-primary" /> Análise de vendas (últimos 30 dias)
+          </CardTitle>
+          <CardDescription>
+            Indicadores consolidados das plataformas conectadas — atualizados a cada sincronização.
+          </CardDescription>
+        </div>
+        <ExportReportButton companyId={companyId} report="sales" label="Exportar vendas" />
       </CardHeader>
       <CardContent className="space-y-6">
         <Metrics data={data} />
