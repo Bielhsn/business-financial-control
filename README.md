@@ -335,6 +335,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 32  | Análise de vendas por plataforma (ticket médio, top produtos, pico, etc.)  | ✅ Concluída |
 | 33  | Previsão de fluxo de caixa (run-rate + tendência dos meses fechados)        | ✅ Concluída |
 | 34  | Metas financeiras mensais (faturamento e resultado) com acompanhamento      | ✅ Concluída |
+| 35  | Exportação de relatórios em CSV (lançamentos e vendas por plataforma)       | ✅ Concluída |
 
 ## Funcionalidades atuais
 
@@ -619,6 +620,12 @@ Detalhes de implementação de cada mecanismo são documentados em
   no mês, a barra de progresso, a projeção pelo mesmo _run-rate_ do forecast e se está "no
   caminho" ou "abaixo do ritmo". CRUD escopado por empresa (uma meta por métrica), restrito a
   papéis de gestão; o cálculo de progresso é puro e testável.
+
+- Exportação de relatórios em CSV — a partir da tela Financeiro, baixe todos os lançamentos
+  (data, tipo, categoria, descrição, valor, status, observações); a partir da Análise de vendas,
+  baixe todas as vendas sincronizadas (data, plataforma, produto, valor, venda/reembolso,
+  cliente). O CSV usa vírgula decimal (pt-BR) e BOM UTF-8 para abrir corretamente no Excel com
+  acentos. A geração é pura (fácil de testar) e o download passa pelo token de autenticação.
 
 ## Funcionalidades futuras
 

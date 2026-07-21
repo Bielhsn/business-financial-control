@@ -23,6 +23,7 @@ from app.api.v1.routers import (
     notifications,
     oauth_callback,
     plans,
+    reports,
     subscription,
 )
 
@@ -50,3 +51,4 @@ api_router.include_router(subscription.router)
 api_router.include_router(admin.router)
 api_router.include_router(analytics.router)
 api_router.include_router(goals.router)
+api_router.include_router(reports.router)

@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useSeedCategoriesFromBlueprint } from "@/features/blueprint/use-blueprint";
 import { useClients } from "@/features/clients/use-clients";
+import { ExportReportButton } from "@/features/reports/export-report-button";
 import {
   useCancelTransaction,
   useCategories,
@@ -513,6 +514,7 @@ export function TransactionsPage() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <PageHeader title="Financeiro" description="Receitas, despesas, contas a pagar e a receber.">
+        <ExportReportButton companyId={id} report="financial" />
         <CategoriesDialog companyId={id} />
         <NewTransactionDialog companyId={id} />
       </PageHeader>
