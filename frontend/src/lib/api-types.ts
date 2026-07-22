@@ -137,6 +137,29 @@ export interface FinancialTransactionResponse {
   updated_at: string;
 }
 
+export interface AccountItemResponse {
+  id: string;
+  description: string;
+  amount_cents: number;
+  due_date: string | null;
+  category_id: string;
+  days_until_due: number | null;
+  is_overdue: boolean;
+}
+
+export interface AccountsBucketResponse {
+  overdue_cents: number;
+  due_soon_cents: number;
+  upcoming_cents: number;
+  total_cents: number;
+  items: AccountItemResponse[];
+}
+
+export interface AccountsSummaryResponse {
+  payable: AccountsBucketResponse;
+  receivable: AccountsBucketResponse;
+}
+
 export type RecurrenceFrequency = "weekly" | "monthly" | "yearly";
 
 export interface RecurringResponse {

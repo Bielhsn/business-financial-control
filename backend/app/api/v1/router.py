@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1.routers import (
+    accounts,
     admin,
     advisor,
     alerts,
@@ -57,6 +58,7 @@ api_router.include_router(analytics.router)
 api_router.include_router(alerts.router)
 api_router.include_router(goals.router)
 api_router.include_router(recurring.router)
+api_router.include_router(accounts.router)
 api_router.include_router(reports.router)
 api_router.include_router(api_keys.router)
 api_router.include_router(public_api.router)
