@@ -39,6 +39,11 @@ class CompanyRepository(Protocol):
 
     async def delete(self, company_id: str) -> None: ...
 
+    async def list_all_ids(self) -> list[str]:
+        """Ids de todas as empresas (cross-tenant). Uso restrito a jobs de
+        manutenção/administração — nunca a fluxos por empresa."""
+        ...
+
 
 class CompanyMembershipRepository(Protocol):
     async def create(

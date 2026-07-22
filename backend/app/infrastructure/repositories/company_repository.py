@@ -124,3 +124,7 @@ class BeanieCompanyRepository:
         document = await CompanyDocument.get(PydanticObjectId(company_id))
         if document is not None:
             await document.delete()
+
+    async def list_all_ids(self) -> list[str]:
+        documents = await CompanyDocument.find_all().to_list()
+        return [str(document.id) for document in documents]

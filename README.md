@@ -342,6 +342,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 39  | Containerização e deploy de produção (Docker, nginx, compose, guia)         | ✅ Concluída |
 | 40  | Sincronização real de vendas do iFood (fetch_sales + parser + testes)       | ✅ Concluída |
 | 41  | Lançamentos recorrentes (aluguel, salários, assinaturas) com geração automática | ✅ Concluída |
+| 42  | Job de manutenção agendável (gera recorrências de todas as empresas via cron) | ✅ Concluída |
 
 ## Funcionalidades atuais
 

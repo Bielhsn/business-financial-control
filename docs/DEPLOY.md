@@ -70,6 +70,22 @@ Para liberar o **painel super-admin** (`/admin`, com MRR/ARR, churn, etc.),
 inclua o mesmo e-mail em `PLATFORM_ADMIN_EMAILS` no `backend/.env` e reinicie o
 backend. O script avisa se isso ainda não está configurado.
 
+## 3.2. Tarefas agendadas (recorrências)
+
+Os lançamentos recorrentes (aluguel, salários, assinaturas) são materializados
+por um job de manutenção idempotente. Agende-o num **cron externo** — por
+exemplo, uma vez por dia às 6h:
+
+```bash
+0 6 * * *  docker compose -f /caminho/infra/docker-compose.prod.yml exec -T \
+    backend python -m scripts.run_scheduled
+```
+
+O job percorre todas as empresas e gera as recorrências vencidas de cada uma.
+Rodar de novo não duplica (idempotente por `external_ref`). Preferimos um cron
+externo a um scheduler embutido para não duplicar a execução quando o backend
+roda com múltiplos workers.
+
 ## 4. Atualizações
 
 ```bash
