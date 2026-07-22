@@ -344,6 +344,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 41  | Lançamentos recorrentes (aluguel, salários, assinaturas) com geração automática | ✅ Concluída |
 | 42  | Job de manutenção agendável (gera recorrências de todas as empresas via cron) | ✅ Concluída |
 | 43  | Contas a pagar e a receber (vencidos, a vencer em 7 dias, totais) com visão no Financeiro | ✅ Concluída |
+| 44  | DRE do mês (resultado por categoria) com comparativo vs. o mês anterior no dashboard | ✅ Concluída |
 
 ## Funcionalidades atuais
 
