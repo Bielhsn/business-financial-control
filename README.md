@@ -345,6 +345,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 42  | Job de manutenção agendável (gera recorrências de todas as empresas via cron) | ✅ Concluída |
 | 43  | Contas a pagar e a receber (vencidos, a vencer em 7 dias, totais) com visão no Financeiro | ✅ Concluída |
 | 44  | DRE do mês (resultado por categoria) com comparativo vs. o mês anterior no dashboard | ✅ Concluída |
+| 45  | Exportação do DRE e das contas a pagar/receber em CSV (relatório para o contador) | ✅ Concluída |
 
 ## Funcionalidades atuais
 

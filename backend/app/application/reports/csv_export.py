@@ -9,6 +9,8 @@ import csv
 import io
 from collections.abc import Iterable
 
+from app.application.financial.accounts import AccountsSummary
+from app.application.financial.income_statement import IncomeStatementComparison
 from app.domain.financial.entities import FinancialCategoryType, FinancialTransaction
 from app.domain.platform_sales.entities import PlatformSale
 
@@ -47,6 +49,64 @@ def financial_transactions_csv(
                 tx.notes or "",
             ]
         )
+    return buffer.getvalue()
+
+
+def income_statement_csv(comparison: IncomeStatementComparison) -> str:
+    """DRE do mês em CSV (Seção, Categoria, Valor) para o contador."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow([f"DRE {comparison.month:02d}/{comparison.year}"])
+    writer.writerow(["Seção", "Categoria", "Valor (R$)"])
+
+    statement = comparison.current
+    for line in statement.income_lines:
+        writer.writerow(["Receita", line.category_name, _reais(line.amount_cents)])
+    writer.writerow(["Total Receitas", "", _reais(statement.total_income_cents)])
+    for line in statement.expense_lines:
+        writer.writerow(["Despesa", line.category_name, _reais(line.amount_cents)])
+    writer.writerow(["Total Despesas", "", _reais(statement.total_expense_cents)])
+    writer.writerow(["Resultado", "", _reais(statement.net_result_cents)])
+
+    writer.writerow([])
+    writer.writerow(["Comparativo com o mês anterior", "Mês atual", "Mês anterior"])
+    writer.writerow(
+        ["Receitas", _reais(statement.total_income_cents), _reais(comparison.previous_income_cents)]
+    )
+    writer.writerow(
+        [
+            "Despesas",
+            _reais(statement.total_expense_cents),
+            _reais(comparison.previous_expense_cents),
+        ]
+    )
+    writer.writerow(
+        [
+            "Resultado",
+            _reais(statement.net_result_cents),
+            _reais(comparison.previous_net_result_cents),
+        ]
+    )
+    return buffer.getvalue()
+
+
+def accounts_csv(summary: AccountsSummary) -> str:
+    """Contas a pagar e a receber em CSV (para conferência/cobrança)."""
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(["Tipo", "Descrição", "Vencimento", "Situação", "Valor (R$)"])
+    groups = (("A pagar", summary.payable.items), ("A receber", summary.receivable.items))
+    for label, items in groups:
+        for item in items:
+            writer.writerow(
+                [
+                    label,
+                    item.description,
+                    _date(item.due_date),
+                    "Vencido" if item.is_overdue else "A vencer",
+                    _reais(item.amount_cents),
+                ]
+            )
     return buffer.getvalue()
 
 
