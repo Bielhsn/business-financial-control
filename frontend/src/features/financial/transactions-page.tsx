@@ -34,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useSeedCategoriesFromBlueprint } from "@/features/blueprint/use-blueprint";
 import { useClients } from "@/features/clients/use-clients";
 import { ExportReportButton } from "@/features/reports/export-report-button";
+import { AccountsSummaryCard } from "@/features/financial/accounts-summary-card";
 import { RecurringCard } from "@/features/financial/recurring-card";
 import {
   useCancelTransaction,
@@ -519,6 +520,8 @@ export function TransactionsPage() {
         <CategoriesDialog companyId={id} />
         <NewTransactionDialog companyId={id} />
       </PageHeader>
+
+      <AccountsSummaryCard companyId={id} />
 
       <div className="mb-4 flex flex-wrap gap-2">
         <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as typeof typeFilter)}>

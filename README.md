@@ -343,6 +343,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 40  | Sincronização real de vendas do iFood (fetch_sales + parser + testes)       | ✅ Concluída |
 | 41  | Lançamentos recorrentes (aluguel, salários, assinaturas) com geração automática | ✅ Concluída |
 | 42  | Job de manutenção agendável (gera recorrências de todas as empresas via cron) | ✅ Concluída |
+| 43  | Contas a pagar e a receber (vencidos, a vencer em 7 dias, totais) com visão no Financeiro | ✅ Concluída |
 
 ## Funcionalidades atuais
 
