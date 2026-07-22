@@ -30,6 +30,7 @@ import { AlertsBanner } from "@/features/dashboard/alerts-banner";
 import { ForecastCard } from "@/features/dashboard/forecast-card";
 import { GoalsCard } from "@/features/dashboard/goals-card";
 import { HealthScoreCard } from "@/features/dashboard/health-score-card";
+import { IncomeStatementCard } from "@/features/dashboard/income-statement-card";
 import { InsightsCard } from "@/features/dashboard/insights-card";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -274,6 +275,8 @@ export function DashboardPage() {
           <AlertsBanner companyId={companyId ?? ""} />
 
           <HealthScoreCard companyId={companyId ?? ""} />
+
+          <IncomeStatementCard companyId={companyId ?? ""} />
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard

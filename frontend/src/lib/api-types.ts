@@ -137,6 +137,32 @@ export interface FinancialTransactionResponse {
   updated_at: string;
 }
 
+export interface StatementLineResponse {
+  category_id: string;
+  category_name: string;
+  amount_cents: number;
+}
+
+export interface IncomeStatementResponse {
+  income_lines: StatementLineResponse[];
+  expense_lines: StatementLineResponse[];
+  total_income_cents: number;
+  total_expense_cents: number;
+  net_result_cents: number;
+}
+
+export interface IncomeStatementComparisonResponse {
+  year: number;
+  month: number;
+  current: IncomeStatementResponse;
+  previous_income_cents: number;
+  previous_expense_cents: number;
+  previous_net_result_cents: number;
+  income_change_pct: number | null;
+  expense_change_pct: number | null;
+  net_change_pct: number | null;
+}
+
 export interface AccountItemResponse {
   id: string;
   description: string;

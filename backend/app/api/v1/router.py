@@ -21,6 +21,7 @@ from app.api.v1.routers import (
     financial,
     goals,
     health,
+    income_statement,
     insights,
     invitations,
     notifications,
@@ -59,6 +60,7 @@ api_router.include_router(alerts.router)
 api_router.include_router(goals.router)
 api_router.include_router(recurring.router)
 api_router.include_router(accounts.router)
+api_router.include_router(income_statement.router)
 api_router.include_router(reports.router)
 api_router.include_router(api_keys.router)
 api_router.include_router(public_api.router)
