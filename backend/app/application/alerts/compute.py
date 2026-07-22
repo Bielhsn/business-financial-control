@@ -24,6 +24,12 @@ def _unlimited(limit: int) -> bool:
     return limit < 0
 
 
+def _reais(cents: int) -> str:
+    # 123456 -> "R$ 1.234,56" (separadores pt-BR).
+    formatted = f"{cents / 100:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"R$ {formatted}"
+
+
 def compute_alerts(
     *,
     connections_with_error: int,
@@ -35,8 +41,40 @@ def compute_alerts(
     members_limit: int,
     integrations_used: int,
     integrations_limit: int,
+    overdue_payable_count: int = 0,
+    overdue_payable_cents: int = 0,
+    due_soon_payable_count: int = 0,
+    due_soon_payable_cents: int = 0,
 ) -> list[Alert]:
     alerts: list[Alert] = []
+
+    if overdue_payable_count > 0:
+        alerts.append(
+            Alert(
+                code="bills_overdue",
+                severity=AlertSeverity.CRITICAL,
+                title="Contas vencidas",
+                message=(
+                    f"Você tem {overdue_payable_count} conta(s) a pagar vencida(s), somando "
+                    f"{_reais(overdue_payable_cents)}. Quite para evitar juros e multa."
+                ),
+                action="transactions",
+            )
+        )
+
+    if due_soon_payable_count > 0:
+        alerts.append(
+            Alert(
+                code="bills_due_soon",
+                severity=AlertSeverity.WARNING,
+                title="Contas a vencer",
+                message=(
+                    f"{due_soon_payable_count} conta(s) a pagar vencem nos próximos 7 dias, "
+                    f"somando {_reais(due_soon_payable_cents)}. Programe o pagamento."
+                ),
+                action="transactions",
+            )
+        )
 
     if connections_with_error > 0:
         alerts.append(

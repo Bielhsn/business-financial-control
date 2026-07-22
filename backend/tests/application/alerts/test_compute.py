@@ -77,3 +77,24 @@ def test_alerts_sorted_by_severity() -> None:
     assert severities == sorted(
         severities, key=lambda s: {"critical": 0, "warning": 1, "info": 2}[s]
     )
+
+
+def test_overdue_bills_generate_critical_alert() -> None:
+    alerts = _alerts(overdue_payable_count=3, overdue_payable_cents=250000)
+    overdue = next(a for a in alerts if a.code == "bills_overdue")
+    assert overdue.severity == AlertSeverity.CRITICAL
+    assert "3 conta" in overdue.message
+    assert "R$ 2.500,00" in overdue.message
+
+
+def test_due_soon_bills_generate_warning_alert() -> None:
+    alerts = _alerts(due_soon_payable_count=2, due_soon_payable_cents=15000)
+    due_soon = next(a for a in alerts if a.code == "bills_due_soon")
+    assert due_soon.severity == AlertSeverity.WARNING
+    assert "R$ 150,00" in due_soon.message
+
+
+def test_no_due_alerts_when_zero() -> None:
+    codes = {a.code for a in _alerts()}
+    assert "bills_overdue" not in codes
+    assert "bills_due_soon" not in codes
