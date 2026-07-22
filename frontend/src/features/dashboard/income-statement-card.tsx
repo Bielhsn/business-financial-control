@@ -1,6 +1,7 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { ExportReportButton } from "@/features/reports/export-report-button";
 import { useIncomeStatement } from "@/features/dashboard/use-income-statement";
 import type { StatementLineResponse } from "@/lib/api-types";
 import { formatCents } from "@/lib/utils";
@@ -65,9 +66,17 @@ export function IncomeStatementCard({ companyId }: { companyId: string }) {
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
-        <div>
-          <h3 className="font-semibold">Resultado do mês (DRE)</h3>
-          <p className="text-sm capitalize text-muted-foreground">{monthLabel}</p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="font-semibold">Resultado do mês (DRE)</h3>
+            <p className="text-sm capitalize text-muted-foreground">{monthLabel}</p>
+          </div>
+          <ExportReportButton
+            companyId={companyId}
+            report="income-statement"
+            label="CSV"
+            size="sm"
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-3">

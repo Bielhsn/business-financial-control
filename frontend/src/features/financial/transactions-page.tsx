@@ -517,6 +517,7 @@ export function TransactionsPage() {
     <div className="mx-auto w-full max-w-4xl px-4 py-8">
       <PageHeader title="Financeiro" description="Receitas, despesas, contas a pagar e a receber.">
         <ExportReportButton companyId={id} report="financial" />
+        <ExportReportButton companyId={id} report="accounts" label="Contas (CSV)" />
         <CategoriesDialog companyId={id} />
         <NewTransactionDialog companyId={id} />
       </PageHeader>
