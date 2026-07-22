@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import UTC, datetime
 
 from app.application.alerts.compute import compute_alerts
+from app.application.financial.accounts import GetAccountsUseCase
 from app.application.forecast.cashflow import GetCashflowForecastUseCase
 from app.application.goals.progress import GetGoalsProgressUseCase
 from app.application.platform_sales.analytics import GetSalesAnalyticsUseCase
@@ -49,6 +50,17 @@ class GetAlertsUseCase:
         forecast = await GetCashflowForecastUseCase(self._transactions).execute(now=now)
         analytics = await GetSalesAnalyticsUseCase(self._sales).execute(days=30, now=now)
 
+        accounts = await GetAccountsUseCase(self._transactions).execute(
+            today=now or datetime.now(UTC)
+        )
+        payable = accounts.payable
+        overdue_items = [item for item in payable.items if item.is_overdue]
+        due_soon_count = sum(
+            1
+            for item in payable.items
+            if not item.is_overdue and item.days_until_due is not None and item.days_until_due <= 7
+        )
+
         subscription = await self._subscriptions.get_by_company(company_id)
         plan = resolve_plan(subscription)
         members = await self._memberships.list_for_company(company_id)
@@ -63,4 +75,8 @@ class GetAlertsUseCase:
             members_limit=plan.limits.max_members,
             integrations_used=len(connections),
             integrations_limit=plan.limits.max_integrations,
+            overdue_payable_count=len(overdue_items),
+            overdue_payable_cents=payable.overdue_cents,
+            due_soon_payable_count=due_soon_count,
+            due_soon_payable_cents=payable.due_soon_cents,
         )
