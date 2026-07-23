@@ -15,6 +15,7 @@ from app.api.v1.deps import (
 from app.application.auth.authenticate_user import AuthenticateUserUseCase
 from app.application.auth.change_password import ChangePasswordUseCase
 from app.application.auth.email_verification import (
+    ConfirmEmailByTokenUseCase,
     RequestEmailVerificationUseCase,
     VerifyEmailUseCase,
 )
@@ -39,12 +40,14 @@ from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.schemas.auth import (
     ChangePasswordRequest,
+    ConfirmEmailRequest,
     ForgotPasswordRequest,
     GoogleLoginRequest,
     LoginRequest,
     MessageResponse,
     RefreshRequest,
     RegisterRequest,
+    ResendVerificationRequest,
     ResetPasswordRequest,
     TokenResponse,
     VerifyEmailRequest,
@@ -115,6 +118,42 @@ async def request_verification(
     ).execute(user_id=current_user.id)
 
 
+@router.post("/confirm-email", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
+async def confirm_email(
+    request: Request,
+    payload: ConfirmEmailRequest,
+    user_repository: Annotated[UserRepository, Depends(get_user_repository)],
+    code_repository: Annotated[
+        VerificationCodeRepository, Depends(get_verification_code_repository)
+    ],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    # Fluxo público: a pessoa clicou no link do e-mail (ainda sem estar logada).
+    await ConfirmEmailByTokenUseCase(user_repository, code_repository, settings).execute(
+        email=payload.email, token=payload.token
+    )
+    audit_event("email_verified")
+
+
+@router.post("/resend-verification", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("3/minute")
+async def resend_verification(
+    request: Request,
+    payload: ResendVerificationRequest,
+    user_repository: Annotated[UserRepository, Depends(get_user_repository)],
+    code_repository: Annotated[
+        VerificationCodeRepository, Depends(get_verification_code_repository)
+    ],
+    email_sender: Annotated[EmailSender, Depends(get_email_sender)],
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> None:
+    # Público e silencioso: reenvia o link se a conta existir e não estiver confirmada.
+    await RequestEmailVerificationUseCase(
+        user_repository, code_repository, email_sender, settings
+    ).execute_by_email(email=payload.email)
+
+
 @router.post("/forgot-password", response_model=MessageResponse)
 @limiter.limit("3/minute")
 async def forgot_password(
@@ -132,7 +171,7 @@ async def forgot_password(
     ).execute(email=payload.email)
     # Resposta idêntica exista ou não a conta (não vaza se o e-mail está cadastrado).
     return MessageResponse(
-        message="Se houver uma conta com este e-mail, enviamos um código de redefinição."
+        message="Se houver uma conta com este e-mail, enviamos um link de redefinição."
     )
 
 
@@ -157,7 +196,7 @@ async def reset_password(
         refresh_token_repository,
         password_hasher,
         settings,
-    ).execute(email=payload.email, code=payload.code, new_password=payload.new_password)
+    ).execute(email=payload.email, code=payload.token, new_password=payload.new_password)
 
 
 @router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)

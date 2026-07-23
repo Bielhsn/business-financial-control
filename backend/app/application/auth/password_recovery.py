@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from urllib.parse import quote
 
 from app.core.config import Settings
 from app.core.exceptions import ValidationError
@@ -7,11 +8,15 @@ from app.domain.auth.repository import RefreshTokenRepository
 from app.domain.auth.verification import (
     VerificationCodeRepository,
     VerificationPurpose,
-    generate_code,
+    generate_token,
     hash_code,
 )
 from app.domain.notifications.email import EmailMessage, EmailSender
 from app.domain.user.repository import UserRepository
+
+
+def _reset_link(app_base_url: str, *, email: str, token: str) -> str:
+    return f"{app_base_url.rstrip('/')}/redefinir-senha?email={quote(email)}&token={quote(token)}"
 
 
 class RequestPasswordResetUseCase:
@@ -35,9 +40,9 @@ class RequestPasswordResetUseCase:
         if user is None:
             return  # silencioso de propósito
 
-        code = generate_code()
-        code_hash = hash_code(
-            code,
+        token = generate_token()
+        token_hash = hash_code(
+            token,
             secret=self._settings.secret_key,
             user_id=user.id,
             purpose=VerificationPurpose.PASSWORD_RESET,
@@ -48,17 +53,21 @@ class RequestPasswordResetUseCase:
         await self._code_repository.create(
             user_id=user.id,
             purpose=VerificationPurpose.PASSWORD_RESET,
-            code_hash=code_hash,
+            code_hash=token_hash,
             expires_at=datetime.now(UTC)
             + timedelta(minutes=self._settings.password_reset_ttl_minutes),
         )
+        link = _reset_link(self._settings.app_base_url, email=user.email, token=token)
         await self._email_sender.send(
             EmailMessage(
                 to=user.email,
                 subject="Redefinição de senha — Aurum OS",
-                body=f"Use o código {code} para redefinir sua senha. "
-                f"Ele expira em {self._settings.password_reset_ttl_minutes} minutos. "
-                "Se você não pediu isso, ignore este e-mail.",
+                body=(
+                    "Recebemos um pedido para redefinir sua senha no Aurum OS. "
+                    f"Clique no link abaixo para escolher uma nova senha:\n\n{link}\n\n"
+                    f"O link expira em {self._settings.password_reset_ttl_minutes} minutos. "
+                    "Se você não pediu isso, ignore este e-mail."
+                ),
             )
         )
 
