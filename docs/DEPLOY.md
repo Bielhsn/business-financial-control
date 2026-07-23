@@ -36,8 +36,16 @@ Mínimo obrigatório em produção:
 `docker-compose.prod.yml` já os aponta para os serviços internos.
 
 Opcionais (habilitam funcionalidades): `PLATFORM_ADMIN_EMAILS` (painel admin),
-`ANTHROPIC_API_KEY` (IA), `GOOGLE_CLIENT_ID` (login Google), `EMAIL_*`/`SMTP_*`
-(e-mails reais), `*_CLIENT_ID`/`*_CLIENT_SECRET` (integrações OAuth).
+`ANTHROPIC_API_KEY` (IA), `GOOGLE_CLIENT_ID` (login Google),
+`EMAIL_PROVIDER=resend` + `RESEND_API_KEY` + `EMAIL_FROM` (e-mails reais de
+verificação de conta e reset de senha), `*_CLIENT_ID`/`*_CLIENT_SECRET`
+(integrações OAuth).
+
+> **E-mails em produção:** por padrão `EMAIL_PROVIDER=console` só imprime o
+> código no log (dev). Para enviar de verdade, crie uma conta no
+> [Resend](https://resend.com), valide um domínio de envio, gere uma API Key e
+> configure `EMAIL_PROVIDER=resend`, `RESEND_API_KEY=re_...` e um `EMAIL_FROM`
+> desse domínio (ex.: `Aurum OS <no-reply@suaempresa.com>`).
 
 > **Nunca** faça commit do `backend/.env` — ele já está no `.gitignore`.
 

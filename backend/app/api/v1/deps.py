@@ -49,6 +49,7 @@ from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
 from app.infrastructure.auth.google import GoogleTokenInfoVerifier
 from app.infrastructure.connectors.factory import build_connector
 from app.infrastructure.email.console import ConsoleEmailSender
+from app.infrastructure.email.resend import ResendEmailSender
 from app.infrastructure.external.brasilapi import BrasilApiCnpjLookup
 from app.infrastructure.repositories.admin_metrics_repository import (
     BeanieAdminMetricsRepository,
@@ -209,7 +210,14 @@ def get_verification_code_repository() -> VerificationCodeRepository:
 
 
 def get_email_sender(settings: Annotated[Settings, Depends(get_settings)]) -> EmailSender:
-    # Só o adaptador de console por ora; SMTP/provedor real pluga aqui via settings.
+    # "resend" envia de verdade em produção; "console" (padrão) só loga em dev.
+    if settings.email_provider == "resend":
+        if not settings.resend_api_key:
+            raise AIProviderNotConfiguredError(
+                "Envio de e-mail indisponível: defina RESEND_API_KEY para "
+                "usar EMAIL_PROVIDER=resend."
+            )
+        return ResendEmailSender(api_key=settings.resend_api_key, sender=settings.email_from)
     return ConsoleEmailSender()
 
 

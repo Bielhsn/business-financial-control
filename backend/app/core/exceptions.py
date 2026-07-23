@@ -87,6 +87,18 @@ class ConnectorError(AppError):
         super().__init__(message, status_code=502, details=details)
 
 
+class ExternalServiceError(AppError):
+    """Falha ao usar um serviço externo (ex.: provedor de e-mail). 502: o erro
+    vem do serviço, não do cliente."""
+
+    def __init__(
+        self,
+        message: str = "Falha ao comunicar com um serviço externo.",
+        details: dict[str, object] | None = None,
+    ) -> None:
+        super().__init__(message, status_code=502, details=details)
+
+
 class PlanLimitError(AppError):
     """Recurso bloqueado pelo plano atual (limite atingido ou funcionalidade não
     incluída). 402 Payment Required: o frontend usa isto para oferecer upgrade."""
