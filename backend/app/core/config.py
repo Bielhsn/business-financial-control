@@ -29,9 +29,11 @@ class Settings(BaseSettings):
     require_email_verification: bool = False
     verification_code_ttl_minutes: int = 15
     password_reset_ttl_minutes: int = 30
-    # Provedor de e-mail: "console" (dev — imprime o código no log) ou "smtp".
+    # Provedor de e-mail: "console" (dev — imprime o código no log) ou "resend"
+    # (envia de verdade via API do Resend; exige RESEND_API_KEY).
     email_provider: str = "console"
     email_from: str = "Aurum OS <no-reply@aurum.local>"
+    resend_api_key: str | None = None
     smtp_host: str | None = None
     smtp_port: int = 587
     smtp_user: str | None = None

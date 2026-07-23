@@ -347,6 +347,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 44  | DRE do mês (resultado por categoria) com comparativo vs. o mês anterior no dashboard | ✅ Concluída |
 | 45  | Exportação do DRE e das contas a pagar/receber em CSV (relatório para o contador) | ✅ Concluída |
 | 46  | Alertas de vencimento (contas vencidas e a vencer em 7 dias na central de alertas) | ✅ Concluída |
+| 47  | Envio real de e-mail via Resend (verificação de conta e reset de senha em produção) | ✅ Concluída |
 
 ## Funcionalidades atuais
 
