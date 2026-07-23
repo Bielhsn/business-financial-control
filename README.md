@@ -348,6 +348,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 45  | Exportação do DRE e das contas a pagar/receber em CSV (relatório para o contador) | ✅ Concluída |
 | 46  | Alertas de vencimento (contas vencidas e a vencer em 7 dias na central de alertas) | ✅ Concluída |
 | 47  | Envio real de e-mail via Resend (verificação de conta e reset de senha em produção) | ✅ Concluída |
+| 48  | Deploy gerenciado: frontend na Vercel (proxy da API p/ Render) + guia Render/Atlas | ✅ Concluída |
 
 ## Funcionalidades atuais
 

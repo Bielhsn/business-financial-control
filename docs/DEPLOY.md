@@ -1,8 +1,52 @@
 # Deploy — Aurum OS
 
-Guia para colocar o Aurum OS em produção com Docker. A stack é composta por
-quatro serviços: **frontend** (nginx servindo o SPA), **backend** (FastAPI),
-**MongoDB** e **Redis**.
+Duas formas de colocar o Aurum OS em produção:
+
+- **A. Render + Vercel + Atlas (gerenciado, grátis para começar)** — backend na
+  Render, frontend na Vercel e MongoDB no Atlas. Veja a seção "Deploy gerenciado".
+- **B. Servidor próprio com Docker** — a stack completa (frontend nginx, backend,
+  MongoDB e Redis) sobe com um comando. Veja da seção 1 em diante.
+
+---
+
+## Deploy gerenciado (Render + Vercel + Atlas)
+
+**Backend (Render)** — Web Service a partir do repositório GitHub:
+
+- **Root Directory**: `backend` (o `Dockerfile` fica dentro dela).
+- **Branch**: `main`.
+- Variáveis de ambiente mínimas: `ENVIRONMENT=production`, `SECRET_KEY` forte,
+  `MONGODB_URI` (string `mongodb+srv://...` do Atlas), `MONGODB_DB_NAME`,
+  `MONGODB_SERVER_SELECTION_TIMEOUT_MS=15000`, `PUBLIC_BASE_URL` (a URL do
+  próprio serviço na Render) e `CORS_ALLOWED_ORIGINS` (a URL do frontend na
+  Vercel). Opcionais: `PLATFORM_ADMIN_EMAILS`, `EMAIL_PROVIDER=resend` +
+  `RESEND_API_KEY` + `EMAIL_FROM`, `GOOGLE_CLIENT_ID`, `ANTHROPIC_API_KEY`.
+- No **MongoDB Atlas**: usuário/senha em *Database Access* e liberação de IP
+  (`0.0.0.0/0`) em *Network Access*.
+- Verificação: `https://SEU-BACKEND.onrender.com/api/v1/health` →
+  `{"status":"ok","database":"ok"}`.
+
+**Frontend (Vercel)** — importe o repositório GitHub na Vercel:
+
+- **Root Directory**: `frontend` (a Vercel detecta Vite e configura build/output
+  sozinha).
+- O `frontend/vercel.json` já faz o **proxy de `/api/*` para o backend na
+  Render** (mesma origem no navegador — sem CORS) e o fallback de SPA para o
+  React Router. Se a URL do seu backend for outra, ajuste o `destination` nele.
+- Opcional: `VITE_GOOGLE_CLIENT_ID` nas variáveis de ambiente do projeto Vercel
+  (habilita o botão "Entrar com Google"; exige também `GOOGLE_CLIENT_ID` no
+  backend).
+- Cada merge na `main` redeploya o frontend automaticamente.
+
+> **Plano grátis da Render:** o serviço "dorme" após inatividade — a primeira
+> requisição pode levar ~1 minuto (cold start). Os planos pagos removem isso.
+
+---
+
+## Deploy com Docker (servidor próprio)
+
+A stack é composta por quatro serviços: **frontend** (nginx servindo o SPA),
+**backend** (FastAPI), **MongoDB** e **Redis**.
 
 O único serviço exposto ao mundo é o **frontend** (porta 80), que faz proxy de
 `/api` para o backend. Banco e cache ficam apenas na rede interna do compose.
