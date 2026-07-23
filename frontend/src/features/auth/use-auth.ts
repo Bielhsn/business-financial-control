@@ -60,8 +60,24 @@ export function useForgotPassword() {
 
 export function useResetPassword() {
   return useMutation({
-    mutationFn: async (input: { email: string; code: string; new_password: string }) => {
+    mutationFn: async (input: { email: string; token: string; new_password: string }) => {
       await api.post("/auth/reset-password", input);
+    },
+  });
+}
+
+export function useConfirmEmail() {
+  return useMutation({
+    mutationFn: async (input: { email: string; token: string }) => {
+      await api.post("/auth/confirm-email", input);
+    },
+  });
+}
+
+export function useResendVerification() {
+  return useMutation({
+    mutationFn: async (email: string) => {
+      await api.post("/auth/resend-verification", { email });
     },
   });
 }

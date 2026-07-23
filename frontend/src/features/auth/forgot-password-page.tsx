@@ -28,8 +28,8 @@ export function ForgotPasswordPage() {
   const onSubmit = handleSubmit((values) => {
     forgot.mutate(values.email, {
       onSuccess: () => {
-        toast.success("Se houver uma conta com este e-mail, enviamos um código.");
-        navigate(`/reset-password?email=${encodeURIComponent(values.email)}`);
+        toast.success("Se houver uma conta com este e-mail, enviamos um link de redefinição.");
+        navigate("/login", { replace: true });
       },
       onError: (error) => toast.error(extractErrorMessage(error)),
     });
@@ -52,7 +52,7 @@ export function ForgotPasswordPage() {
           <CardHeader>
             <CardTitle>Recuperar senha</CardTitle>
             <CardDescription>
-              Informe seu e-mail e enviaremos um código para você redefinir a senha.
+              Informe seu e-mail e enviaremos um link para você redefinir a senha.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -67,7 +67,7 @@ export function ForgotPasswordPage() {
                 )}
               </div>
               <Button type="submit" className="w-full" disabled={forgot.isPending}>
-                {forgot.isPending ? "Enviando…" : "Enviar código"}
+                {forgot.isPending ? "Enviando…" : "Enviar link"}
               </Button>
             </form>
             <p className="mt-4 text-center text-sm text-muted-foreground">
