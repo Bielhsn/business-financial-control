@@ -11,6 +11,7 @@ from app.api.v1.deps import (
 )
 from app.application.client.create_client import CreateClientUseCase
 from app.application.client.get_client_summary import GetClientSummaryUseCase
+from app.application.client.register_visit import RegisterClientVisitUseCase
 from app.application.client.update_client import UpdateClientUseCase
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
@@ -48,6 +49,8 @@ def _to_response(client: Client) -> ClientResponse:
         is_active=client.is_active,
         created_at=client.created_at,
         updated_at=client.updated_at,
+        return_interval_days=client.return_interval_days,
+        last_visit_at=client.last_visit_at,
     )
 
 
@@ -77,6 +80,7 @@ async def create_client(
         phone=payload.phone,
         notes=payload.notes,
         custom_fields=payload.custom_fields,
+        return_interval_days=payload.return_interval_days,
     )
     return _to_response(client)
 
@@ -119,6 +123,18 @@ async def update_client(
         client_id=client_id,
         **payload.model_dump(exclude_unset=True),
     )
+    return _to_response(client)
+
+
+@router.post("/{client_id}/register-visit", response_model=ClientResponse)
+async def register_client_visit(
+    client_id: str,
+    company_context: Annotated[CompanyContext, Depends(require_role(*_STAFF_ROLES))],
+    client_repository: Annotated[ClientRepository, Depends(get_client_repository)],
+) -> ClientResponse:
+    # Marca o atendimento de hoje — reinicia a contagem da cadência de retorno.
+    use_case = RegisterClientVisitUseCase(client_repository)
+    client = await use_case.execute(client_id=client_id)
     return _to_response(client)
 
 

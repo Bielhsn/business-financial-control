@@ -266,6 +266,8 @@ export interface ClientResponse {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  return_interval_days: number | null;
+  last_visit_at: string | null;
 }
 
 export interface ClientSummaryResponse {
