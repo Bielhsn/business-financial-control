@@ -45,6 +45,7 @@ export interface CompanyResponse {
   email: string | null;
   website: string | null;
   social_links: Record<string, string>;
+  client_return_message: string | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;

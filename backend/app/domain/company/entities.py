@@ -40,6 +40,9 @@ class Company:
     email: str | None = None
     website: str | None = None
     social_links: dict[str, str] = field(default_factory=dict)
+    # Mensagem que o dono envia ao chamar um cliente de volta (WhatsApp). Aceita
+    # os marcadores {nome}, {empresa} e {dias}. None = usa o texto padrão.
+    client_return_message: str | None = None
 
 
 @dataclass

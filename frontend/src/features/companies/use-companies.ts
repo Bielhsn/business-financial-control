@@ -42,6 +42,7 @@ export interface UpdateCompanyInput {
   email?: string | null;
   website?: string | null;
   social_links?: Record<string, string>;
+  client_return_message?: string | null;
 }
 
 /** Consulta um CNPJ (apenas dígitos) na Receita via backend, para autopreencher. */

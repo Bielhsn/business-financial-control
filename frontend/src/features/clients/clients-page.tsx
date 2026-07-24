@@ -1,5 +1,13 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarCheck, Clock, MessageCircle, Plus, ShoppingBag, Users } from "lucide-react";
+import {
+  CalendarCheck,
+  Clock,
+  MessageCircle,
+  Pencil,
+  Plus,
+  ShoppingBag,
+  Users,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
@@ -32,7 +40,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
-import { useCompany } from "@/features/companies/use-companies";
+import { useCompany, useUpdateCompany } from "@/features/companies/use-companies";
 import {
   useClientSummary,
   useClients,
@@ -45,7 +53,12 @@ import type { BlueprintCustomField, ClientResponse } from "@/lib/api-types";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { computeReturnStatus } from "@/lib/client-return";
 import { formatCents } from "@/lib/utils";
-import { buildWhatsappLink } from "@/lib/whatsapp";
+import {
+  DEFAULT_RETURN_MESSAGE,
+  RETURN_MESSAGE_PLACEHOLDERS,
+  buildWhatsappLink,
+  renderReturnMessage,
+} from "@/lib/whatsapp";
 
 /** Opções de cadência de retorno oferecidas ao barbeiro/salão. */
 const RETURN_INTERVAL_OPTIONS = [7, 10, 15, 21, 30, 45, 60];
@@ -319,18 +332,22 @@ function ClientReturnCard({
   client,
   companyId,
   companyName,
+  messageTemplate,
 }: {
   client: ClientResponse;
   companyId: string;
   companyName: string | undefined;
+  messageTemplate: string | null | undefined;
 }) {
   const registerVisit = useRegisterVisit(companyId);
   const setInterval = useSetReturnInterval(companyId);
 
-  const firstName = client.name.trim().split(" ")[0];
-  const message = `Olá, ${firstName}! Tudo bem? Já faz um tempinho desde sua última visita${
-    companyName ? ` na ${companyName}` : ""
-  }. Que tal agendar seu retorno? 😊`;
+  const status = computeReturnStatus(client.last_visit_at, client.return_interval_days);
+  const message = renderReturnMessage(messageTemplate, {
+    clientName: client.name,
+    companyName,
+    daysSinceVisit: status.daysSinceVisit,
+  });
   const waLink = buildWhatsappLink(client.phone, message);
 
   const lastVisit = client.last_visit_at
@@ -410,14 +427,111 @@ function ClientReturnCard({
   );
 }
 
+/** Editor do texto que será enviado no WhatsApp — "mensagem pré-programada" pelo dono. */
+function ReturnMessageDialog({
+  companyId,
+  companyName,
+  current,
+}: {
+  companyId: string;
+  companyName: string | undefined;
+  current: string | null | undefined;
+}) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(current ?? DEFAULT_RETURN_MESSAGE);
+  const updateCompany = useUpdateCompany(companyId);
+
+  // Ao reabrir, recomeça do que está salvo (descarta rascunho não enviado).
+  const onOpenChange = (next: boolean) => {
+    if (next) {
+      setDraft(current ?? DEFAULT_RETURN_MESSAGE);
+    }
+    setOpen(next);
+  };
+
+  const preview = renderReturnMessage(draft, {
+    clientName: "João Pedro",
+    companyName,
+    daysSinceVisit: 15,
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Pencil className="size-4" /> Editar mensagem
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Mensagem de retorno</DialogTitle>
+          <DialogDescription>
+            Este é o texto enviado ao chamar um cliente de volta pelo WhatsApp.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="return-message">Texto</Label>
+          <Textarea
+            id="return-message"
+            rows={4}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            Marcadores:{" "}
+            {RETURN_MESSAGE_PLACEHOLDERS.map((item, index) => (
+              <span key={item.token}>
+                {index > 0 && ", "}
+                <code className="rounded bg-muted px-1">{item.token}</code> = {item.description}
+              </span>
+            ))}
+          </p>
+        </div>
+        <div className="rounded-lg border bg-muted/40 p-3">
+          <p className="text-xs font-medium text-muted-foreground">Prévia</p>
+          <p className="mt-1 whitespace-pre-wrap text-sm">{preview}</p>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="ghost"
+            onClick={() => setDraft(DEFAULT_RETURN_MESSAGE)}
+            disabled={updateCompany.isPending}
+          >
+            Restaurar padrão
+          </Button>
+          <Button
+            onClick={() =>
+              updateCompany.mutate(
+                { client_return_message: draft.trim() },
+                {
+                  onSuccess: () => {
+                    toast.success("Mensagem salva!");
+                    setOpen(false);
+                  },
+                  onError: (error) => toast.error(extractErrorMessage(error)),
+                },
+              )
+            }
+            disabled={updateCompany.isPending || draft.trim() === ""}
+          >
+            {updateCompany.isPending ? "Salvando…" : "Salvar mensagem"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ClientReturnView({
   clients,
   companyId,
   companyName,
+  messageTemplate,
 }: {
   clients: ClientResponse[];
   companyId: string;
   companyName: string | undefined;
+  messageTemplate: string | null | undefined;
 }) {
   // Ordena por prioridade: quem está na hora de voltar primeiro (mais atrasado
   // no topo), depois os próximos do vencimento, por fim os sem cadência.
@@ -445,11 +559,18 @@ function ClientReturnView({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        {dueCount > 0
-          ? `${dueCount} cliente(s) na hora de voltar. Toque em "Chamar no WhatsApp" para enviar o convite.`
-          : "Nenhum cliente na hora de voltar agora. Configure a cadência de cada um para receber avisos."}
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted-foreground">
+          {dueCount > 0
+            ? `${dueCount} cliente(s) na hora de voltar. Toque em "Chamar no WhatsApp" para enviar o convite.`
+            : "Nenhum cliente na hora de voltar agora. Configure a cadência de cada um para receber avisos."}
+        </p>
+        <ReturnMessageDialog
+          companyId={companyId}
+          companyName={companyName}
+          current={messageTemplate}
+        />
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {sorted.map((client) => (
           <ClientReturnCard
@@ -457,6 +578,7 @@ function ClientReturnView({
             client={client}
             companyId={companyId}
             companyName={companyName}
+            messageTemplate={messageTemplate}
           />
         ))}
       </div>
@@ -533,7 +655,12 @@ export function ClientsPage() {
       )}
 
       {hasClients && tab === "return" && (
-        <ClientReturnView clients={clients ?? []} companyId={id} companyName={company?.name} />
+        <ClientReturnView
+          clients={clients ?? []}
+          companyId={id}
+          companyName={company?.name}
+          messageTemplate={company?.client_return_message}
+        />
       )}
     </div>
   );

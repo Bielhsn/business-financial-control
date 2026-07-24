@@ -35,3 +35,45 @@ export function buildWhatsappLink(
   }
   return `https://wa.me/${normalized}?text=${encodeURIComponent(message)}`;
 }
+
+/** Texto usado quando a empresa ainda não escreveu a própria mensagem. */
+export const DEFAULT_RETURN_MESSAGE =
+  "Olá, {nome}! Tudo bem? Já faz um tempinho desde sua última visita na {empresa}. " +
+  "Que tal agendar seu retorno? 😊";
+
+/** Marcadores que o dono pode usar no texto da mensagem. */
+export const RETURN_MESSAGE_PLACEHOLDERS = [
+  { token: "{nome}", description: "primeiro nome do cliente" },
+  { token: "{empresa}", description: "nome da sua empresa" },
+  { token: "{dias}", description: "dias desde a última visita" },
+] as const;
+
+export interface ReturnMessageVars {
+  clientName: string;
+  companyName?: string | null;
+  daysSinceVisit?: number | null;
+}
+
+/**
+ * Troca os marcadores do modelo pelos dados do cliente. Só o primeiro nome é
+ * usado em {nome} — soa mais natural na conversa do que o nome completo.
+ */
+export function renderReturnMessage(
+  template: string | null | undefined,
+  { clientName, companyName, daysSinceVisit }: ReturnMessageVars,
+): string {
+  const text = template && template.trim() !== "" ? template : DEFAULT_RETURN_MESSAGE;
+  const firstName = clientName.trim().split(/\s+/)[0] ?? clientName;
+  return (
+    text
+      .replaceAll("{nome}", firstName)
+      .replaceAll("{empresa}", companyName ?? "")
+      .replaceAll(
+        "{dias}",
+        daysSinceVisit === null || daysSinceVisit === undefined ? "" : String(daysSinceVisit),
+      )
+      // Remove espaços duplicados deixados por marcadores sem valor.
+      .replace(/[ \t]{2,}/g, " ")
+      .trim()
+  );
+}
