@@ -90,6 +90,53 @@ def test_update_client(client: TestClient) -> None:
     assert response.json()["notes"] == "Cliente frequente"
 
 
+def test_create_client_with_return_interval(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/clients",
+        json={"name": "João", "phone": "11999998888", "return_interval_days": 15},
+        headers=headers,
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["return_interval_days"] == 15
+    assert body["last_visit_at"] is None
+
+
+def test_register_client_visit_sets_last_visit(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    client_id = client.post(
+        f"/api/v1/companies/{company_id}/clients",
+        json={"name": "João", "phone": "11999998888", "return_interval_days": 10},
+        headers=headers,
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/clients/{client_id}/register-visit",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["last_visit_at"] is not None
+
+
+def test_return_interval_rejects_out_of_range(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/clients",
+        json={"name": "João", "return_interval_days": 0},
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
 def test_client_summary_reflects_paid_transactions(client: TestClient) -> None:
     headers = _auth_header(client, "dono@example.com")
     company_id = _create_company(client, headers)

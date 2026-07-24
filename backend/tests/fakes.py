@@ -556,6 +556,7 @@ class FakeClientRepository:
         phone: str | None,
         notes: str | None,
         custom_fields: dict[str, str],
+        return_interval_days: int | None = None,
     ) -> Client:
         client_id = str(self._next_id)
         self._next_id += 1
@@ -571,6 +572,7 @@ class FakeClientRepository:
             is_active=True,
             created_at=now,
             updated_at=now,
+            return_interval_days=return_interval_days,
         )
         self._clients[client_id] = client
         return client
