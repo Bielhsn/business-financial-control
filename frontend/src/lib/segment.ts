@@ -19,6 +19,7 @@ export const GENERIC_SEGMENT_PROFILE: SegmentProfileResponse = {
     employee_singular: "funcionário",
     agenda: "Agenda",
     appointment_singular: "agendamento",
+    transactions: "Lançamentos",
   },
   catalog_fields: {
     sku: true,

@@ -66,7 +66,8 @@ def test_create_and_list_financial_categories(client: TestClient) -> None:
         f"/api/v1/companies/{company_id}/financial-categories", headers=headers
     )
     assert list_response.status_code == 200
-    assert len(list_response.json()) == 1
+    # A empresa nasce com as categorias do segmento; a criada entra junto delas.
+    assert "Venda de serviços" in {item["name"] for item in list_response.json()}
 
 
 def test_create_category_rejects_duplicate_name_and_type(client: TestClient) -> None:

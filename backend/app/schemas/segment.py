@@ -23,6 +23,7 @@ class SegmentTerminologyResponse(BaseModel):
     employee_singular: str
     agenda: str
     appointment_singular: str
+    transactions: str
 
 
 class SegmentProfileResponse(BaseModel):
@@ -62,6 +63,7 @@ def to_segment_profile_response(profile: SegmentProfile) -> SegmentProfileRespon
             employee_singular=profile.terminology.employee_singular,
             agenda=profile.terminology.agenda,
             appointment_singular=profile.terminology.appointment_singular,
+            transactions=profile.terminology.transactions,
         ),
         catalog_fields=CatalogFieldPolicyResponse(
             sku=profile.catalog_fields.sku,

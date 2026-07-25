@@ -136,7 +136,7 @@ def test_paid_income_updates_client_last_visit(client: TestClient) -> None:
     ).json()["id"]
     category_id = client.post(
         f"/api/v1/companies/{company_id}/financial-categories",
-        json={"name": "Serviços", "type": "income"},
+        json={"name": "Serviços avulsos", "type": "income"},
         headers=headers,
     ).json()["id"]
 
@@ -166,7 +166,7 @@ def test_older_paid_income_does_not_move_last_visit_back(client: TestClient) -> 
     ).json()["id"]
     category_id = client.post(
         f"/api/v1/companies/{company_id}/financial-categories",
-        json={"name": "Serviços", "type": "income"},
+        json={"name": "Serviços avulsos", "type": "income"},
         headers=headers,
     ).json()["id"]
 
@@ -199,7 +199,7 @@ def test_marking_pending_transaction_paid_sets_last_visit(client: TestClient) ->
     ).json()["id"]
     category_id = client.post(
         f"/api/v1/companies/{company_id}/financial-categories",
-        json={"name": "Serviços", "type": "income"},
+        json={"name": "Serviços avulsos", "type": "income"},
         headers=headers,
     ).json()["id"]
     transaction_id = client.post(
@@ -233,7 +233,7 @@ def test_pending_transaction_does_not_set_last_visit(client: TestClient) -> None
     ).json()["id"]
     category_id = client.post(
         f"/api/v1/companies/{company_id}/financial-categories",
-        json={"name": "Serviços", "type": "income"},
+        json={"name": "Serviços avulsos", "type": "income"},
         headers=headers,
     ).json()["id"]
 
@@ -274,7 +274,7 @@ def test_client_summary_reflects_paid_transactions(client: TestClient) -> None:
     ).json()["id"]
     category_id = client.post(
         f"/api/v1/companies/{company_id}/financial-categories",
-        json={"name": "Vendas", "type": "income"},
+        json={"name": "Vendas avulsas", "type": "income"},
         headers=headers,
     ).json()["id"]
     client.post(

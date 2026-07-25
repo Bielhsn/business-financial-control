@@ -6,9 +6,6 @@ import {
   Minus,
   Receipt,
   Sparkles,
-  TrendingDown,
-  TrendingUp,
-  Users,
   Wallet,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -45,6 +42,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDashboard } from "@/features/dashboard/use-dashboard";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
+import { buildKpiCards } from "@/lib/kpi-cards";
 import type { CategoryBreakdownResponse, ComputedKPIResponse } from "@/lib/api-types";
 import { cn, formatCents, formatPercent } from "@/lib/utils";
 
@@ -210,6 +209,7 @@ export function DashboardPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const [period, setPeriod] = useState<PeriodKey>("this_month");
   const currency = useCompanyCurrency(companyId ?? "");
+  const segmentProfile = useSegmentProfileOrDefault(companyId ?? "");
   const range = useMemo(() => periodRange(period), [period]);
   const { data, isLoading } = useDashboard(companyId ?? "", range);
 
@@ -278,34 +278,19 @@ export function DashboardPage() {
 
           <IncomeStatementCard companyId={companyId ?? ""} />
 
+          {/* Indicadores escolhidos pelo perfil do segmento, com o vocabulário
+              do negócio — uma barbearia vê "Atendimentos", um varejo vê "Margem". */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Receita"
-              value={formatCents(data.revenue_cents, currency)}
-              icon={TrendingUp}
-              change={data.comparison.revenue_change_pct}
-              tone="positive"
-            />
-            <StatCard
-              title="Despesas"
-              value={formatCents(data.expense_cents, currency)}
-              icon={TrendingDown}
-              change={data.comparison.expense_change_pct}
-              tone="negative"
-            />
-            <StatCard
-              title="Lucro"
-              value={formatCents(data.profit_cents, currency)}
-              icon={Wallet}
-              change={data.comparison.profit_change_pct}
-              tone={data.profit_cents >= 0 ? "positive" : "negative"}
-            />
-            <StatCard
-              title="Clientes ativos"
-              value={new Intl.NumberFormat("pt-BR").format(data.active_clients)}
-              icon={Users}
-              tone="neutral"
-            />
+            {buildKpiCards(segmentProfile, data, currency).map((card) => (
+              <StatCard
+                key={card.key}
+                title={card.title}
+                value={card.value}
+                icon={card.icon}
+                change={card.change ?? undefined}
+                tone={card.tone}
+              />
+            ))}
           </div>
 
           {data.kpis.length > 0 && (

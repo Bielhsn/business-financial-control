@@ -267,6 +267,7 @@ export interface SegmentTerminology {
   employee_singular: string;
   agenda: string;
   appointment_singular: string;
+  transactions: string;
 }
 
 export interface CatalogFieldPolicy {
