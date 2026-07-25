@@ -19,14 +19,16 @@ def _register_and_token(client: TestClient, email: str = "ana@example.com") -> s
     return login.json()["access_token"]
 
 
-def _extract_code(email_sender: FakeEmailSender) -> str:
-    body = email_sender.sent[-1].body
-    # O código de 6 dígitos está no corpo do e-mail.
+def _extract_token(email_sender: FakeEmailSender) -> str:
+    """Extrai o parâmetro ?token=... do LINK presente no corpo do e-mail."""
     import re
+    from urllib.parse import parse_qs, urlparse
 
-    match = re.search(r"\b(\d{6})\b", body)
-    assert match is not None
-    return match.group(1)
+    body = email_sender.sent[-1].body
+    match = re.search(r"https?://\S+", body)
+    assert match is not None, body
+    query = parse_qs(urlparse(match.group(0)).query)
+    return query["token"][0]
 
 
 def test_request_and_verify_email(
@@ -43,11 +45,64 @@ def test_request_and_verify_email(
 
     requested = client.post("/api/v1/auth/request-verification", headers=headers)
     assert requested.status_code == 204
-    code = _extract_code(fake_email_sender)
+    link_token = _extract_token(fake_email_sender)
 
-    verified = client.post("/api/v1/auth/verify-email", json={"code": code}, headers=headers)
+    verified = client.post("/api/v1/auth/verify-email", json={"code": link_token}, headers=headers)
     assert verified.status_code == 204
     assert user.is_verified is True
+
+
+def test_public_confirm_email_by_link(
+    client: TestClient,
+    fake_email_sender: FakeEmailSender,
+    fake_user_repository: object,
+) -> None:
+    # Cadastra e força não-verificado; reenvia a confirmação de forma PÚBLICA
+    # (sem login) e confirma pelo token do link — como quem clica no e-mail.
+    _register_and_token(client, "leo@example.com")
+    user = next(iter(fake_user_repository._users_by_id.values()))  # type: ignore[attr-defined]
+    user.is_verified = False
+
+    resent = client.post("/api/v1/auth/resend-verification", json={"email": "leo@example.com"})
+    assert resent.status_code == 204
+    link_token = _extract_token(fake_email_sender)
+
+    confirmed = client.post(
+        "/api/v1/auth/confirm-email",
+        json={"email": "leo@example.com", "token": link_token},
+    )
+    assert confirmed.status_code == 204
+    assert user.is_verified is True
+
+    # Clicar de novo é idempotente (não dá erro).
+    again = client.post(
+        "/api/v1/auth/confirm-email",
+        json={"email": "leo@example.com", "token": link_token},
+    )
+    assert again.status_code == 204
+
+
+def test_confirm_email_rejects_bad_token(client: TestClient, fake_user_repository: object) -> None:
+    _register_and_token(client, "mia@example.com")
+    user = next(iter(fake_user_repository._users_by_id.values()))  # type: ignore[attr-defined]
+    user.is_verified = False
+
+    response = client.post(
+        "/api/v1/auth/confirm-email",
+        json={"email": "mia@example.com", "token": "token-invalido"},
+    )
+    assert response.status_code == 422
+    assert user.is_verified is False
+
+
+def test_resend_verification_unknown_email_is_silent(
+    client: TestClient, fake_email_sender: FakeEmailSender
+) -> None:
+    response = client.post(
+        "/api/v1/auth/resend-verification", json={"email": "ninguem@example.com"}
+    )
+    assert response.status_code == 204
+    assert fake_email_sender.sent == []
 
 
 def test_verify_email_rejects_wrong_code(client: TestClient) -> None:
@@ -63,11 +118,11 @@ def test_forgot_and_reset_password(client: TestClient, fake_email_sender: FakeEm
 
     forgot = client.post("/api/v1/auth/forgot-password", json={"email": "ana@example.com"})
     assert forgot.status_code == 200
-    code = _extract_code(fake_email_sender)
+    link_token = _extract_token(fake_email_sender)
 
     reset = client.post(
         "/api/v1/auth/reset-password",
-        json={"email": "ana@example.com", "code": code, "new_password": "novaSenha123"},
+        json={"email": "ana@example.com", "token": link_token, "new_password": "novaSenha123"},
     )
     assert reset.status_code == 204
 

@@ -19,6 +19,8 @@ def _to_entity(document: ClientDocument) -> Client:
         is_active=document.is_active,
         created_at=document.created_at,
         updated_at=document.updated_at,
+        return_interval_days=document.return_interval_days,
+        last_visit_at=document.last_visit_at,
     )
 
 
@@ -33,6 +35,7 @@ class BeanieClientRepository:
         phone: str | None,
         notes: str | None,
         custom_fields: dict[str, str],
+        return_interval_days: int | None = None,
     ) -> Client:
         now = datetime.now(UTC)
         document = ClientDocument(
@@ -44,6 +47,7 @@ class BeanieClientRepository:
             custom_fields=custom_fields,
             created_at=now,
             updated_at=now,
+            return_interval_days=return_interval_days,
         )
         await document.insert()
         return _to_entity(document)

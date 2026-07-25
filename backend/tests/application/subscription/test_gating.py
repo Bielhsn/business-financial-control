@@ -28,7 +28,7 @@ async def test_ensure_feature_blocks_when_not_included() -> None:
 
 async def test_ensure_feature_allows_when_included() -> None:
     subs = FakeSubscriptionRepository()
-    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.PROFESSIONAL)
+    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.Profissional)
     # Não deve levantar.
     await ensure_feature(subs, company_id="c1", feature=Feature.ADVANCED_AI)
 
@@ -45,11 +45,11 @@ async def test_ensure_can_add_member_respects_starter_limit() -> None:
 
 async def test_ensure_can_add_member_allows_upgraded_plan() -> None:
     subs = FakeSubscriptionRepository()
-    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.PROFESSIONAL)
+    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.Profissional)
     members = FakeCompanyMembershipRepository()
     await members.create(company_id="c1", user_id="u1", role=CompanyRole.OWNER)
     await members.create(company_id="c1", user_id="u2", role=CompanyRole.EMPLOYEE)
-    # Professional permite 5 => terceiro é liberado.
+    # Profissional permite 5 => terceiro é liberado.
     await ensure_can_add_member(subs, members, company_id="c1")
 
 

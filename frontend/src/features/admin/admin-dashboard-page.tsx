@@ -11,7 +11,7 @@ import { cn, formatCents } from "@/lib/utils";
 
 const PLAN_LABELS: Record<PlanTier, string> = {
   starter: "Starter",
-  professional: "Professional",
+  Profissional: "Profissional",
   business: "Business",
   enterprise: "Enterprise",
 };

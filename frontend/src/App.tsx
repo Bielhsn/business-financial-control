@@ -21,6 +21,12 @@ const ForgotPasswordPage = lazy(() =>
 const ResetPasswordPage = lazy(() =>
   import("@/features/auth/reset-password-page").then((m) => ({ default: m.ResetPasswordPage })),
 );
+const CheckEmailPage = lazy(() =>
+  import("@/features/auth/check-email-page").then((m) => ({ default: m.CheckEmailPage })),
+);
+const VerifyEmailPage = lazy(() =>
+  import("@/features/auth/verify-email-page").then((m) => ({ default: m.VerifyEmailPage })),
+);
 const CompaniesPage = lazy(() =>
   import("@/features/companies/companies-page").then((m) => ({ default: m.CompaniesPage })),
 );
@@ -96,6 +102,9 @@ export function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+        <Route path="/verifique-email" element={<CheckEmailPage />} />
+        <Route path="/verificar-email" element={<VerifyEmailPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/companies" element={<CompaniesPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />

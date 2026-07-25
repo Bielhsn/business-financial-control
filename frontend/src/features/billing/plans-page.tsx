@@ -20,7 +20,7 @@ import { cn, formatCents } from "@/lib/utils";
 
 const TIER_ORDER: Record<PlanTier, number> = {
   starter: 0,
-  professional: 1,
+  Profissional: 1,
   business: 2,
   enterprise: 3,
 };

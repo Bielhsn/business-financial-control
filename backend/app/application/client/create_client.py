@@ -22,6 +22,7 @@ class CreateClientUseCase:
         phone: str | None,
         notes: str | None,
         custom_fields: dict[str, str],
+        return_interval_days: int | None = None,
     ) -> Client:
         await validate_custom_fields(
             company_id=company_id,
@@ -34,4 +35,5 @@ class CreateClientUseCase:
             phone=phone,
             notes=notes.strip() if notes else None,
             custom_fields=custom_fields,
+            return_interval_days=return_interval_days,
         )

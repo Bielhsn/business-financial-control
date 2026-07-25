@@ -15,7 +15,7 @@ import { extractErrorMessage } from "@/lib/api";
 
 const schema = z.object({
   email: z.string().email("Informe um e-mail válido."),
-  code: z.string().min(4, "Informe o código recebido."),
+  token: z.string().min(1, "Link inválido. Solicite um novo e-mail de redefinição."),
   new_password: z.string().min(8, "A senha deve ter ao menos 8 caracteres."),
 });
 type FormValues = z.infer<typeof schema>;
@@ -30,7 +30,10 @@ export function ResetPasswordPage() {
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: searchParams.get("email") ?? "" },
+    defaultValues: {
+      email: searchParams.get("email") ?? "",
+      token: searchParams.get("token") ?? "",
+    },
   });
 
   const onSubmit = handleSubmit((values) => {
@@ -60,11 +63,13 @@ export function ResetPasswordPage() {
           <CardHeader>
             <CardTitle>Redefinir senha</CardTitle>
             <CardDescription>
-              Digite o código que enviamos para o seu e-mail e escolha uma nova senha.
+              Escolha uma nova senha para a sua conta. Abrimos esta página a partir do link enviado
+              para o seu e-mail.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4" noValidate>
+              <input type="hidden" {...register("token")} />
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" autoComplete="email" {...register("email")} />
@@ -74,15 +79,11 @@ export function ResetPasswordPage() {
                   </p>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="code">Código</Label>
-                <Input id="code" inputMode="numeric" placeholder="000000" {...register("code")} />
-                {errors.code && (
-                  <p role="alert" className="text-sm text-destructive">
-                    {errors.code.message}
-                  </p>
-                )}
-              </div>
+              {errors.token && (
+                <p role="alert" className="text-sm text-destructive">
+                  {errors.token.message}
+                </p>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="new_password">Nova senha</Label>
                 <Input

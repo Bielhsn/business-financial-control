@@ -18,9 +18,13 @@ Duas formas de colocar o Aurum OS em produção:
 - Variáveis de ambiente mínimas: `ENVIRONMENT=production`, `SECRET_KEY` forte,
   `MONGODB_URI` (string `mongodb+srv://...` do Atlas), `MONGODB_DB_NAME`,
   `MONGODB_SERVER_SELECTION_TIMEOUT_MS=15000`, `PUBLIC_BASE_URL` (a URL do
-  próprio serviço na Render) e `CORS_ALLOWED_ORIGINS` (a URL do frontend na
-  Vercel). Opcionais: `PLATFORM_ADMIN_EMAILS`, `EMAIL_PROVIDER=resend` +
-  `RESEND_API_KEY` + `EMAIL_FROM`, `GOOGLE_CLIENT_ID`, `ANTHROPIC_API_KEY`.
+  próprio serviço na Render), `APP_BASE_URL` (a URL do frontend na Vercel, usada
+  para montar os LINKS de confirmação de e-mail e redefinição de senha) e
+  `CORS_ALLOWED_ORIGINS` (a URL do frontend na Vercel). Para exigir e-mail
+  confirmado antes do primeiro login, ligue `REQUIRE_EMAIL_VERIFICATION=true` (e
+  configure o envio real de e-mails, abaixo). Opcionais: `PLATFORM_ADMIN_EMAILS`,
+  `EMAIL_PROVIDER=resend` + `RESEND_API_KEY` + `EMAIL_FROM`, `GOOGLE_CLIENT_ID`,
+  `ANTHROPIC_API_KEY`.
 - No **MongoDB Atlas**: usuário/senha em *Database Access* e liberação de IP
   (`0.0.0.0/0`) em *Network Access*.
 - Verificação: `https://SEU-BACKEND.onrender.com/api/v1/health` →
@@ -75,6 +79,7 @@ Mínimo obrigatório em produção:
 | `CONNECTOR_SECRET_KEY` | chave Fernet dedicada (`python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"`) |
 | `CORS_ALLOWED_ORIGINS` | a URL pública do frontend (ex.: `https://app.suaempresa.com`) |
 | `PUBLIC_BASE_URL` | a URL pública da API para os callbacks OAuth (ex.: `https://app.suaempresa.com`) |
+| `APP_BASE_URL` | a URL pública do frontend, usada nos LINKS de confirmação de e-mail e reset de senha (ex.: `https://app.suaempresa.com`) |
 
 `MONGODB_URI` e `REDIS_URL` **não** precisam ser definidos no `.env` — o
 `docker-compose.prod.yml` já os aponta para os serviços internos.
@@ -86,7 +91,9 @@ verificação de conta e reset de senha), `*_CLIENT_ID`/`*_CLIENT_SECRET`
 (integrações OAuth).
 
 > **E-mails em produção:** por padrão `EMAIL_PROVIDER=console` só imprime o
-> código no log (dev). Para enviar de verdade, crie uma conta no
+> código no log (dev). A confirmação de e-mail e o reset de senha chegam por
+> LINK — defina `APP_BASE_URL` com a URL do frontend para os links apontarem
+> para o site certo. Para enviar de verdade, crie uma conta no
 > [Resend](https://resend.com), valide um domínio de envio, gere uma API Key e
 > configure `EMAIL_PROVIDER=resend`, `RESEND_API_KEY=re_...` e um `EMAIL_FROM`
 > desse domínio (ex.: `Aurum OS <no-reply@suaempresa.com>`).
@@ -183,7 +190,8 @@ repositório — a base já está pronta.
 ## Checklist de produção
 
 - [ ] `ENVIRONMENT=production` e `SECRET_KEY`/`CONNECTOR_SECRET_KEY` fortes
-- [ ] `CORS_ALLOWED_ORIGINS` e `PUBLIC_BASE_URL` com a URL pública real
+- [ ] `CORS_ALLOWED_ORIGINS`, `PUBLIC_BASE_URL` e `APP_BASE_URL` com a URL pública real
+- [ ] `REQUIRE_EMAIL_VERIFICATION=true` + `EMAIL_PROVIDER=resend` (envio real dos links)
 - [ ] HTTPS na frente (proxy TLS)
 - [ ] Backup automático do MongoDB
 - [ ] `PLATFORM_ADMIN_EMAILS` com o seu e-mail (para o painel admin)

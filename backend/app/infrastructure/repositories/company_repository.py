@@ -35,6 +35,7 @@ def _to_entity(document: CompanyDocument) -> Company:
         email=document.email,
         website=document.website,
         social_links=dict(document.social_links),
+        client_return_message=document.client_return_message,
         is_active=document.is_active,
         created_at=document.created_at,
         updated_at=document.updated_at,

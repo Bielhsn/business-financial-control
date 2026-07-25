@@ -90,6 +90,182 @@ def test_update_client(client: TestClient) -> None:
     assert response.json()["notes"] == "Cliente frequente"
 
 
+def test_create_client_with_return_interval(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/clients",
+        json={"name": "João", "phone": "11999998888", "return_interval_days": 15},
+        headers=headers,
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["return_interval_days"] == 15
+    assert body["last_visit_at"] is None
+
+
+def test_register_client_visit_sets_last_visit(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    client_id = client.post(
+        f"/api/v1/companies/{company_id}/clients",
+        json={"name": "João", "phone": "11999998888", "return_interval_days": 10},
+        headers=headers,
+    ).json()["id"]
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/clients/{client_id}/register-visit",
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["last_visit_at"] is not None
+
+
+def test_paid_income_updates_client_last_visit(client: TestClient) -> None:
+    # O dono não precisa marcar o atendimento à mão: registrar a venda paga do
+    # cliente já atualiza a última visita (base da cadência de retorno).
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    client_id = client.post(
+        f"/api/v1/companies/{company_id}/clients",
+        json={"name": "João", "phone": "11999998888", "return_interval_days": 15},
+        headers=headers,
+    ).json()["id"]
+    category_id = client.post(
+        f"/api/v1/companies/{company_id}/financial-categories",
+        json={"name": "Serviços", "type": "income"},
+        headers=headers,
+    ).json()["id"]
+
+    client.post(
+        f"/api/v1/companies/{company_id}/transactions",
+        json={
+            "category_id": category_id,
+            "type": "income",
+            "amount_cents": 5000,
+            "description": "Corte",
+            "client_id": client_id,
+            "paid_at": "2026-03-10T14:00:00Z",
+        },
+        headers=headers,
+    )
+
+    updated = client.get(f"/api/v1/companies/{company_id}/clients/{client_id}", headers=headers)
+    assert updated.json()["last_visit_at"] is not None
+    assert updated.json()["last_visit_at"].startswith("2026-03-10")
+
+
+def test_older_paid_income_does_not_move_last_visit_back(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    client_id = client.post(
+        f"/api/v1/companies/{company_id}/clients", json={"name": "João"}, headers=headers
+    ).json()["id"]
+    category_id = client.post(
+        f"/api/v1/companies/{company_id}/financial-categories",
+        json={"name": "Serviços", "type": "income"},
+        headers=headers,
+    ).json()["id"]
+
+    def register(paid_at: str) -> None:
+        client.post(
+            f"/api/v1/companies/{company_id}/transactions",
+            json={
+                "category_id": category_id,
+                "type": "income",
+                "amount_cents": 5000,
+                "description": "Corte",
+                "client_id": client_id,
+                "paid_at": paid_at,
+            },
+            headers=headers,
+        )
+
+    register("2026-05-20T14:00:00Z")
+    register("2026-01-05T14:00:00Z")  # lançamento retroativo
+
+    updated = client.get(f"/api/v1/companies/{company_id}/clients/{client_id}", headers=headers)
+    assert updated.json()["last_visit_at"].startswith("2026-05-20")
+
+
+def test_marking_pending_transaction_paid_sets_last_visit(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    client_id = client.post(
+        f"/api/v1/companies/{company_id}/clients", json={"name": "João"}, headers=headers
+    ).json()["id"]
+    category_id = client.post(
+        f"/api/v1/companies/{company_id}/financial-categories",
+        json={"name": "Serviços", "type": "income"},
+        headers=headers,
+    ).json()["id"]
+    transaction_id = client.post(
+        f"/api/v1/companies/{company_id}/transactions",
+        json={
+            "category_id": category_id,
+            "type": "income",
+            "amount_cents": 5000,
+            "description": "Corte fiado",
+            "client_id": client_id,
+        },
+        headers=headers,
+    ).json()["id"]
+
+    paid = client.post(
+        f"/api/v1/companies/{company_id}/transactions/{transaction_id}/mark-paid",
+        json={},
+        headers=headers,
+    )
+
+    assert paid.status_code == 200
+    updated = client.get(f"/api/v1/companies/{company_id}/clients/{client_id}", headers=headers)
+    assert updated.json()["last_visit_at"] is not None
+
+
+def test_pending_transaction_does_not_set_last_visit(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    client_id = client.post(
+        f"/api/v1/companies/{company_id}/clients", json={"name": "João"}, headers=headers
+    ).json()["id"]
+    category_id = client.post(
+        f"/api/v1/companies/{company_id}/financial-categories",
+        json={"name": "Serviços", "type": "income"},
+        headers=headers,
+    ).json()["id"]
+
+    client.post(
+        f"/api/v1/companies/{company_id}/transactions",
+        json={
+            "category_id": category_id,
+            "type": "income",
+            "amount_cents": 5000,
+            "description": "Corte agendado",
+            "client_id": client_id,
+        },
+        headers=headers,
+    )
+
+    updated = client.get(f"/api/v1/companies/{company_id}/clients/{client_id}", headers=headers)
+    assert updated.json()["last_visit_at"] is None
+
+
+def test_return_interval_rejects_out_of_range(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+
+    response = client.post(
+        f"/api/v1/companies/{company_id}/clients",
+        json={"name": "João", "return_interval_days": 0},
+        headers=headers,
+    )
+
+    assert response.status_code == 422
+
+
 def test_client_summary_reflects_paid_transactions(client: TestClient) -> None:
     headers = _auth_header(client, "dono@example.com")
     company_id = _create_company(client, headers)

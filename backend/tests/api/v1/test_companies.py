@@ -184,6 +184,26 @@ def test_update_company_branding(client: TestClient) -> None:
     assert body["brand_logo"].startswith("data:image/")
 
 
+def test_update_company_client_return_message(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = client.post(
+        "/api/v1/companies", json=VALID_COMPANY_PAYLOAD, headers=headers
+    ).json()["id"]
+
+    # Nova empresa começa sem mensagem própria (o frontend usa o texto padrão).
+    created = client.get(f"/api/v1/companies/{company_id}", headers=headers).json()
+    assert created["client_return_message"] is None
+
+    response = client.patch(
+        f"/api/v1/companies/{company_id}",
+        json={"client_return_message": "Fala {nome}! Bora dar um trato no visual?"},
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json()["client_return_message"] == "Fala {nome}! Bora dar um trato no visual?"
+
+
 def test_update_company_branding_rejects_invalid_values(client: TestClient) -> None:
     headers = _auth_header(client, "dono@example.com")
     company_id = client.post(

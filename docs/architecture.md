@@ -148,7 +148,7 @@ aparece na tela de empresas para quem tem acesso.
 
 **Etapa 29 (Planos de assinatura + gating):** o catálogo de planos é um registro estático
 e imutável em `app/domain/subscription/plans.py` (mesmo padrão do `CONNECTOR_REGISTRY`):
-quatro `PlanDefinition` (Starter/Professional/Business/Enterprise) com preço mensal/anual,
+quatro `PlanDefinition` (Starter/Profissional/Business/Enterprise) com preço mensal/anual,
 público-alvo, `PlanLimits` (usuários, integrações, insights de IA, itens de catálogo — `-1`
 = ilimitado) e um conjunto de `Feature`. Isso torna o catálogo a **fonte única da verdade**:
 API, gating e frontend leem tudo daqui; nenhum preço/limite fica hard-coded fora dele. A

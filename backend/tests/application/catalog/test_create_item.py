@@ -84,7 +84,7 @@ async def test_product_without_inventory_tracking_has_no_stock_quantity() -> Non
     assert item.stock_quantity is None
 
 
-async def test_creates_a_full_professional_product() -> None:
+async def test_creates_a_full_Profissional_product() -> None:
     item = await CreateCatalogItemUseCase(FakeCatalogItemRepository()).execute(
         name="Camiseta básica",
         description="Camiseta 100% algodão, corte unissex.",

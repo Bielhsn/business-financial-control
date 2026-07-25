@@ -34,8 +34,16 @@ export function RegisterPage() {
 
   const onSubmit = handleSubmit((values) => {
     registerMutation.mutate(values, {
-      onSuccess: () => {
-        // Após registrar, autentica direto — sem pedir login de novo.
+      onSuccess: (user) => {
+        // Se o e-mail ainda não está confirmado, a conta fica bloqueada até a
+        // pessoa clicar no link enviado — leva para a tela de "verifique o e-mail".
+        if (!user.is_verified) {
+          navigate(`/verifique-email?email=${encodeURIComponent(values.email)}`, {
+            replace: true,
+          });
+          return;
+        }
+        // E-mail já liberado: autentica direto — sem pedir login de novo.
         login.mutate(
           { email: values.email, password: values.password },
           {

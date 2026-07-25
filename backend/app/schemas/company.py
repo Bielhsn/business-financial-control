@@ -80,6 +80,9 @@ class UpdateCompanyRequest(BaseModel):
     email: str | None = Field(default=None, max_length=200)
     website: str | None = Field(default=None, max_length=300)
     social_links: dict[str, str] | None = None
+    # Mensagem de retorno por WhatsApp, escrita pelo dono. Marcadores aceitos:
+    # {nome}, {empresa} e {dias}.
+    client_return_message: str | None = Field(default=None, max_length=1000)
 
     @field_validator("brand_logo")
     @classmethod
@@ -124,6 +127,7 @@ class CompanyResponse(BaseModel):
     email: str | None
     website: str | None
     social_links: dict[str, str]
+    client_return_message: str | None
     is_active: bool
     created_at: datetime
     updated_at: datetime

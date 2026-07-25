@@ -27,8 +27,12 @@ class Settings(BaseSettings):
     # Autenticação (Etapa 27). require_email_verification desligado por padrão para
     # não travar dev/testes; em produção, ligue para exigir e-mail confirmado no login.
     require_email_verification: bool = False
-    verification_code_ttl_minutes: int = 15
+    verification_code_ttl_minutes: int = 60
     password_reset_ttl_minutes: int = 30
+    # URL base do frontend (SPA) — usada para montar os LINKS de confirmação de
+    # e-mail e de redefinição de senha enviados por e-mail. Em produção, a URL da
+    # Vercel (ex.: https://app.suaempresa.com).
+    app_base_url: str = "http://localhost:5173"
     # Provedor de e-mail: "console" (dev — imprime o código no log) ou "resend"
     # (envia de verdade via API do Resend; exige RESEND_API_KEY).
     email_provider: str = "console"

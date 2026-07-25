@@ -14,6 +14,11 @@ class Client:
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    # Retorno de clientes (ex.: barbearia): a cada quantos dias esperar o cliente
+    # de volta e quando foi o último atendimento — usados para sinalizar quem já
+    # está "na hora de voltar" e disparar o convite por WhatsApp.
+    return_interval_days: int | None = None
+    last_visit_at: datetime | None = None
 
 
 @dataclass

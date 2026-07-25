@@ -36,6 +36,12 @@ def generate_code() -> str:
     return f"{secrets.randbelow(1_000_000):06d}"
 
 
+def generate_token() -> str:
+    """Token longo e seguro para URL — usado nos LINKS de confirmação de e-mail e
+    redefinição de senha (não é digitado, então pode ser longo e imprevisível)."""
+    return secrets.token_urlsafe(32)
+
+
 class VerificationCodeRepository(Protocol):
     async def create(
         self,

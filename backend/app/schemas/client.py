@@ -9,6 +9,8 @@ class CreateClientRequest(BaseModel):
     phone: str | None = Field(default=None, max_length=50)
     notes: str | None = Field(default=None, max_length=2000)
     custom_fields: dict[str, str] = Field(default_factory=dict)
+    # Cadência de retorno em dias (ex.: barbearia a cada 15 dias). Opcional.
+    return_interval_days: int | None = Field(default=None, ge=1, le=365)
 
 
 class UpdateClientRequest(BaseModel):
@@ -18,6 +20,7 @@ class UpdateClientRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=2000)
     custom_fields: dict[str, str] | None = None
     is_active: bool | None = None
+    return_interval_days: int | None = Field(default=None, ge=1, le=365)
 
 
 class ClientResponse(BaseModel):
@@ -31,6 +34,8 @@ class ClientResponse(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+    return_interval_days: int | None
+    last_visit_at: datetime | None
 
 
 class ClientSummaryResponse(BaseModel):

@@ -14,6 +14,7 @@ class ClientRepository(Protocol):
         phone: str | None,
         notes: str | None,
         custom_fields: dict[str, str],
+        return_interval_days: int | None = None,
     ) -> Client: ...
 
     async def get_by_id(self, client_id: str) -> Client | None: ...
