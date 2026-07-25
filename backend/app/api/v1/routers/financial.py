@@ -8,11 +8,13 @@ from app.api.v1.deps import (
     get_client_repository,
     get_company_blueprint_repository,
     get_company_context,
+    get_company_repository,
     get_current_user,
     get_financial_category_repository,
     get_financial_transaction_repository,
     require_role,
 )
+from app.application.company.seed_segment_categories import SeedSegmentCategoriesUseCase
 from app.application.financial.cancel_transaction import CancelTransactionUseCase
 from app.application.financial.create_category import CreateFinancialCategoryUseCase
 from app.application.financial.create_transaction import CreateFinancialTransactionUseCase
@@ -32,6 +34,7 @@ from app.core.tenant import CompanyContext
 from app.domain.audit.repository import AuditLogRepository
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.client.repository import ClientRepository
+from app.domain.company.repository import CompanyRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.financial.entities import (
     CashFlowSummary,
@@ -173,6 +176,27 @@ async def seed_categories_from_blueprint(
         blueprint_repository, category_repository
     )
     created = await use_case.execute(company_id=company_context.company_id)
+    return [_category_to_response(category) for category in created]
+
+
+@router.post(
+    "/financial-categories/seed-from-segment",
+    response_model=list[FinancialCategoryResponse],
+    status_code=status.HTTP_201_CREATED,
+)
+async def seed_categories_from_segment(
+    company_context: Annotated[CompanyContext, Depends(require_role(*_ADMIN_ROLES))],
+    company_repository: Annotated[CompanyRepository, Depends(get_company_repository)],
+    category_repository: Annotated[
+        FinancialCategoryRepository, Depends(get_financial_category_repository)
+    ],
+) -> list[FinancialCategoryResponse]:
+    """Traz o plano de contas do segmento para empresas criadas antes da
+    semeadura automática. Idempotente: o que já existe não é duplicado."""
+    company = await company_repository.get_by_id(company_context.company_id)
+    if company is None:
+        raise NotFoundError("Empresa não encontrada.")
+    created = await SeedSegmentCategoriesUseCase(category_repository).execute(company=company)
     return [_category_to_response(category) for category in created]
 
 

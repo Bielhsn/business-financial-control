@@ -420,3 +420,26 @@ def test_import_rejects_zero_amount(client: TestClient) -> None:
     )
 
     assert response.status_code == 422
+
+
+def test_seed_categories_from_segment_is_idempotent(client: TestClient) -> None:
+    # Caso real: empresa criada antes da semeadura automática importa o plano de
+    # contas do seu segmento — e importar de novo não duplica nada.
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+
+    before = len(
+        client.get(f"/api/v1/companies/{company_id}/financial-categories", headers=headers).json()
+    )
+
+    again = client.post(
+        f"/api/v1/companies/{company_id}/financial-categories/seed-from-segment",
+        headers=headers,
+    )
+
+    assert again.status_code == 201
+    assert again.json() == []  # tudo já existia: nada recriado
+    after = len(
+        client.get(f"/api/v1/companies/{company_id}/financial-categories", headers=headers).json()
+    )
+    assert after == before

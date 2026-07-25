@@ -12,7 +12,7 @@ rodar de novo não duplica nada.
 from app.core.exceptions import ConflictError
 from app.core.tenant import set_current_company_id
 from app.domain.company.entities import Company
-from app.domain.financial.entities import FinancialCategoryType
+from app.domain.financial.entities import FinancialCategory, FinancialCategoryType
 from app.domain.financial.repository import FinancialCategoryRepository
 from app.domain.segment.registry import resolve_segment_profile
 
@@ -21,24 +21,26 @@ class SeedSegmentCategoriesUseCase:
     def __init__(self, category_repository: FinancialCategoryRepository) -> None:
         self._category_repository = category_repository
 
-    async def execute(self, *, company: Company) -> int:
-        """Cria as categorias do segmento e devolve quantas foram criadas."""
+    async def execute(self, *, company: Company) -> list[FinancialCategory]:
+        """Cria as categorias do segmento e devolve as que foram criadas agora
+        (as que já existiam ficam de fora, sem erro)."""
         profile = resolve_segment_profile(company.segment, company.subsegment)
 
         # Os repositórios com dados por empresa leem o tenant do contexto; na
         # criação da empresa ainda não há requisição "dentro" dela.
         set_current_company_id(company.id)
 
-        created = 0
+        created: list[FinancialCategory] = []
         planned = [(name, FinancialCategoryType.INCOME) for name in profile.income_categories] + [
             (name, FinancialCategoryType.EXPENSE) for name in profile.expense_categories
         ]
 
         for name, category_type in planned:
             try:
-                await self._category_repository.create(name=name, type=category_type)
-                created += 1
+                created.append(
+                    await self._category_repository.create(name=name, type=category_type)
+                )
             except ConflictError:
-                # Já existe (empresa recriada ou semeadura repetida) — segue.
+                # Já existe (empresa antiga ou semeadura repetida) — segue.
                 continue
         return created
