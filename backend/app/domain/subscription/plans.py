@@ -16,7 +16,7 @@ UNLIMITED = -1
 
 class PlanTier(StrEnum):
     STARTER = "starter"
-    Profissional = "Profissional"
+    PROFESSIONAL = "professional"
     BUSINESS = "business"
     ENTERPRISE = "enterprise"
 
@@ -90,7 +90,7 @@ PLAN_CATALOG: tuple[PlanDefinition, ...] = (
         ),
     ),
     PlanDefinition(
-        tier=PlanTier.Profissional,
+        tier=PlanTier.PROFESSIONAL,
         name="Profissional",
         tagline="Tudo que um pequeno negócio precisa para crescer.",
         target_audience="Pequenos negócios com equipe enxuta.",

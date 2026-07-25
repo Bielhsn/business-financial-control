@@ -257,6 +257,46 @@ export interface CompanyBlueprintResponse {
   generated_at: string;
 }
 
+export interface SegmentTerminology {
+  clients: string;
+  client_singular: string;
+  catalog: string;
+  products: string;
+  services: string;
+  employees: string;
+  employee_singular: string;
+  agenda: string;
+  appointment_singular: string;
+}
+
+export interface CatalogFieldPolicy {
+  sku: boolean;
+  barcode: boolean;
+  brand: boolean;
+  supplier: boolean;
+  variants: boolean;
+  inventory: boolean;
+  duration: boolean;
+}
+
+export interface SegmentProfileResponse {
+  id: string;
+  label: string;
+  offering: string;
+  modules: string[];
+  terminology: SegmentTerminology;
+  catalog_fields: CatalogFieldPolicy;
+  service_examples: string[];
+  product_examples: string[];
+  catalog_categories: string[];
+  income_categories: string[];
+  expense_categories: string[];
+  kpis: string[];
+  integrations: string[];
+  sells_products: boolean;
+  sells_services: boolean;
+}
+
 export interface ClientResponse {
   id: string;
   name: string;
@@ -583,7 +623,7 @@ export interface GoalProgressResponse {
 }
 
 // Planos e assinatura (Etapa 29)
-export type PlanTier = "starter" | "Profissional" | "business" | "enterprise";
+export type PlanTier = "starter" | "professional" | "business" | "enterprise";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
 export type BillingCycle = "monthly" | "yearly";
 

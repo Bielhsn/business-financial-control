@@ -30,6 +30,7 @@ import { useCurrentUser, useLogout } from "@/features/auth/use-auth";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useCompany } from "@/features/companies/use-companies";
 import { NotificationsBell } from "@/features/notifications/notifications-bell";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import type { CompanyResponse } from "@/lib/api-types";
 import { BRAND } from "@/lib/brand";
 import { visibleNavItems, type NavItem } from "@/lib/navigation";
@@ -139,6 +140,7 @@ export function CompanyLayout() {
   const navigate = useNavigate();
   const { data: company, isLoading, isError } = useCompany(companyId ?? "");
   const { data: blueprint } = useBlueprint(companyId ?? "");
+  const segmentProfile = useSegmentProfileOrDefault(companyId ?? "");
   const { data: user } = useCurrentUser();
   const logout = useLogout();
   const { theme } = useTheme();
@@ -167,11 +169,11 @@ export function CompanyLayout() {
     return <Navigate to="/companies" replace />;
   }
 
-  // Com blueprint, a navegação é o retrato exato do que a IA ativou; sem
-  // blueprint, os presets por segmento já adaptam a sidebar ao tipo de negócio.
+  // O perfil do segmento (backend, determinístico) define os módulos e como as
+  // coisas se chamam. Um blueprint gerado por IA, quando existe, refina a lista.
   const visibleItems = visibleNavItems(
-    blueprint ? blueprint.modules : null,
-    company?.segment ?? null,
+    blueprint ? blueprint.modules : segmentProfile.modules,
+    segmentProfile.terminology,
   );
 
   // Cor da marca da empresa: sobrescreve os tokens de primária apenas dentro do shell.
