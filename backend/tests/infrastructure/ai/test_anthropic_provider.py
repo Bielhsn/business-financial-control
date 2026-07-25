@@ -28,12 +28,12 @@ class _FakeBlock:
         self.input = input_
 
 
-def _company() -> Company:
+def _company(segment: str = "Barbearia") -> Company:
     now = datetime.now(UTC)
     return Company(
         id="1",
         name="Barbearia do Zé",
-        segment="Barbearia",
+        segment=segment,
         employee_count=3,
         average_customer_count=100,
         city="São Paulo",
@@ -416,3 +416,23 @@ async def test_blueprint_filters_unknown_integrations(mock_client_cls: MagicMock
     sent_prompt = mock_create.call_args.kwargs["messages"][0]["content"]
     assert "Catálogo de integrações disponíveis:" in sent_prompt
     assert "- ifood: iFood (Delivery)" in sent_prompt
+
+
+def test_prompts_anchor_on_the_segment_profile() -> None:
+    """A IA recebe o perfil do segmento como base — é o que evita sugestão
+    incoerente (estoque para consultório, agenda para loja de bebidas)."""
+    from app.infrastructure.ai.anthropic_provider import _build_prompt, _segment_block
+
+    clinic = _company(segment="Laboratório de análises clínicas")
+    block = _segment_block(clinic)
+    assert "Clínica, consultório e laboratório" in block
+    assert "Pacientes" in block  # terminologia do negócio
+    assert "Exames" in block  # receitas típicas
+
+    prompt = _build_prompt(clinic, None)
+    assert "Perfil identificado do segmento" in prompt
+
+    store = _segment_block(_company(segment="Loja de bebidas"))
+    assert "Loja de bebidas e adega" in store
+    assert "Cerveja long neck" in store
+    assert "appointments" not in store  # sem agenda para varejo

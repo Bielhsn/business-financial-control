@@ -20,6 +20,7 @@ from app.domain.dashboard.entities import DashboardSummary
 from app.domain.dashboard.kpi_registry import KPI_METRIC_REGISTRY, KPIMetric
 from app.domain.financial.entities import FinancialCategoryType
 from app.domain.insights.entities import FinancialInsight, InsightKind
+from app.domain.segment.registry import resolve_segment_profile
 
 _TOOL_NAME = "submit_company_blueprint"
 _INSIGHTS_TOOL_NAME = "submit_financial_insights"
@@ -114,6 +115,38 @@ def _build_tool_schema() -> ToolParam:
     }
 
 
+def _segment_block(company: Company) -> str:
+    """Perfil do segmento como âncora do prompt.
+
+    Sem isso, a IA parte só do texto livre do segmento e às vezes destoa do
+    negócio (sugere estoque para consultório, agenda para loja). O perfil é
+    determinístico e já sabe como aquele tipo de empresa opera — a IA passa a
+    refinar uma base correta em vez de adivinhar do zero.
+    """
+    profile = resolve_segment_profile(company.segment, company.subsegment)
+    lines = [
+        f"Perfil identificado do segmento: {profile.label} (id: {profile.id}).",
+        f"- Opera vendendo: {profile.offering.value} "
+        "(services = serviços, products = produtos, both = ambos).",
+        f"- Módulos típicos: {', '.join(profile.modules)}.",
+        f"- Como o negócio chama seus clientes: {profile.terminology.clients}.",
+        f"- Como chama uma entrada de receita: {profile.terminology.transactions}.",
+    ]
+    if profile.service_examples:
+        lines.append(f"- Serviços típicos: {', '.join(profile.service_examples)}.")
+    if profile.product_examples:
+        lines.append(f"- Produtos típicos: {', '.join(profile.product_examples)}.")
+    if profile.income_categories:
+        lines.append(f"- Receitas típicas: {', '.join(profile.income_categories)}.")
+    if profile.expense_categories:
+        lines.append(f"- Despesas típicas: {', '.join(profile.expense_categories)}.")
+    lines.append(
+        "Use este perfil como base. Adapte aos dados concretos da empresa abaixo, mas "
+        "não sugira nada incoerente com esse tipo de operação."
+    )
+    return "\n".join(lines)
+
+
 def _build_prompt(company: Company, additional_context: str | None) -> str:
     modules_catalog = "\n".join(
         f"- {module.id}: {module.name} — {module.description}" for module in MODULE_REGISTRY
@@ -131,6 +164,7 @@ def _build_prompt(company: Company, additional_context: str | None) -> str:
         f"Catálogo de módulos disponíveis:\n{modules_catalog}",
         f"Catálogo de métricas computáveis disponíveis para KPIs:\n{metrics_catalog}",
         f"Catálogo de integrações disponíveis:\n{integrations_catalog}",
+        _segment_block(company),
         "Dados da empresa:",
         f"- Nome: {company.name}",
         f"- Segmento: {company.segment}",
@@ -263,6 +297,7 @@ def _build_insights_prompt(company: Company, summary: DashboardSummary) -> str:
     lines = [
         "Você é um consultor financeiro para pequenas e médias empresas no Brasil.",
         f"Empresa: {company.name} — segmento: {company.segment}, porte: {company.size}.",
+        _segment_block(company),
         f"Período analisado: {summary.start:%d/%m/%Y} a {summary.end:%d/%m/%Y}.",
         "Números do período (já calculados pelo sistema — não recalcule):",
         f"- Receita: {_format_cents(summary.revenue_cents)} "
