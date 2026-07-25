@@ -78,6 +78,8 @@ export function useCreateTransaction(companyId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["companies", companyId, "transactions"] });
       void queryClient.invalidateQueries({ queryKey: ["companies", companyId, "dashboard"] });
+      // Uma receita paga com cliente atualiza a última visita dele no backend.
+      void queryClient.invalidateQueries({ queryKey: ["companies", companyId, "clients"] });
     },
   });
 }
@@ -95,6 +97,8 @@ export function useMarkTransactionPaid(companyId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["companies", companyId, "transactions"] });
       void queryClient.invalidateQueries({ queryKey: ["companies", companyId, "dashboard"] });
+      // Receber de um cliente atualiza a última visita dele no backend.
+      void queryClient.invalidateQueries({ queryKey: ["companies", companyId, "clients"] });
     },
   });
 }
