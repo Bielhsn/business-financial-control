@@ -62,6 +62,9 @@ class SegmentTerminology:
     employee_singular: str = "funcionário"
     agenda: str = "Agenda"
     appointment_singular: str = "agendamento"
+    # Como o negócio chama uma entrada de receita: uma barbearia faz
+    # "atendimentos", uma loja faz "vendas". Usado nos indicadores.
+    transactions: str = "Lançamentos"
 
 
 @dataclass(frozen=True)

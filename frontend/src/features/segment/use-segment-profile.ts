@@ -30,5 +30,16 @@ export function useSegmentProfile(companyId: string) {
  */
 export function useSegmentProfileOrDefault(companyId: string): SegmentProfileResponse {
   const { data } = useSegmentProfile(companyId);
-  return data ?? GENERIC_SEGMENT_PROFILE;
+  if (!data) {
+    return GENERIC_SEGMENT_PROFILE;
+  }
+  // Mescla sobre o perfil genérico: um payload parcial (backend mais antigo que
+  // o frontend, campo novo ainda não publicado) preenche o que falta em vez de
+  // quebrar a tela ao acessar terminology/catalog_fields.
+  return {
+    ...GENERIC_SEGMENT_PROFILE,
+    ...data,
+    terminology: { ...GENERIC_SEGMENT_PROFILE.terminology, ...data.terminology },
+    catalog_fields: { ...GENERIC_SEGMENT_PROFILE.catalog_fields, ...data.catalog_fields },
+  };
 }

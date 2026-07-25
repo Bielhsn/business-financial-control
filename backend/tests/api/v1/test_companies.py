@@ -256,3 +256,37 @@ def test_segment_profile_differs_for_another_segment(client: TestClient) -> None
     # Nada de agenda de barbeiro numa loja de bebidas.
     assert "appointments" not in body["modules"]
     assert "Cervejas" in body["catalog_categories"]
+
+
+def test_new_company_is_seeded_with_segment_categories(client: TestClient) -> None:
+    # A empresa nasce com o plano de contas do segmento, sem depender de IA.
+    headers = _auth_header(client, "dono@example.com")
+    company_id = client.post(
+        "/api/v1/companies", json=VALID_COMPANY_PAYLOAD, headers=headers
+    ).json()["id"]
+
+    categories = client.get(
+        f"/api/v1/companies/{company_id}/financial-categories", headers=headers
+    ).json()
+
+    names = {item["name"] for item in categories}
+    # Barbearia: receitas e despesas típicas do negócio.
+    assert "Serviços" in names
+    assert "Comissões" in names
+    assert {item["type"] for item in categories} == {"income", "expense"}
+
+
+def test_seeded_categories_match_the_segment(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    payload = {**VALID_COMPANY_PAYLOAD, "name": "Adega Central", "segment": "Loja de bebidas"}
+    company_id = client.post("/api/v1/companies", json=payload, headers=headers).json()["id"]
+
+    names = {
+        item["name"]
+        for item in client.get(
+            f"/api/v1/companies/{company_id}/financial-categories", headers=headers
+        ).json()
+    }
+
+    assert "Compra de mercadorias" in names
+    assert "Comissões" not in names  # categoria de barbearia não vaza para cá

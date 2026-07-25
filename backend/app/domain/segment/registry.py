@@ -66,6 +66,7 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             employees="Profissionais",
             employee_singular="profissional",
             agenda="Agenda",
+            transactions="Atendimentos",
         ),
         catalog_fields=CatalogFieldPolicy(
             sku=False,
@@ -132,6 +133,7 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             employee_singular="profissional",
             agenda="Consultas",
             appointment_singular="consulta",
+            transactions="Atendimentos",
         ),
         catalog_fields=CatalogFieldPolicy(
             sku=False,
@@ -178,7 +180,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         offering=OfferingModel.PRODUCTS,
         modules=("clients", "products", "inventory"),
-        terminology=SegmentTerminology(catalog="Produtos", employees="Equipe"),
+        terminology=SegmentTerminology(
+            catalog="Produtos", employees="Equipe", transactions="Vendas"
+        ),
         catalog_fields=_RETAIL_FIELDS,
         product_examples=(
             "Cerveja long neck",
@@ -231,7 +235,10 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         offering=OfferingModel.PRODUCTS,
         modules=("clients", "products", "inventory", "employees"),
         terminology=SegmentTerminology(
-            catalog="Cardápio", products="Itens do cardápio", employees="Equipe"
+            catalog="Cardápio",
+            products="Itens do cardápio",
+            employees="Equipe",
+            transactions="Pedidos",
         ),
         catalog_fields=CatalogFieldPolicy(
             sku=False, barcode=False, brand=False, supplier=True, variants=True, inventory=True
@@ -267,7 +274,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         offering=OfferingModel.PRODUCTS,
         modules=("clients", "products", "inventory"),
-        terminology=SegmentTerminology(catalog="Produtos", employees="Equipe"),
+        terminology=SegmentTerminology(
+            catalog="Produtos", employees="Equipe", transactions="Vendas"
+        ),
         catalog_fields=_RETAIL_FIELDS,
         product_examples=("Camiseta básica", "Calça jeans", "Vestido midi", "Tênis casual"),
         catalog_categories=("Camisetas", "Calças", "Vestidos", "Calçados", "Acessórios"),
@@ -310,6 +319,7 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             employee_singular="instrutor",
             agenda="Aulas",
             appointment_singular="aula",
+            transactions="Check-ins",
         ),
         catalog_fields=CatalogFieldPolicy(
             sku=False,
@@ -356,6 +366,7 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             employee_singular="mecânico",
             agenda="Ordens de serviço",
             appointment_singular="ordem de serviço",
+            transactions="Ordens de serviço",
         ),
         catalog_fields=CatalogFieldPolicy(
             sku=True,
@@ -407,6 +418,7 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             employee_singular="membro da equipe",
             agenda="Compromissos",
             appointment_singular="compromisso",
+            transactions="Serviços prestados",
         ),
         catalog_fields=CatalogFieldPolicy(
             sku=False,
@@ -436,7 +448,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         keywords=("e-commerce", "ecommerce", "loja virtual", "marketplace", "dropship"),
         offering=OfferingModel.PRODUCTS,
         modules=("clients", "products", "inventory"),
-        terminology=SegmentTerminology(catalog="Produtos", employees="Equipe"),
+        terminology=SegmentTerminology(
+            catalog="Produtos", employees="Equipe", transactions="Pedidos"
+        ),
         catalog_fields=_RETAIL_FIELDS,
         product_examples=("Produto principal", "Kit promocional"),
         catalog_categories=("Mais vendidos", "Lançamentos", "Promoções"),
@@ -472,7 +486,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         offering=OfferingModel.PRODUCTS,
         modules=("clients", "products", "inventory"),
-        terminology=SegmentTerminology(catalog="Produtos", employees="Equipe"),
+        terminology=SegmentTerminology(
+            catalog="Produtos", employees="Equipe", transactions="Vendas"
+        ),
         catalog_fields=_RETAIL_FIELDS,
         product_examples=("Produto de maior giro", "Item promocional"),
         catalog_categories=("Geral", "Promoções", "Mais vendidos"),

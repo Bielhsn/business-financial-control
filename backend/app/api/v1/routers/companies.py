@@ -11,6 +11,7 @@ from app.api.v1.deps import (
     get_company_repository,
     get_current_user,
     get_email_sender,
+    get_financial_category_repository,
     get_invitation_repository,
     get_subscription_repository,
     get_user_repository,
@@ -18,6 +19,7 @@ from app.api.v1.deps import (
 )
 from app.application.company.create_company import CreateCompanyUseCase
 from app.application.company.list_my_companies import ListMyCompaniesUseCase
+from app.application.company.seed_segment_categories import SeedSegmentCategoriesUseCase
 from app.application.company.team import (
     ChangeMemberRoleUseCase,
     InviteMemberUseCase,
@@ -34,6 +36,7 @@ from app.domain.company.entities import Company
 from app.domain.company.invitation import InvitationRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
+from app.domain.financial.repository import FinancialCategoryRepository
 from app.domain.notifications.email import EmailSender
 from app.domain.segment.registry import resolve_segment_profile
 from app.domain.subscription.repository import SubscriptionRepository
@@ -64,9 +67,16 @@ async def create_company(
     membership_repository: Annotated[
         CompanyMembershipRepository, Depends(get_company_membership_repository)
     ],
+    category_repository: Annotated[
+        FinancialCategoryRepository, Depends(get_financial_category_repository)
+    ],
 ) -> Company:
     use_case = CreateCompanyUseCase(company_repository, membership_repository)
-    return await use_case.execute(owner_id=current_user.id, **payload.model_dump())
+    company = await use_case.execute(owner_id=current_user.id, **payload.model_dump())
+    # A empresa já nasce com o plano de contas do seu segmento — o dono não
+    # precisa inventar categorias nem depender da IA para começar a lançar.
+    await SeedSegmentCategoriesUseCase(category_repository).execute(company=company)
+    return company
 
 
 @router.get("", response_model=list[CompanyWithRoleResponse])
