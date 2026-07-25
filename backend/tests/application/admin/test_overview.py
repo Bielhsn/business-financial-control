@@ -29,13 +29,13 @@ async def _overview(admin: FakeAdminMetricsRepository, subs: FakeSubscriptionRep
 async def test_mrr_sums_active_paid_subscriptions() -> None:
     admin = FakeAdminMetricsRepository()
     subs = FakeSubscriptionRepository()
-    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.Profissional)
+    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.PROFESSIONAL)
     await ChangePlanUseCase(subs).execute(company_id="c2", tier=PlanTier.BUSINESS)
 
     overview = await _overview(admin, subs)
 
     expected = (
-        get_plan(PlanTier.Profissional).price_cents_monthly
+        get_plan(PlanTier.PROFESSIONAL).price_cents_monthly
         + get_plan(PlanTier.BUSINESS).price_cents_monthly
     )
     assert overview.revenue.mrr_cents == expected
@@ -48,7 +48,7 @@ async def test_starter_and_trial_do_not_count_as_mrr() -> None:
     subs = FakeSubscriptionRepository()
     await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.STARTER)
     await ChangePlanUseCase(subs).execute(
-        company_id="c2", tier=PlanTier.Profissional, start_trial=True
+        company_id="c2", tier=PlanTier.PROFESSIONAL, start_trial=True
     )
 
     overview = await _overview(admin, subs)
@@ -62,12 +62,12 @@ async def test_yearly_billing_is_normalized_to_monthly() -> None:
     admin = FakeAdminMetricsRepository()
     subs = FakeSubscriptionRepository()
     await ChangePlanUseCase(subs).execute(
-        company_id="c1", tier=PlanTier.Profissional, billing_cycle=BillingCycle.YEARLY
+        company_id="c1", tier=PlanTier.PROFESSIONAL, billing_cycle=BillingCycle.YEARLY
     )
 
     overview = await _overview(admin, subs)
 
-    expected = round(get_plan(PlanTier.Profissional).price_cents_yearly / 12)
+    expected = round(get_plan(PlanTier.PROFESSIONAL).price_cents_yearly / 12)
     assert overview.revenue.mrr_cents == expected
 
 
@@ -80,7 +80,7 @@ async def test_churn_rate_and_customers() -> None:
     ]
     admin.users = 5
     subs = FakeSubscriptionRepository()
-    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.Profissional)
+    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.PROFESSIONAL)
     # c2 cancelou
     from app.application.subscription.change_plan import CancelSubscriptionUseCase
 
@@ -134,11 +134,11 @@ async def test_system_metrics_and_connection_errors() -> None:
 async def test_subscriptions_breakdown_by_plan() -> None:
     admin = FakeAdminMetricsRepository()
     subs = FakeSubscriptionRepository()
-    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.Profissional)
-    await ChangePlanUseCase(subs).execute(company_id="c2", tier=PlanTier.Profissional)
+    await ChangePlanUseCase(subs).execute(company_id="c1", tier=PlanTier.PROFESSIONAL)
+    await ChangePlanUseCase(subs).execute(company_id="c2", tier=PlanTier.PROFESSIONAL)
 
     overview = await _overview(admin, subs)
     assert overview.subscriptions is not None
-    pro = next(b for b in overview.subscriptions.by_plan if b.tier == PlanTier.Profissional)
+    pro = next(b for b in overview.subscriptions.by_plan if b.tier == PlanTier.PROFESSIONAL)
     assert pro.subscribers == 2
     assert overview.subscriptions.by_status[SubscriptionStatus.ACTIVE] == 2

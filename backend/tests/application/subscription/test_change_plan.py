@@ -15,9 +15,9 @@ async def test_change_to_paid_plan_activates_with_period() -> None:
     repo = FakeSubscriptionRepository()
     use_case = ChangePlanUseCase(repo)
 
-    sub = await use_case.execute(company_id="c1", tier=PlanTier.Profissional)
+    sub = await use_case.execute(company_id="c1", tier=PlanTier.PROFESSIONAL)
 
-    assert sub.tier == PlanTier.Profissional
+    assert sub.tier == PlanTier.PROFESSIONAL
     assert sub.status == SubscriptionStatus.ACTIVE
     assert sub.current_period_end is not None
     assert sub.trial_ends_at is None
@@ -45,7 +45,7 @@ async def test_starter_never_has_trial_or_period() -> None:
 async def test_yearly_cycle_is_persisted() -> None:
     repo = FakeSubscriptionRepository()
     sub = await ChangePlanUseCase(repo).execute(
-        company_id="c1", tier=PlanTier.Profissional, billing_cycle=BillingCycle.YEARLY
+        company_id="c1", tier=PlanTier.PROFESSIONAL, billing_cycle=BillingCycle.YEARLY
     )
     assert sub.billing_cycle == BillingCycle.YEARLY
 
@@ -53,7 +53,7 @@ async def test_yearly_cycle_is_persisted() -> None:
 async def test_change_plan_is_idempotent_upsert() -> None:
     repo = FakeSubscriptionRepository()
     use_case = ChangePlanUseCase(repo)
-    first = await use_case.execute(company_id="c1", tier=PlanTier.Profissional)
+    first = await use_case.execute(company_id="c1", tier=PlanTier.PROFESSIONAL)
     second = await use_case.execute(company_id="c1", tier=PlanTier.BUSINESS)
     assert first.id == second.id  # mesma linha, atualizada
     assert second.tier == PlanTier.BUSINESS
