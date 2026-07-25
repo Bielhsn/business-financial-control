@@ -12,6 +12,9 @@ export interface KpiCard {
   tone: "positive" | "negative" | "neutral";
 }
 
+/** Conjunto exibido quando o segmento não elege indicadores próprios. */
+const CLASSIC_METRICS = ["total_revenue", "total_expenses", "profit", "active_clients"];
+
 const NUMBER_FORMAT = new Intl.NumberFormat("pt-BR");
 const PERCENT_FORMAT = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 1 });
 
@@ -93,9 +96,16 @@ export function buildKpiCards(
     },
   };
 
-  const selected = profile.kpis.map((metric) => byMetric[metric]).filter(Boolean);
-  // Sem perfil resolvido (ou métrica desconhecida), mantém o conjunto clássico.
-  return selected.length > 0
-    ? selected
-    : [byMetric.total_revenue, byMetric.total_expenses, byMetric.profit, byMetric.active_clients];
+  // O type guard remove o undefined de métricas que o backend conheça e o
+  // frontend ainda não (filter(Boolean) sozinho não estreita o tipo em TS).
+  const selected = profile.kpis
+    .map((metric) => byMetric[metric])
+    .filter((card): card is KpiCard => card !== undefined);
+  if (selected.length > 0) {
+    return selected;
+  }
+  // Sem perfil resolvido (ou nenhuma métrica reconhecida), o conjunto clássico.
+  return CLASSIC_METRICS.map((metric) => byMetric[metric]).filter(
+    (card): card is KpiCard => card !== undefined,
+  );
 }
