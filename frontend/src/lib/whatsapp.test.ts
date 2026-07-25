@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { buildWhatsappLink, normalizeBrazilPhone } from "@/lib/whatsapp";
+import {
+  DEFAULT_RETURN_MESSAGE,
+  buildWhatsappLink,
+  normalizeBrazilPhone,
+  renderReturnMessage,
+} from "@/lib/whatsapp";
 
 describe("normalizeBrazilPhone", () => {
   it("prefixa 55 em um celular com DDD", () => {
@@ -28,5 +33,28 @@ describe("buildWhatsappLink", () => {
 
   it("retorna null sem telefone válido", () => {
     expect(buildWhatsappLink(null, "oi")).toBeNull();
+  });
+});
+
+describe("renderReturnMessage", () => {
+  it("troca os marcadores pelo primeiro nome, empresa e dias", () => {
+    const text = renderReturnMessage("Oi {nome}! Faz {dias} dias que você não vem na {empresa}.", {
+      clientName: "João Pedro Souza",
+      companyName: "Barbearia do Zé",
+      daysSinceVisit: 21,
+    });
+    expect(text).toBe("Oi João! Faz 21 dias que você não vem na Barbearia do Zé.");
+  });
+
+  it("usa a mensagem padrão quando o modelo está vazio", () => {
+    const text = renderReturnMessage("  ", { clientName: "Ana", companyName: "Salão X" });
+    expect(text).toBe(
+      DEFAULT_RETURN_MESSAGE.replace("{nome}", "Ana").replace("{empresa}", "Salão X"),
+    );
+  });
+
+  it("não deixa espaço sobrando quando um marcador fica sem valor", () => {
+    const text = renderReturnMessage("Oi {nome}, faz {dias} dias!", { clientName: "Ana" });
+    expect(text).toBe("Oi Ana, faz dias!");
   });
 });

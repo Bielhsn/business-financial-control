@@ -30,6 +30,8 @@ class CompanyDocument(Document):
     email: str | None = None
     website: str | None = None
     social_links: dict[str, str] = {}
+    # Mensagem de retorno enviada por WhatsApp (marcadores {nome}/{empresa}/{dias}).
+    client_return_message: str | None = None
     is_active: bool = True
     created_at: datetime
     updated_at: datetime
