@@ -571,6 +571,10 @@ function ClientReturnView({
           current={messageTemplate}
         />
       </div>
+      <p className="text-xs text-muted-foreground">
+        A última visita é preenchida sozinha quando você registra uma venda paga do cliente no
+        Financeiro. Use “Registrar atendimento” apenas para visitas sem venda.
+      </p>
       <div className="grid gap-3 sm:grid-cols-2">
         {sorted.map((client) => (
           <ClientReturnCard

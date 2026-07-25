@@ -299,9 +299,10 @@ async def mark_transaction_paid(
     transaction_repository: Annotated[
         FinancialTransactionRepository, Depends(get_financial_transaction_repository)
     ],
+    client_repository: Annotated[ClientRepository, Depends(get_client_repository)],
     audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
 ) -> FinancialTransactionResponse:
-    use_case = MarkTransactionPaidUseCase(transaction_repository)
+    use_case = MarkTransactionPaidUseCase(transaction_repository, client_repository)
     transaction = await use_case.execute(transaction_id=transaction_id, paid_at=payload.paid_at)
     await record_audit(
         audit_repository,

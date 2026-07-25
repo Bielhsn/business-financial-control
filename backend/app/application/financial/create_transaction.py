@@ -1,6 +1,8 @@
 from datetime import datetime
 
+from app.application.client.visit_tracking import as_utc, is_newer_visit
 from app.core.exceptions import NotFoundError, ValidationError
+from app.domain.client.entities import Client
 from app.domain.client.repository import ClientRepository
 from app.domain.financial.entities import (
     FinancialCategoryType,
@@ -45,12 +47,23 @@ class CreateFinancialTransactionUseCase:
         if amount_cents <= 0:
             raise ValidationError("O valor do lançamento deve ser maior que zero.")
 
+        client: Client | None = None
         if client_id is not None:
             client = await self._client_repository.get_by_id(client_id)
             if client is None:
                 raise NotFoundError("Cliente não encontrado.")
 
         status = TransactionStatus.PAID if paid_at is not None else TransactionStatus.PENDING
+
+        # Uma receita paga vinculada a um cliente É um atendimento: atualiza a
+        # última visita sozinha, sem depender de o dono lembrar de marcar.
+        if (
+            client is not None
+            and paid_at is not None
+            and type == FinancialCategoryType.INCOME
+            and is_newer_visit(client.last_visit_at, paid_at)
+        ):
+            await self._client_repository.update(client.id, last_visit_at=as_utc(paid_at))
 
         return await self._transaction_repository.create(
             category_id=category_id,
