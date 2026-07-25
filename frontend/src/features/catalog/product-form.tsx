@@ -32,9 +32,11 @@ import {
   type CatalogItemInput,
   type ProductVariantInput,
 } from "@/features/catalog/use-catalog";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import { extractErrorMessage } from "@/lib/api";
 import type { CatalogItemResponse } from "@/lib/api-types";
 import { centsToInput, marginPct, parseCurrencyToCents } from "@/lib/money";
+import { exampleHint } from "@/lib/segment";
 
 // Mesmos limites do backend (schemas/catalog.py): 6 imagens de até ~150 KB
 // (~200k chars em data URL base64).
@@ -162,7 +164,16 @@ export function ProductFormDialog({
   });
 
   const kind = watch("kind");
-  const tracksInventory = watch("tracks_inventory") === "yes" && kind === "product";
+  const profile = useSegmentProfileOrDefault(companyId);
+  const isProduct = kind === "product";
+  // Campo só aparece se o segmento usa E o tipo do item comporta: um serviço
+  // nunca tem SKU/código de barras, e uma clínica não usa nem para produto.
+  const fields = profile.catalog_fields;
+  const showSku = fields.sku && isProduct;
+  const showBarcode = fields.barcode && isProduct;
+  const showBrand = fields.brand && isProduct;
+  const showSupplier = fields.supplier && isProduct;
+  const tracksInventory = watch("tracks_inventory") === "yes" && isProduct;
   const priceValue = watch("price");
   const costValue = watch("cost_price");
   const promoValue = watch("promo_price");
@@ -319,7 +330,13 @@ export function ProductFormDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="item-name">Nome</Label>
-              <Input id="item-name" {...register("name")} />
+              <Input
+                id="item-name"
+                placeholder={exampleHint(
+                  isProduct ? profile.product_examples : profile.service_examples,
+                )}
+                {...register("name")}
+              />
               {errors.name && (
                 <p role="alert" className="text-sm text-destructive">
                   {errors.name.message}
@@ -346,36 +363,47 @@ export function ProductFormDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="item-category">Categoria</Label>
-              <Input id="item-category" placeholder="Ex.: Vestuário" {...register("category")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="item-subcategory">Subcategoria</Label>
               <Input
-                id="item-subcategory"
-                placeholder="Ex.: Camisetas"
-                {...register("subcategory")}
+                id="item-category"
+                placeholder={exampleHint(profile.catalog_categories)}
+                {...register("category")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="item-brand">Marca</Label>
-              <Input id="item-brand" {...register("brand")} />
+              <Label htmlFor="item-subcategory">Subcategoria</Label>
+              <Input id="item-subcategory" {...register("subcategory")} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="item-supplier">Fornecedor</Label>
-              <Input id="item-supplier" {...register("supplier")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="item-sku">SKU</Label>
-              <Input id="item-sku" placeholder="Ex.: CAM-001" {...register("sku")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="item-barcode">Código de barras</Label>
-              <Input id="item-barcode" inputMode="numeric" {...register("barcode")} />
-            </div>
+            {/* Campos de ficha de produto físico: só aparecem quando fazem sentido
+                para o segmento E para o tipo do item. Um corte de cabelo não tem
+                SKU, código de barras nem fornecedor. */}
+            {showBrand && (
+              <div className="space-y-2">
+                <Label htmlFor="item-brand">Marca</Label>
+                <Input id="item-brand" {...register("brand")} />
+              </div>
+            )}
+            {showSupplier && (
+              <div className="space-y-2">
+                <Label htmlFor="item-supplier">Fornecedor</Label>
+                <Input id="item-supplier" {...register("supplier")} />
+              </div>
+            )}
+            {showSku && (
+              <div className="space-y-2">
+                <Label htmlFor="item-sku">SKU</Label>
+                <Input id="item-sku" {...register("sku")} />
+              </div>
+            )}
+            {showBarcode && (
+              <div className="space-y-2">
+                <Label htmlFor="item-barcode">Código de barras</Label>
+                <Input id="item-barcode" inputMode="numeric" {...register("barcode")} />
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="item-tags">Tags (separadas por vírgula)</Label>
-            <Input id="item-tags" placeholder="algodão, básico, verão" {...register("tags")} />
+            <Input id="item-tags" {...register("tags")} />
           </div>
 
           <SectionTitle>Preços</SectionTitle>

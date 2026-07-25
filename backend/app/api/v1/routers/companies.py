@@ -35,6 +35,7 @@ from app.domain.company.invitation import InvitationRepository
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.notifications.email import EmailSender
+from app.domain.segment.registry import resolve_segment_profile
 from app.domain.subscription.repository import SubscriptionRepository
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
@@ -48,6 +49,7 @@ from app.schemas.company import (
     MemberResponse,
     UpdateCompanyRequest,
 )
+from app.schemas.segment import SegmentProfileResponse, to_segment_profile_response
 
 router = APIRouter(prefix="/companies", tags=["companies"])
 
@@ -94,6 +96,20 @@ async def get_company(
     if company is None:
         raise NotFoundError("Empresa não encontrada.")
     return company
+
+
+@router.get("/{company_id}/segment-profile", response_model=SegmentProfileResponse)
+async def get_company_segment_profile(
+    company_context: Annotated[CompanyContext, Depends(get_company_context)],
+    company_repository: Annotated[CompanyRepository, Depends(get_company_repository)],
+) -> SegmentProfileResponse:
+    """Perfil do segmento da empresa: rótulos, módulos, campos aplicáveis e
+    indicadores relevantes. Determinístico — não depende de IA configurada."""
+    company = await company_repository.get_by_id(company_context.company_id)
+    if company is None:
+        raise NotFoundError("Empresa não encontrada.")
+    profile = resolve_segment_profile(company.segment, company.subsegment)
+    return to_segment_profile_response(profile)
 
 
 @router.patch("/{company_id}", response_model=CompanyResponse)

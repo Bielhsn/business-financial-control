@@ -223,3 +223,36 @@ def test_update_company_branding_rejects_invalid_values(client: TestClient) -> N
         headers=headers,
     )
     assert not_an_image.status_code == 422
+
+
+def test_segment_profile_adapts_to_business(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    company_id = client.post(
+        "/api/v1/companies", json=VALID_COMPANY_PAYLOAD, headers=headers
+    ).json()["id"]
+
+    response = client.get(f"/api/v1/companies/{company_id}/segment-profile", headers=headers)
+
+    assert response.status_code == 200
+    body = response.json()
+    # VALID_COMPANY_PAYLOAD é uma barbearia.
+    assert body["id"] == "barbershop"
+    assert body["terminology"]["employees"] == "Profissionais"
+    assert "appointments" in body["modules"]
+    # Barbearia não deve pedir SKU num corte de cabelo.
+    assert body["catalog_fields"]["sku"] is False
+    assert "Corte de cabelo" in body["service_examples"]
+
+
+def test_segment_profile_differs_for_another_segment(client: TestClient) -> None:
+    headers = _auth_header(client, "dono@example.com")
+    payload = {**VALID_COMPANY_PAYLOAD, "name": "Adega Central", "segment": "Loja de bebidas"}
+    company_id = client.post("/api/v1/companies", json=payload, headers=headers).json()["id"]
+
+    body = client.get(f"/api/v1/companies/{company_id}/segment-profile", headers=headers).json()
+
+    assert body["id"] == "beverage_store"
+    assert body["sells_services"] is False
+    # Nada de agenda de barbeiro numa loja de bebidas.
+    assert "appointments" not in body["modules"]
+    assert "Cervejas" in body["catalog_categories"]
