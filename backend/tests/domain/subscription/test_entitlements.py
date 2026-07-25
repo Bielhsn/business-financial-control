@@ -35,20 +35,20 @@ def test_canceled_subscription_falls_back_to_starter() -> None:
 
 
 def test_past_due_subscription_falls_back_to_starter() -> None:
-    sub = _sub(PlanTier.PROFESSIONAL, SubscriptionStatus.PAST_DUE)
+    sub = _sub(PlanTier.Profissional, SubscriptionStatus.PAST_DUE)
     assert resolve_plan(sub).tier == PlanTier.STARTER
 
 
 def test_active_and_trialing_keep_contracted_plan() -> None:
     active = _sub(PlanTier.BUSINESS, SubscriptionStatus.ACTIVE)
-    trialing = _sub(PlanTier.PROFESSIONAL, SubscriptionStatus.TRIALING)
+    trialing = _sub(PlanTier.Profissional, SubscriptionStatus.TRIALING)
     assert resolve_plan(active).tier == PlanTier.BUSINESS
-    assert resolve_plan(trialing).tier == PlanTier.PROFESSIONAL
+    assert resolve_plan(trialing).tier == PlanTier.Profissional
 
 
 def test_feature_gating_by_plan() -> None:
     assert has_feature(None, Feature.ADVANCED_AI) is False  # Starter
-    pro = _sub(PlanTier.PROFESSIONAL, SubscriptionStatus.ACTIVE)
+    pro = _sub(PlanTier.Profissional, SubscriptionStatus.ACTIVE)
     assert has_feature(pro, Feature.ADVANCED_AI) is True
     assert has_feature(pro, Feature.WHITE_LABEL) is False  # só Business+
 
@@ -79,9 +79,9 @@ def test_unlimited_is_never_blocked() -> None:
 
 
 def test_build_entitlements_mirrors_plan() -> None:
-    pro = _sub(PlanTier.PROFESSIONAL, SubscriptionStatus.ACTIVE)
+    pro = _sub(PlanTier.Profissional, SubscriptionStatus.ACTIVE)
     ent = build_entitlements(pro)
-    plan = get_plan(PlanTier.PROFESSIONAL)
-    assert ent.tier == PlanTier.PROFESSIONAL
+    plan = get_plan(PlanTier.Profissional)
+    assert ent.tier == PlanTier.Profissional
     assert ent.max_members == plan.limits.max_members
     assert ent.features == plan.features

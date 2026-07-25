@@ -36,15 +36,15 @@ def test_plan_catalog_is_public(client: TestClient) -> None:
     response = client.get("/api/v1/plans")
     assert response.status_code == 200
     tiers = [p["tier"] for p in response.json()["plans"]]
-    assert tiers == ["starter", "professional", "business", "enterprise"]
+    assert tiers == ["starter", "Profissional", "business", "enterprise"]
 
 
 def test_plan_catalog_has_prices_and_features(client: TestClient) -> None:
     plans = client.get("/api/v1/plans").json()["plans"]
-    professional = next(p for p in plans if p["tier"] == "professional")
-    assert professional["price_cents_monthly"] == 4900
-    assert "advanced_ai" in professional["features"]
-    assert professional["badge"] == "Mais popular"
+    Profissional = next(p for p in plans if p["tier"] == "Profissional")
+    assert Profissional["price_cents_monthly"] == 4900
+    assert "advanced_ai" in Profissional["features"]
+    assert Profissional["badge"] == "Mais popular"
     enterprise = next(p for p in plans if p["tier"] == "enterprise")
     assert enterprise["is_contact_sales"] is True
     assert enterprise["limits"]["max_members"] == -1
@@ -101,7 +101,7 @@ def test_start_trial_sets_trialing(client: TestClient) -> None:
 
     response = client.put(
         f"/api/v1/companies/{company_id}/subscription",
-        json={"tier": "professional", "start_trial": True},
+        json={"tier": "Profissional", "start_trial": True},
         headers=owner,
     )
     assert response.status_code == 200
@@ -156,7 +156,7 @@ def test_upgrade_unblocks_invite(client: TestClient) -> None:
     company_id = _create_company(client, owner)
     client.put(
         f"/api/v1/companies/{company_id}/subscription",
-        json={"tier": "professional"},
+        json={"tier": "Profissional"},
         headers=owner,
     )
 
@@ -170,4 +170,4 @@ def test_upgrade_unblocks_invite(client: TestClient) -> None:
         json={"email": "joao@example.com", "role": "employee"},
         headers=owner,
     )
-    assert third.status_code == 201  # Professional permite 5
+    assert third.status_code == 201  # Profissional permite 5

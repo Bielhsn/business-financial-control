@@ -1,4 +1,4 @@
-"""Catálogo estático de planos de assinatura (Starter/Professional/Business/
+"""Catálogo estático de planos de assinatura (Starter/Profissional/Business/
 Enterprise).
 
 Este módulo é a fonte única da verdade para preços, limites e funcionalidades de
@@ -16,7 +16,7 @@ UNLIMITED = -1
 
 class PlanTier(StrEnum):
     STARTER = "starter"
-    PROFESSIONAL = "professional"
+    Profissional = "Profissional"
     BUSINESS = "business"
     ENTERPRISE = "enterprise"
 
@@ -90,8 +90,8 @@ PLAN_CATALOG: tuple[PlanDefinition, ...] = (
         ),
     ),
     PlanDefinition(
-        tier=PlanTier.PROFESSIONAL,
-        name="Professional",
+        tier=PlanTier.Profissional,
+        name="Profissional",
         tagline="Tudo que um pequeno negócio precisa para crescer.",
         target_audience="Pequenos negócios com equipe enxuta.",
         price_cents_monthly=4900,
@@ -144,7 +144,7 @@ PLAN_CATALOG: tuple[PlanDefinition, ...] = (
             }
         ),
         highlights=(
-            "Tudo do Professional",
+            "Tudo do Profissional",
             "Até 15 usuários",
             "10 integrações conectadas",
             "Relatórios avançados e exportações",

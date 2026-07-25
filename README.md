@@ -329,7 +329,7 @@ Detalhes de implementação de cada mecanismo são documentados em
 | 26  | Cadastro de empresa completo + validação/autopreenchimento de CNPJ        | ✅ Concluída |
 | 27  | Autenticação completa (verificação e-mail, reset/troca senha, Google)     | ✅ Concluída |
 | 28  | Convites de equipe (papéis) + LGPD (exportar/excluir dados)               | ✅ Concluída |
-| 29  | Planos de assinatura (Starter/Professional/Business/Enterprise) + gating  | ✅ Concluída |
+| 29  | Planos de assinatura (Starter/Profissional/Business/Enterprise) + gating  | ✅ Concluída |
 | 30  | Painel administrativo do SaaS (super-admin: MRR/ARR, churn, segmentação)   | ✅ Concluída |
 | 31  | Framework modular de integrações OAuth2 (Mercado Livre, Shopify, iFood)    | ✅ Concluída |
 | 32  | Análise de vendas por plataforma (ticket médio, top produtos, pico, etc.)  | ✅ Concluída |
@@ -572,7 +572,7 @@ Detalhes de implementação de cada mecanismo são documentados em
   todos os dados da empresa em JSON (sem segredos de integração) e excluir a empresa
   permanentemente (com confirmação pelo nome), apagando todos os dados relacionados.
 
-- Planos de assinatura — catálogo com quatro níveis (Starter grátis, Professional, Business e
+- Planos de assinatura — catálogo com quatro níveis (Starter grátis, Profissional, Business e
   Enterprise), cada um com preço mensal/anual sugerido, público-alvo, limites (usuários,
   integrações, insights de IA, itens de catálogo) e funcionalidades incluídas. O catálogo é a
   fonte única da verdade (`app/domain/subscription/plans.py`) e alimenta a página de preços, o

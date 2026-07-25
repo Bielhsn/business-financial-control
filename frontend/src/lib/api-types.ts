@@ -623,7 +623,7 @@ export interface GoalProgressResponse {
 }
 
 // Planos e assinatura (Etapa 29)
-export type PlanTier = "starter" | "professional" | "business" | "enterprise";
+export type PlanTier = "starter" | "Profissional" | "business" | "enterprise";
 export type SubscriptionStatus = "trialing" | "active" | "past_due" | "canceled";
 export type BillingCycle = "monthly" | "yearly";
 
