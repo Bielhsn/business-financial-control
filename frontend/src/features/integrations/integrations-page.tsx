@@ -14,7 +14,8 @@ import { useImportTransactions } from "@/features/integrations/use-import-transa
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { extractErrorMessage } from "@/lib/api";
 import { parseImportCsv, type ImportParseResult } from "@/lib/csv";
-import { INTEGRATIONS, integrationInfo } from "@/lib/integrations";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
+import { INTEGRATIONS, integrationInfo, isConnectable } from "@/lib/integrations";
 import { formatCents } from "@/lib/utils";
 
 function CsvImportCard({ companyId }: { companyId: string }) {
@@ -163,6 +164,7 @@ export function IntegrationsPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId ?? "";
   const { data: blueprint } = useBlueprint(id);
+  const profile = useSegmentProfileOrDefault(id);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Retorno do fluxo OAuth: mostra o resultado e limpa a URL.
@@ -183,9 +185,13 @@ export function IntegrationsPage() {
     setSearchParams(next, { replace: true });
   }, [searchParams, setSearchParams]);
 
-  // Integrações recomendadas pela IA no blueprint (específicas do segmento);
-  // o restante do catálogo fica disponível, mas em segundo plano.
-  const recommended = (blueprint?.integrations ?? [])
+  // Recomendação vem do PERFIL do segmento (determinístico) e, quando existe,
+  // é refinada pelo blueprint da IA. Antes saía só da IA — por isso uma
+  // barbearia via iFood sugerido quando o blueprint não existia ou errava.
+  const recommendedIdList = [
+    ...new Set([...profile.integrations, ...(blueprint?.integrations ?? [])]),
+  ];
+  const recommended = recommendedIdList
     .map((integrationId) => integrationInfo(integrationId))
     .filter((item): item is NonNullable<typeof item> => item !== undefined);
   const recommendedIds = new Set(recommended.map((item) => item.id));
@@ -251,7 +257,9 @@ export function IntegrationsPage() {
                     <p className="truncate text-sm font-medium">{item.name}</p>
                     <p className="text-xs text-muted-foreground">{item.group}</p>
                   </div>
-                  <Badge variant="muted">Em breve</Badge>
+                  <Badge variant={isConnectable(item.id) ? "secondary" : "muted"}>
+                    {isConnectable(item.id) ? "Disponível" : "Suportado"}
+                  </Badge>
                 </div>
               ))}
             </CardContent>
@@ -297,7 +305,9 @@ export function IntegrationsPage() {
                         className="flex items-center justify-between rounded-lg border p-3"
                       >
                         <p className="text-sm font-medium">{item.name}</p>
-                        <Badge variant="muted">Em breve</Badge>
+                        <Badge variant={isConnectable(item.id) ? "secondary" : "muted"}>
+                          {isConnectable(item.id) ? "Disponível" : "Suportado"}
+                        </Badge>
                       </div>
                     ))}
                 </CardContent>

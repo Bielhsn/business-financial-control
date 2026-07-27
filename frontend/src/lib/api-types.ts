@@ -294,6 +294,7 @@ export interface SegmentProfileResponse {
   expense_categories: string[];
   kpis: string[];
   integrations: string[];
+  capabilities: string[];
   sells_products: boolean;
   sells_services: boolean;
 }

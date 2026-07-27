@@ -43,6 +43,7 @@ class SegmentProfileResponse(BaseModel):
     expense_categories: list[str]
     kpis: list[str]
     integrations: list[str]
+    capabilities: list[str]
     sells_products: bool
     sells_services: bool
 
@@ -81,6 +82,7 @@ def to_segment_profile_response(profile: SegmentProfile) -> SegmentProfileRespon
         expense_categories=list(profile.expense_categories),
         kpis=[metric.value for metric in profile.kpis],
         integrations=list(profile.integrations),
+        capabilities=sorted(c.value for c in profile.capabilities),
         sells_products=profile.sells_products,
         sells_services=profile.sells_services,
     )

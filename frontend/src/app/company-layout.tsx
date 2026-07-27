@@ -1,14 +1,4 @@
-import {
-  Building2,
-  ChevronsUpDown,
-  LogOut,
-  Menu,
-  Moon,
-  Receipt,
-  Search,
-  Settings,
-  Sun,
-} from "lucide-react";
+import { Building2, ChevronsUpDown, LogOut, Menu, Moon, Search, Settings, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavLink, Navigate, Outlet, useNavigate, useParams } from "react-router-dom";
 
@@ -119,15 +109,29 @@ function SidebarBody({
           </NavLink>
         ))}
       </nav>
-      <div className="space-y-2 border-t p-3 text-xs text-muted-foreground">
-        {company?.segment ? (
-          <p className="flex items-center gap-1.5">
-            <Receipt className="size-3.5" />
-            Painel adaptado para {company.segment}
-          </p>
-        ) : null}
-        <p className="flex items-center gap-1.5 opacity-70">
-          <AurumMark className="size-4" />
+      {/* Footer da sidebar: ações do produto. O contexto do segmento é mostrado
+          no painel, não aqui — antes este espaço imprimia o texto cru que o dono
+          digitou no campo "segmento", que pode ser uma frase inteira. */}
+      <div className="space-y-1 border-t p-3">
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate?.();
+            navigate("/companies");
+          }}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <Building2 className="size-3.5" /> Minhas empresas
+        </button>
+        <NavLink
+          to={`/c/${companyId}/settings`}
+          onClick={onNavigate}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+        >
+          <Settings className="size-3.5" /> Configurações
+        </NavLink>
+        <p className="flex items-center gap-2 px-2 pt-2 text-xs opacity-60">
+          <AurumMark className="size-3.5" />
           {BRAND.product}
         </p>
       </div>
@@ -256,7 +260,7 @@ export function CompanyLayout() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onSelect={() => {
-                    logout.mutate(undefined, { onSettled: () => navigate("/login") });
+                    logout.mutate(undefined, { onSettled: () => navigate("/", { replace: true }) });
                   }}
                 >
                   <LogOut /> Sair

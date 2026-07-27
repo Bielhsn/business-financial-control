@@ -13,6 +13,7 @@ import unicodedata
 
 from app.domain.dashboard.kpi_registry import KPIMetric
 from app.domain.segment.profile import (
+    Capability,
     CatalogFieldPolicy,
     OfferingModel,
     SegmentProfile,
@@ -99,6 +100,15 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_SERVICE_KPIS,
         integrations=("google_agenda", "whatsapp"),
+        capabilities=frozenset(
+            {
+                Capability.CLIENT_RETENTION,
+                Capability.COMMISSIONS,
+                Capability.SCHEDULE_ANALYTICS,
+                Capability.INVENTORY,
+                Capability.PRODUCT_MARGIN,
+            }
+        ),
     ),
     SegmentProfile(
         id="health_clinic",
@@ -164,6 +174,13 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_SERVICE_KPIS,
         integrations=("google_agenda", "whatsapp"),
+        capabilities=frozenset(
+            {
+                Capability.CLIENT_RETENTION,
+                Capability.SCHEDULE_ANALYTICS,
+                Capability.RECURRING_REVENUE,
+            }
+        ),
     ),
     SegmentProfile(
         id="beverage_store",
@@ -211,6 +228,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_RETAIL_KPIS,
         integrations=("ifood", "rappi", "mercado_livre"),
+        capabilities=frozenset(
+            {Capability.INVENTORY, Capability.SALES_CHANNELS, Capability.PRODUCT_MARGIN}
+        ),
     ),
     SegmentProfile(
         id="restaurant",
@@ -257,6 +277,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_RETAIL_KPIS,
         integrations=("ifood", "rappi", "uber_eats", "anota_ai"),
+        capabilities=frozenset(
+            {Capability.INVENTORY, Capability.SALES_CHANNELS, Capability.PRODUCT_MARGIN}
+        ),
     ),
     SegmentProfile(
         id="fashion_retail",
@@ -291,6 +314,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_RETAIL_KPIS,
         integrations=("shopify", "nuvemshop", "mercado_livre", "shopee"),
+        capabilities=frozenset(
+            {Capability.INVENTORY, Capability.SALES_CHANNELS, Capability.PRODUCT_MARGIN}
+        ),
     ),
     SegmentProfile(
         id="gym",
@@ -342,6 +368,13 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_SERVICE_KPIS,
         integrations=("google_agenda", "whatsapp"),
+        capabilities=frozenset(
+            {
+                Capability.CLIENT_RETENTION,
+                Capability.SCHEDULE_ANALYTICS,
+                Capability.RECURRING_REVENUE,
+            }
+        ),
     ),
     SegmentProfile(
         id="auto_shop",
@@ -390,6 +423,15 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_SERVICE_KPIS,
         integrations=("whatsapp",),
+        capabilities=frozenset(
+            {
+                Capability.CLIENT_RETENTION,
+                Capability.COMMISSIONS,
+                Capability.SCHEDULE_ANALYTICS,
+                Capability.INVENTORY,
+                Capability.PRODUCT_MARGIN,
+            }
+        ),
     ),
     SegmentProfile(
         id="professional_services",
@@ -441,6 +483,7 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_SERVICE_KPIS,
         integrations=("whatsapp",),
+        capabilities=frozenset({Capability.CLIENT_RETENTION, Capability.RECURRING_REVENUE}),
     ),
     SegmentProfile(
         id="ecommerce",
@@ -464,6 +507,9 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_RETAIL_KPIS,
         integrations=("shopify", "nuvemshop", "mercado_livre", "shopee", "melhor_envio"),
+        capabilities=frozenset(
+            {Capability.INVENTORY, Capability.SALES_CHANNELS, Capability.PRODUCT_MARGIN}
+        ),
     ),
     SegmentProfile(
         id="general_retail",
@@ -502,6 +548,7 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         kpis=_RETAIL_KPIS,
         integrations=("mercado_livre", "shopee"),
+        capabilities=frozenset({Capability.INVENTORY, Capability.PRODUCT_MARGIN}),
     ),
 )
 

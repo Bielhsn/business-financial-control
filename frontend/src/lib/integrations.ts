@@ -8,6 +8,21 @@ export interface IntegrationInfo {
   group: string;
 }
 
+/** Integrações com conector implementado de verdade — as únicas que oferecem um
+ * fluxo real de conexão. O resto do catálogo mostra o que a plataforma suporta,
+ * sem prometer um botão que não leva a lugar nenhum. Espelha CONNECTOR_PROVIDERS
+ * (backend/app/domain/connector/registry.py). */
+export const CONNECTABLE_INTEGRATION_IDS = new Set([
+  "ifood",
+  "mercado_livre",
+  "shopify",
+  "hotmart",
+]);
+
+export function isConnectable(integrationId: string): boolean {
+  return CONNECTABLE_INTEGRATION_IDS.has(integrationId);
+}
+
 export const INTEGRATIONS: IntegrationInfo[] = [
   { id: "ifood", name: "iFood", group: "Delivery" },
   { id: "rappi", name: "Rappi", group: "Delivery" },
