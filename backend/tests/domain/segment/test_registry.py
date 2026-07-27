@@ -110,3 +110,22 @@ class TestCapabilities:
     def test_generic_profile_claims_no_capability(self) -> None:
         # Sem saber o negócio, não inventa recurso — melhor neutro que errado.
         assert resolve_segment_profile("Algo novo").capabilities == frozenset()
+
+
+class TestSpecificSegmentsWinOverBroadOnes:
+    """A ordem do catálogo é regra de negócio: o perfil mais específico precisa
+    casar antes do mais amplo, senão "agência de viagens" cai em consultoria."""
+
+    def test_travel_agency_beats_professional_services(self) -> None:
+        assert resolve_segment_profile("Agência de viagens").id == "travel_agency"
+        # E o caso amplo continua indo para consultoria.
+        assert resolve_segment_profile("Agência de marketing digital").id == "professional_services"
+
+    def test_online_course_beats_marketing_keyword(self) -> None:
+        assert resolve_segment_profile("Curso online de marketing").id == "online_education"
+
+    def test_infoproduct_segment_recommends_infoproduct_platforms(self) -> None:
+        profile = resolve_segment_profile("Infoprodutos")
+        assert "hotmart" in profile.integrations
+        # Nada de delivery para quem vende curso.
+        assert "ifood" not in profile.integrations

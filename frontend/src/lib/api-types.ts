@@ -257,6 +257,14 @@ export interface CompanyBlueprintResponse {
   generated_at: string;
 }
 
+export interface IntegrationCatalogItem {
+  id: string;
+  name: string;
+  group: string;
+  /** Tem conector implementado — só então "Conectar" leva a um fluxo real. */
+  connectable: boolean;
+}
+
 export interface SegmentTerminology {
   clients: string;
   client_singular: string;
