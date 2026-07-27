@@ -85,12 +85,48 @@ async def test_fetch_sales_uses_stored_merchant_id_and_paginates() -> None:
     assert any(s.external_id == "last" for s in sales)
 
 
-async def test_missing_access_token_raises_before_request() -> None:
+async def test_missing_credentials_raises_before_request() -> None:
     def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
         raise AssertionError("não deveria chamar a rede")
 
-    with pytest.raises(ConnectorError, match="Reconecte"):
+    with pytest.raises(ConnectorError, match="Client ID"):
         await _make_connector(handler).fetch_sales({}, since=None)
+
+
+async def test_token_request_uses_camel_case_fields() -> None:
+    """O iFood recusa o snake_case do padrão OAuth2 com "Invalid grant type
+    null". Este teste trava o formato correto para que a correção não regrida."""
+    seen: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/oauth/token"):
+            body = request.content.decode()
+            seen.update(item.split("=", 1) for item in body.split("&"))  # type: ignore[misc]
+            return httpx.Response(200, json={"accessToken": "tok-novo", "expiresIn": 10800})
+        assert request.headers["Authorization"] == "Bearer tok-novo"
+        if request.url.path.endswith("/merchants"):
+            return httpx.Response(200, json=[{"id": "m1"}])
+        return httpx.Response(200, json={"sales": [_SALE]})
+
+    sales = await _make_connector(handler).fetch_sales(
+        {"client_id": "uuid-do-app", "client_secret": "segredo"}, since=None
+    )
+
+    assert seen["grantType"] == "client_credentials"
+    assert seen["clientId"] == "uuid-do-app"
+    assert seen["clientSecret"] == "segredo"
+    assert "grant_type" not in seen
+    assert len(sales) == 1
+
+
+async def test_rejected_credentials_surface_ifood_message() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            400, json={"error": {"code": "BadRequest", "message": "Invalid UUID string: x"}}
+        )
+
+    with pytest.raises(ConnectorError, match="Invalid UUID string"):
+        await _make_connector(handler).test_connection({"client_id": "x", "client_secret": "y"})
 
 
 async def test_rejected_token_raises_connector_error() -> None:

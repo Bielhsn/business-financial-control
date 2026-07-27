@@ -24,7 +24,7 @@ def test_roundtrip_preserves_context() -> None:
 
 
 def test_tampered_state_is_rejected() -> None:
-    state = build_oauth_state(secret_key=SECRET, company_id="c1", user_id="u1", provider="ifood")
+    state = build_oauth_state(secret_key=SECRET, company_id="c1", user_id="u1", provider="shopify")
     body, signature = state.split(".", 1)
     tampered = f"{body}x.{signature}"
     with pytest.raises(ValidationError):
@@ -32,7 +32,7 @@ def test_tampered_state_is_rejected() -> None:
 
 
 def test_wrong_secret_is_rejected() -> None:
-    state = build_oauth_state(secret_key=SECRET, company_id="c1", user_id="u1", provider="ifood")
+    state = build_oauth_state(secret_key=SECRET, company_id="c1", user_id="u1", provider="shopify")
     with pytest.raises(ValidationError):
         parse_oauth_state(state, secret_key="outro-secret")
 
@@ -40,7 +40,7 @@ def test_wrong_secret_is_rejected() -> None:
 def test_expired_state_is_rejected() -> None:
     past = datetime.now(UTC) - timedelta(hours=1)
     state = build_oauth_state(
-        secret_key=SECRET, company_id="c1", user_id="u1", provider="ifood", now=past
+        secret_key=SECRET, company_id="c1", user_id="u1", provider="shopify", now=past
     )
     with pytest.raises(ValidationError):
         parse_oauth_state(state, secret_key=SECRET)
