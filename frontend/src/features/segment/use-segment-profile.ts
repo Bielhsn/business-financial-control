@@ -1,7 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import type { SegmentProfileResponse } from "@/lib/api-types";
+import type { FinancialCategoryResponse, SegmentProfileResponse } from "@/lib/api-types";
 import { GENERIC_SEGMENT_PROFILE } from "@/lib/segment";
 
 /**
@@ -42,4 +42,23 @@ export function useSegmentProfileOrDefault(companyId: string): SegmentProfileRes
     terminology: { ...GENERIC_SEGMENT_PROFILE.terminology, ...data.terminology },
     catalog_fields: { ...GENERIC_SEGMENT_PROFILE.catalog_fields, ...data.catalog_fields },
   };
+}
+
+/**
+ * Importa o plano de contas do segmento. Serve para empresas criadas antes da
+ * semeadura automática — idempotente, não duplica o que já existe.
+ */
+export function useSeedCategoriesFromSegment(companyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await api.post<FinancialCategoryResponse[]>(
+        `/companies/${companyId}/financial-categories/seed-from-segment`,
+      );
+      return data;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["companies", companyId, "categories"] });
+    },
+  });
 }

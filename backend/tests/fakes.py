@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from app.core.exceptions import UnauthorizedError
+from app.core.exceptions import ConflictError, UnauthorizedError
 from app.core.tenant import get_current_company_id
 from app.domain.admin.metrics import CompanySummary, ConnectionSummary, FinancialTotals
 from app.domain.advisor.entities import BusinessSignal
@@ -404,6 +404,11 @@ class FakeFinancialCategoryRepository:
         self._next_id = 1
 
     async def create(self, *, name: str, type: FinancialCategoryType) -> FinancialCategory:
+        # O Mongo garante unicidade de (empresa, nome, tipo) por índice, e a
+        # implementação real converte a violação em ConflictError. O fake precisa
+        # do mesmo comportamento, senão testes de idempotência passam por engano.
+        if any(c.name == name and c.type == type for c in self._categories.values()):
+            raise ConflictError("Já existe uma categoria com este nome e tipo.")
         category_id = str(self._next_id)
         self._next_id += 1
         category = FinancialCategory(

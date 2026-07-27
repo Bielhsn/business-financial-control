@@ -32,6 +32,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useSeedCategoriesFromBlueprint } from "@/features/blueprint/use-blueprint";
+import { useSeedCategoriesFromSegment } from "@/features/segment/use-segment-profile";
 import { useClients } from "@/features/clients/use-clients";
 import { ExportReportButton } from "@/features/reports/export-report-button";
 import { AccountsSummaryCard } from "@/features/financial/accounts-summary-card";
@@ -307,6 +308,7 @@ function CategoriesDialog({ companyId }: { companyId: string }) {
   const { data: categories } = useCategories(companyId);
   const createCategory = useCreateCategory(companyId);
   const seedFromBlueprint = useSeedCategoriesFromBlueprint(companyId);
+  const seedFromSegment = useSeedCategoriesFromSegment(companyId);
 
   const {
     register,
@@ -356,19 +358,39 @@ function CategoriesDialog({ companyId }: { companyId: string }) {
           )}
         </div>
 
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={seedFromBlueprint.isPending}
-          onClick={() =>
-            seedFromBlueprint.mutate(undefined, {
-              onSuccess: () => toast.success("Sugestões do blueprint importadas!"),
-              onError: (error) => toast.error(extractErrorMessage(error)),
-            })
-          }
-        >
-          Importar sugestões da IA
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            disabled={seedFromSegment.isPending}
+            onClick={() =>
+              seedFromSegment.mutate(undefined, {
+                onSuccess: (created) =>
+                  toast.success(
+                    created.length === 0
+                      ? "Você já tem todas as categorias do seu segmento."
+                      : `${created.length} categoria(s) do seu segmento importada(s)!`,
+                  ),
+                onError: (error) => toast.error(extractErrorMessage(error)),
+              })
+            }
+          >
+            Importar categorias do meu segmento
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={seedFromBlueprint.isPending}
+            onClick={() =>
+              seedFromBlueprint.mutate(undefined, {
+                onSuccess: () => toast.success("Sugestões do blueprint importadas!"),
+                onError: (error) => toast.error(extractErrorMessage(error)),
+              })
+            }
+          >
+            Importar sugestões da IA
+          </Button>
+        </div>
 
         <form onSubmit={onSubmit} className="flex items-end gap-2" noValidate>
           <div className="flex-1 space-y-2">
