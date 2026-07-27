@@ -67,6 +67,8 @@ class FakeUserRepository:
         hashed_password: str,
         full_name: str,
         is_verified: bool = True,
+        phone: str | None = None,
+        job_role: str | None = None,
     ) -> User:
         user_id = str(self._next_id)
         self._next_id += 1
@@ -78,6 +80,8 @@ class FakeUserRepository:
             full_name=full_name,
             is_active=True,
             is_verified=is_verified,
+            phone=phone,
+            job_role=job_role,
             created_at=now,
             updated_at=now,
         )

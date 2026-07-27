@@ -15,6 +15,8 @@ class UserRepository(Protocol):
         hashed_password: str,
         full_name: str,
         is_verified: bool = True,
+        phone: str | None = None,
+        job_role: str | None = None,
     ) -> User: ...
 
     async def update(self, user_id: str, **fields: object) -> User | None: ...

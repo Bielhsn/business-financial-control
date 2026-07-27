@@ -112,6 +112,8 @@ class SegmentProfile:
     service_examples: tuple[str, ...] = ()
     product_examples: tuple[str, ...] = ()
     catalog_categories: tuple[str, ...] = ()
+    # Funções da equipe neste negócio (barbeiro, recepcionista, atendente...).
+    employee_role_examples: tuple[str, ...] = ()
     # Categorias financeiras que nascem com a empresa (sem depender de IA).
     income_categories: tuple[str, ...] = ()
     expense_categories: tuple[str, ...] = ()

@@ -89,6 +89,12 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         product_examples=("Pomada modeladora", "Shampoo", "Óleo para barba", "Minoxidil"),
         catalog_categories=("Cortes", "Barba", "Coloração", "Tratamentos", "Cosméticos"),
+        employee_role_examples=(
+            "Barbeiro",
+            "Cabeleireiro",
+            "Manicure",
+            "Recepcionista",
+        ),
         income_categories=("Serviços", "Venda de produtos", "Pacotes e planos"),
         expense_categories=(
             "Comissões",
@@ -163,6 +169,12 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             "Coleta domiciliar",
         ),
         catalog_categories=("Consultas", "Exames laboratoriais", "Procedimentos", "Retornos"),
+        employee_role_examples=(
+            "Médico",
+            "Enfermeiro",
+            "Técnico de laboratório",
+            "Recepcionista",
+        ),
         income_categories=("Consultas", "Exames", "Procedimentos", "Convênios", "Particular"),
         expense_categories=(
             "Honorários profissionais",
@@ -217,6 +229,12 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             "Águas",
             "Gelo e descartáveis",
         ),
+        employee_role_examples=(
+            "Atendente",
+            "Estoquista",
+            "Entregador",
+            "Caixa",
+        ),
         income_categories=("Vendas no balcão", "Delivery", "Vendas por aplicativo"),
         expense_categories=(
             "Compra de mercadorias",
@@ -265,6 +283,12 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         product_examples=("X-Salada", "Pizza calabresa", "Refrigerante lata", "Marmita executiva"),
         catalog_categories=("Entradas", "Pratos principais", "Lanches", "Bebidas", "Sobremesas"),
+        employee_role_examples=(
+            "Cozinheiro",
+            "Garçom",
+            "Atendente",
+            "Entregador",
+        ),
         income_categories=("Salão", "Delivery", "Balcão", "Aplicativos"),
         expense_categories=(
             "Insumos e ingredientes",
@@ -303,6 +327,12 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         catalog_fields=_RETAIL_FIELDS,
         product_examples=("Camiseta básica", "Calça jeans", "Vestido midi", "Tênis casual"),
         catalog_categories=("Camisetas", "Calças", "Vestidos", "Calçados", "Acessórios"),
+        employee_role_examples=(
+            "Vendedor",
+            "Estoquista",
+            "Caixa",
+            "Visual merchandiser",
+        ),
         income_categories=("Vendas na loja", "Vendas online", "Marketplaces"),
         expense_categories=(
             "Compra de mercadorias",
@@ -358,6 +388,11 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         service_examples=("Plano mensal", "Plano trimestral", "Aula avulsa", "Personal"),
         catalog_categories=("Planos", "Aulas coletivas", "Personal", "Avaliações"),
+        employee_role_examples=(
+            "Instrutor",
+            "Personal trainer",
+            "Recepcionista",
+        ),
         income_categories=("Mensalidades", "Aulas avulsas", "Personal", "Venda de produtos"),
         expense_categories=(
             "Salários e instrutores",
@@ -413,6 +448,12 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         service_examples=("Troca de óleo", "Alinhamento", "Revisão completa", "Troca de pastilhas"),
         product_examples=("Óleo 5W30", "Filtro de ar", "Pastilha de freio", "Bateria"),
         catalog_categories=("Serviços", "Peças", "Lubrificantes", "Pneus"),
+        employee_role_examples=(
+            "Mecânico",
+            "Funileiro",
+            "Consultor técnico",
+            "Atendente",
+        ),
         income_categories=("Mão de obra", "Venda de peças", "Serviços rápidos"),
         expense_categories=(
             "Compra de peças",
@@ -468,6 +509,11 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         product_examples=("Curso completo", "Mentoria individual", "Comunidade", "E-book"),
         catalog_categories=("Cursos", "Mentorias", "Assinaturas", "Materiais"),
+        employee_role_examples=(
+            "Produtor de conteúdo",
+            "Suporte ao aluno",
+            "Editor de vídeo",
+        ),
         income_categories=("Vendas de cursos", "Assinaturas", "Mentorias", "Afiliados"),
         expense_categories=(
             "Taxas de plataforma",
@@ -514,6 +560,11 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
             "Seguro viagem",
         ),
         catalog_categories=("Pacotes", "Passagens", "Hospedagem", "Transfers", "Seguros"),
+        employee_role_examples=(
+            "Consultor de viagens",
+            "Emissor",
+            "Atendente",
+        ),
         income_categories=("Pacotes", "Passagens", "Hospedagem", "Comissões de operadora"),
         expense_categories=(
             "Fornecedores e operadoras",
@@ -566,6 +617,11 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         ),
         service_examples=("Consultoria mensal", "Projeto pontual", "Hora técnica", "Assessoria"),
         catalog_categories=("Consultoria", "Projetos", "Retainer", "Treinamentos"),
+        employee_role_examples=(
+            "Consultor",
+            "Analista",
+            "Gerente de projeto",
+        ),
         income_categories=("Honorários", "Projetos", "Contratos recorrentes"),
         expense_categories=(
             "Salários e pró-labore",
@@ -590,6 +646,11 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         catalog_fields=_RETAIL_FIELDS,
         product_examples=("Produto principal", "Kit promocional"),
         catalog_categories=("Mais vendidos", "Lançamentos", "Promoções"),
+        employee_role_examples=(
+            "Atendente",
+            "Estoquista",
+            "Analista de marketplace",
+        ),
         income_categories=("Vendas na loja virtual", "Marketplaces", "Social commerce"),
         expense_categories=(
             "Compra de mercadorias",
@@ -631,6 +692,11 @@ SEGMENT_PROFILES: tuple[SegmentProfile, ...] = (
         catalog_fields=_RETAIL_FIELDS,
         product_examples=("Produto de maior giro", "Item promocional"),
         catalog_categories=("Geral", "Promoções", "Mais vendidos"),
+        employee_role_examples=(
+            "Vendedor",
+            "Estoquista",
+            "Caixa",
+        ),
         income_categories=("Vendas", "Delivery"),
         expense_categories=(
             "Compra de mercadorias",

@@ -5,6 +5,10 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     full_name: str = Field(min_length=1, max_length=200)
+    # Telefone: canal de contato para suporte e recuperação de conta.
+    phone: str | None = Field(default=None, max_length=40)
+    # Cargo: calibra a linguagem do produto e o contexto que a IA recebe.
+    job_role: str | None = Field(default=None, max_length=100)
 
 
 class LoginRequest(BaseModel):

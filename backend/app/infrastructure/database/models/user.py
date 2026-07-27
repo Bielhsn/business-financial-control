@@ -10,6 +10,8 @@ class UserDocument(Document):
     full_name: str
     is_active: bool = True
     is_verified: bool = True
+    phone: str | None = None
+    job_role: str | None = None
     created_at: datetime
     updated_at: datetime
 

@@ -234,3 +234,34 @@ def test_login_blocked_when_verification_required_and_unverified(
         assert login.status_code == 401
     finally:
         app.dependency_overrides.clear()
+
+
+def test_register_stores_contact_and_role(client: TestClient) -> None:
+    """Telefone e cargo têm propósito: contato de suporte e calibragem do
+    contexto (produto e IA). Ambos opcionais — não travam o onboarding."""
+    response = client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "gestor@example.com",
+            "password": "s3cr3t!!",
+            "full_name": "Gabriel Henrique",
+            "phone": "11999998888",
+            "job_role": "Dono",
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.json()
+    assert body["phone"] == "11999998888"
+    assert body["job_role"] == "Dono"
+
+
+def test_register_without_optional_fields_still_works(client: TestClient) -> None:
+    response = client.post(
+        "/api/v1/auth/register",
+        json={"email": "simples@example.com", "password": "s3cr3t!!", "full_name": "Ana"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["phone"] is None
+    assert response.json()["job_role"] is None

@@ -39,7 +39,9 @@ import { useCatalogItems } from "@/features/catalog/use-catalog";
 import { useClients } from "@/features/clients/use-clients";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { useEmployees } from "@/features/employees/use-employees";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import { extractErrorMessage } from "@/lib/api";
+import { exampleHint } from "@/lib/segment";
 import type { AppointmentResponse, AppointmentStatus } from "@/lib/api-types";
 import { parseCurrencyToCents } from "@/lib/money";
 import { formatCents } from "@/lib/utils";
@@ -98,6 +100,7 @@ type AppointmentForm = z.infer<typeof appointmentSchema>;
 function NewAppointmentDialog({ companyId, day }: { companyId: string; day: Date }) {
   const [open, setOpen] = useState(false);
   const createAppointment = useCreateAppointment(companyId);
+  const profile = useSegmentProfileOrDefault(companyId);
   const { data: clients } = useClients(companyId);
   const { data: employees } = useEmployees(companyId);
   const { data: catalogItems } = useCatalogItems(companyId);
@@ -201,7 +204,11 @@ function NewAppointmentDialog({ companyId, day }: { companyId: string; day: Date
 
           <div className="space-y-2">
             <Label htmlFor="appt-title">Título (se não escolher serviço)</Label>
-            <Input id="appt-title" placeholder="Ex.: Corte masculino" {...register("title")} />
+            <Input
+              id="appt-title"
+              placeholder={exampleHint(profile.service_examples)}
+              {...register("title")}
+            />
             {errors.title && (
               <p role="alert" className="text-sm text-destructive">
                 {errors.title.message}

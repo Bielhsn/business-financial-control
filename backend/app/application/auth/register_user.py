@@ -16,7 +16,15 @@ class RegisterUserUseCase:
         self._password_hasher = password_hasher
         self._settings = settings
 
-    async def execute(self, *, email: str, password: str, full_name: str) -> User:
+    async def execute(
+        self,
+        *,
+        email: str,
+        password: str,
+        full_name: str,
+        phone: str | None = None,
+        job_role: str | None = None,
+    ) -> User:
         normalized_email = email.strip().lower()
 
         if await self._user_repository.get_by_email(normalized_email) is not None:
@@ -30,4 +38,6 @@ class RegisterUserUseCase:
             hashed_password=hashed_password,
             full_name=full_name.strip(),
             is_verified=not self._settings.require_email_verification,
+            phone=phone.strip() if phone else None,
+            job_role=job_role.strip() if job_role else None,
         )

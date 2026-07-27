@@ -23,6 +23,8 @@ describe("auth store", () => {
       full_name: "A",
       is_active: true,
       is_verified: true,
+      phone: null,
+      job_role: null,
       created_at: new Date().toISOString(),
     });
 
