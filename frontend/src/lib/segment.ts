@@ -37,6 +37,7 @@ export const GENERIC_SEGMENT_PROFILE: SegmentProfileResponse = {
   expense_categories: ["Fornecedores", "Aluguel", "Salários", "Impostos", "Marketing"],
   kpis: ["total_revenue", "total_expenses", "profit", "active_clients"],
   integrations: [],
+  capabilities: [],
   sells_products: true,
   sells_services: true,
 };
@@ -47,4 +48,25 @@ export function exampleHint(examples: string[], limit = 2): string | undefined {
     return undefined;
   }
   return `Ex.: ${examples.slice(0, limit).join(", ")}`;
+}
+
+/** Recursos do produto que só fazem sentido em certos negócios (espelha o
+ * Capability do backend — vocabulário fechado, sem string solta nas telas). */
+export const CAPABILITY = {
+  clientRetention: "client_retention",
+  inventory: "inventory",
+  salesChannels: "sales_channels",
+  productMargin: "product_margin",
+  commissions: "commissions",
+  scheduleAnalytics: "schedule_analytics",
+  recurringRevenue: "recurring_revenue",
+} as const;
+
+export type CapabilityId = (typeof CAPABILITY)[keyof typeof CAPABILITY];
+
+export function hasCapability(
+  profile: { capabilities: string[] },
+  capability: CapabilityId,
+): boolean {
+  return profile.capabilities.includes(capability);
 }

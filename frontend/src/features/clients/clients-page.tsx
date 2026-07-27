@@ -51,7 +51,9 @@ import {
 import { extractErrorMessage } from "@/lib/api";
 import type { BlueprintCustomField, ClientResponse } from "@/lib/api-types";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import { computeReturnStatus } from "@/lib/client-return";
+import { CAPABILITY, hasCapability } from "@/lib/segment";
 import { formatCents } from "@/lib/utils";
 import {
   DEFAULT_RETURN_MESSAGE,
@@ -97,6 +99,10 @@ function NewClientDialog({ companyId }: { companyId: string }) {
   const [open, setOpen] = useState(false);
   const { data: blueprint } = useBlueprint(companyId);
   const createClient = useCreateClient(companyId);
+  const canRetainClients = hasCapability(
+    useSegmentProfileOrDefault(companyId),
+    CAPABILITY.clientRetention,
+  );
   const customFieldDefs = blueprint?.client_custom_fields ?? [];
 
   const {
@@ -118,7 +124,8 @@ function NewClientDialog({ companyId }: { companyId: string }) {
     const filledCustomFields = Object.fromEntries(
       Object.entries(values.custom_fields).filter(([, value]) => value.trim() !== ""),
     );
-    const interval = values.return_interval_days ? Number(values.return_interval_days) : null;
+    const interval =
+      canRetainClients && values.return_interval_days ? Number(values.return_interval_days) : null;
     createClient.mutate(
       {
         name: values.name,
@@ -181,24 +188,26 @@ function NewClientDialog({ companyId }: { companyId: string }) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="client-interval">Retorno esperado (opcional)</Label>
-            <select
-              id="client-interval"
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              {...register("return_interval_days")}
-            >
-              <option value="">Não lembrar</option>
-              {RETURN_INTERVAL_OPTIONS.map((days) => (
-                <option key={days} value={days}>
-                  A cada {days} dias
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground">
-              Usado para avisar quando o cliente está na hora de voltar (aba Retorno).
-            </p>
-          </div>
+          {canRetainClients && (
+            <div className="space-y-2">
+              <Label htmlFor="client-interval">Retorno esperado (opcional)</Label>
+              <select
+                id="client-interval"
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                {...register("return_interval_days")}
+              >
+                <option value="">Não lembrar</option>
+                {RETURN_INTERVAL_OPTIONS.map((days) => (
+                  <option key={days} value={days}>
+                    A cada {days} dias
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Usado para avisar quando o cliente está na hora de voltar (aba Retorno).
+              </p>
+            </div>
+          )}
 
           {customFieldDefs.length > 0 && (
             <div className="grid gap-4 sm:grid-cols-2">
@@ -598,6 +607,10 @@ export function ClientsPage() {
   const { data: clients, isLoading } = useClients(id);
   const { data: blueprint } = useBlueprint(id);
   const { data: company } = useCompany(id);
+  const profile = useSegmentProfileOrDefault(id);
+  // Reconvite de clientes só existe onde a recorrência de atendimento é o motor
+  // do negócio. Um delivery de bebidas vive de canal de venda, não disso.
+  const canRetainClients = hasCapability(profile, CAPABILITY.clientRetention);
   const [tab, setTab] = useState<ClientsTab>("list");
 
   const hasClients = (clients?.length ?? 0) > 0;
@@ -620,17 +633,19 @@ export function ClientsPage() {
         >
           Lista
         </button>
-        <button
-          type="button"
-          onClick={() => setTab("return")}
-          className={
-            tab === "return"
-              ? "rounded-md bg-accent px-3 py-1.5 font-medium text-accent-foreground"
-              : "rounded-md px-3 py-1.5 text-muted-foreground"
-          }
-        >
-          Retorno (WhatsApp)
-        </button>
+        {canRetainClients && (
+          <button
+            type="button"
+            onClick={() => setTab("return")}
+            className={
+              tab === "return"
+                ? "rounded-md bg-accent px-3 py-1.5 font-medium text-accent-foreground"
+                : "rounded-md px-3 py-1.5 text-muted-foreground"
+            }
+          >
+            Retorno (WhatsApp)
+          </button>
+        )}
       </div>
 
       {isLoading && <Skeleton className="h-64 w-full" />}
@@ -658,7 +673,7 @@ export function ClientsPage() {
         </Card>
       )}
 
-      {hasClients && tab === "return" && (
+      {hasClients && tab === "return" && canRetainClients && (
         <ClientReturnView
           clients={clients ?? []}
           companyId={id}

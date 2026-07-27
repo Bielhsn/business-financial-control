@@ -7,6 +7,20 @@ class IntegrationDefinition:
     name: str
     group: str
 
+    @property
+    def is_connectable(self) -> bool:
+        """True quando existe conector implementado — ou seja, quando o botão
+        "Conectar" leva a um fluxo real. O resto do catálogo mostra que a
+        plataforma é suportada pelo produto, sem prometer conexão que não existe.
+
+        Import local evita ciclo: o registro de conectores é infraestrutura.
+        """
+        from app.domain.connector.registry import CONNECTOR_PROVIDERS
+
+        # O id do catálogo e o provider do conector divergem em um caso histórico.
+        provider = "mercadolivre" if self.id == "mercado_livre" else self.id
+        return provider in CONNECTOR_PROVIDERS
+
 
 # Catálogo fechado de integrações que a plataforma conhece. A IA seleciona as
 # relevantes para o segmento da empresa no blueprint (mesmo padrão de enum

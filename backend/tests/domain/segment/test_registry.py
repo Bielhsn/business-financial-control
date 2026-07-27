@@ -1,6 +1,7 @@
 from app.domain.blueprint.integration_registry import INTEGRATION_REGISTRY
 from app.domain.blueprint.module_registry import MODULE_IDS
 from app.domain.dashboard.kpi_registry import KPI_METRIC_IDS
+from app.domain.segment.profile import Capability
 from app.domain.segment.registry import (
     GENERIC_PROFILE,
     SEGMENT_PROFILES,
@@ -85,3 +86,27 @@ class TestResolveSegmentProfile:
         assert get_profile_by_id("restaurant") is not None
         assert get_profile_by_id("generic") is GENERIC_PROFILE
         assert get_profile_by_id("nao-existe") is None
+
+
+class TestCapabilities:
+    """Capacidade responde "que recurso do produto faz sentido aqui" — é o que
+    impede a aba de reconvite por WhatsApp aparecer numa loja de bebidas."""
+
+    def test_retention_only_where_recurrence_matters(self) -> None:
+        assert resolve_segment_profile("Barbearia").has(Capability.CLIENT_RETENTION)
+        assert resolve_segment_profile("Clínica").has(Capability.CLIENT_RETENTION)
+        # Delivery de bebidas vive de canal de venda, não de reconvite individual.
+        assert not resolve_segment_profile("Loja de bebidas").has(Capability.CLIENT_RETENTION)
+        assert not resolve_segment_profile("Loja de roupas").has(Capability.CLIENT_RETENTION)
+
+    def test_inventory_only_for_who_holds_stock(self) -> None:
+        assert resolve_segment_profile("Loja de bebidas").has(Capability.INVENTORY)
+        assert not resolve_segment_profile("Clínica").has(Capability.INVENTORY)
+
+    def test_sales_channels_only_for_multichannel_retail(self) -> None:
+        assert resolve_segment_profile("Loja de bebidas").has(Capability.SALES_CHANNELS)
+        assert not resolve_segment_profile("Barbearia").has(Capability.SALES_CHANNELS)
+
+    def test_generic_profile_claims_no_capability(self) -> None:
+        # Sem saber o negócio, não inventa recurso — melhor neutro que errado.
+        assert resolve_segment_profile("Algo novo").capabilities == frozenset()

@@ -29,6 +29,34 @@ class OfferingModel(StrEnum):
     BOTH = "both"
 
 
+class Capability(StrEnum):
+    """Funcionalidades do produto que só fazem sentido em certos negócios.
+
+    Módulo responde "que telas existem"; capacidade responde "que recursos dentro
+    delas fazem sentido". Sem essa distinção, uma loja de bebidas por delivery
+    recebia a aba de reconvite de clientes por WhatsApp — que serve a quem vive de
+    recorrência de atendimento, não a quem vende por aplicativo.
+
+    Vocabulário fechado de propósito: uma tela só pode pedir o que existe aqui, o
+    que impede regra de negócio nascer solta no frontend.
+    """
+
+    # Relacionamento: cadência de retorno, reconvite por WhatsApp.
+    CLIENT_RETENTION = "client_retention"
+    # Estoque: entrada/saída, mínimo, produtos parados, giro.
+    INVENTORY = "inventory"
+    # Venda por canal: delivery/marketplace, comparação entre plataformas.
+    SALES_CHANNELS = "sales_channels"
+    # Margem e custo por item vendido.
+    PRODUCT_MARGIN = "product_margin"
+    # Comissão de profissionais sobre serviços.
+    COMMISSIONS = "commissions"
+    # Ocupação de agenda, horários de pico.
+    SCHEDULE_ANALYTICS = "schedule_analytics"
+    # Receita recorrente: planos, mensalidades, contratos.
+    RECURRING_REVENUE = "recurring_revenue"
+
+
 @dataclass(frozen=True)
 class CatalogFieldPolicy:
     """Quais campos da ficha de item fazem sentido neste segmento.
@@ -89,7 +117,14 @@ class SegmentProfile:
     expense_categories: tuple[str, ...] = ()
     # Indicadores que importam para este negócio, na ordem de exibição.
     kpis: tuple[KPIMetric, ...] = ()
+    # Integrações RECOMENDADAS para este negócio. O catálogo completo continua
+    # visível na Central de Integrações — recomendar é diferente de oferecer.
     integrations: tuple[str, ...] = ()
+    # Recursos do produto que fazem sentido neste negócio (ver Capability).
+    capabilities: frozenset[Capability] = frozenset()
+
+    def has(self, capability: Capability) -> bool:
+        return capability in self.capabilities
 
     @property
     def sells_services(self) -> bool:

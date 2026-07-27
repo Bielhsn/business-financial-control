@@ -8,9 +8,29 @@ const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogClose = DialogPrimitive.Close;
 
+/**
+ * Selects, dropdowns e popovers do Radix renderizam em portal — o conteúdo deles
+ * fica FORA do DOM do dialog. Sem este guarda, escolher uma opção no select conta
+ * como "clique fora" e o dialog inteiro fecha junto, perdendo o que o usuário
+ * digitou. Aqui, eventos vindos de qualquer camada flutuante do Radix são
+ * ignorados: só clique no overlay de verdade fecha.
+ */
+function isInsideFloatingLayer(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  return (
+    target.closest("[data-radix-popper-content-wrapper]") !== null ||
+    target.closest("[role='listbox']") !== null ||
+    target.closest("[role='menu']") !== null
+  );
+}
+
 function DialogContent({
   className,
   children,
+  onPointerDownOutside,
+  onInteractOutside,
   ...props
 }: React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>) {
   return (
@@ -18,9 +38,23 @@ function DialogContent({
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/60 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 grid w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 border bg-card p-6 shadow-lg sm:rounded-xl",
+          "fixed left-1/2 top-1/2 z-50 grid max-h-[90dvh] w-full max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 overflow-y-auto border bg-card p-6 shadow-lg sm:rounded-xl",
           className,
         )}
+        onPointerDownOutside={(event) => {
+          if (isInsideFloatingLayer(event.target)) {
+            event.preventDefault();
+            return;
+          }
+          onPointerDownOutside?.(event);
+        }}
+        onInteractOutside={(event) => {
+          if (isInsideFloatingLayer(event.target)) {
+            event.preventDefault();
+            return;
+          }
+          onInteractOutside?.(event);
+        }}
         {...props}
       >
         {children}
