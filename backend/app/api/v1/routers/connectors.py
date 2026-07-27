@@ -47,6 +47,7 @@ from app.schemas.connector import (
     OAuthAuthorizeResponse,
     SyncResultResponse,
 )
+from app.schemas.integration_catalog import IntegrationCatalogResponse, build_integration_catalog
 
 router = APIRouter(prefix="/companies/{company_id}/connectors", tags=["connectors"])
 
@@ -238,3 +239,18 @@ async def disconnect(
         company_id=company_context.company_id,
         provider=provider,
     )
+
+
+catalog_router = APIRouter(prefix="/integrations", tags=["integrations"])
+
+
+@catalog_router.get("/catalog", response_model=IntegrationCatalogResponse)
+async def get_integration_catalog(
+    _: Annotated[User, Depends(get_current_user)],
+) -> IntegrationCatalogResponse:
+    """Catálogo completo de integrações que a plataforma conhece — fonte única.
+
+    Antes o frontend mantinha um espelho manual desta lista, que saía de sincronia
+    a cada conector novo. Agora existe um lugar só.
+    """
+    return build_integration_catalog()

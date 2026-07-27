@@ -14,8 +14,8 @@ import { useImportTransactions } from "@/features/integrations/use-import-transa
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { extractErrorMessage } from "@/lib/api";
 import { parseImportCsv, type ImportParseResult } from "@/lib/csv";
+import { useIntegrationCatalog } from "@/features/integrations/use-integration-catalog";
 import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
-import { INTEGRATIONS, integrationInfo, isConnectable } from "@/lib/integrations";
 import { formatCents } from "@/lib/utils";
 
 function CsvImportCard({ companyId }: { companyId: string }) {
@@ -165,6 +165,10 @@ export function IntegrationsPage() {
   const id = companyId ?? "";
   const { data: blueprint } = useBlueprint(id);
   const profile = useSegmentProfileOrDefault(id);
+  // Catálogo do backend: fonte única, com o status real de cada integração.
+  const { data: catalog } = useIntegrationCatalog();
+  const allIntegrations = catalog ?? [];
+  const catalogById = new Map(allIntegrations.map((item) => [item.id, item]));
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Retorno do fluxo OAuth: mostra o resultado e limpa a URL.
@@ -192,10 +196,10 @@ export function IntegrationsPage() {
     ...new Set([...profile.integrations, ...(blueprint?.integrations ?? [])]),
   ];
   const recommended = recommendedIdList
-    .map((integrationId) => integrationInfo(integrationId))
+    .map((integrationId) => catalogById.get(integrationId))
     .filter((item): item is NonNullable<typeof item> => item !== undefined);
   const recommendedIds = new Set(recommended.map((item) => item.id));
-  const others = INTEGRATIONS.filter((item) => !recommendedIds.has(item.id));
+  const others = allIntegrations.filter((item) => !recommendedIds.has(item.id));
   const otherGroups = [...new Set(others.map((item) => item.group))];
 
   return (
@@ -257,8 +261,8 @@ export function IntegrationsPage() {
                     <p className="truncate text-sm font-medium">{item.name}</p>
                     <p className="text-xs text-muted-foreground">{item.group}</p>
                   </div>
-                  <Badge variant={isConnectable(item.id) ? "secondary" : "muted"}>
-                    {isConnectable(item.id) ? "Disponível" : "Suportado"}
+                  <Badge variant={item.connectable ? "secondary" : "muted"}>
+                    {item.connectable ? "Disponível" : "Suportado"}
                   </Badge>
                 </div>
               ))}
@@ -305,8 +309,8 @@ export function IntegrationsPage() {
                         className="flex items-center justify-between rounded-lg border p-3"
                       >
                         <p className="text-sm font-medium">{item.name}</p>
-                        <Badge variant={isConnectable(item.id) ? "secondary" : "muted"}>
-                          {isConnectable(item.id) ? "Disponível" : "Suportado"}
+                        <Badge variant={item.connectable ? "secondary" : "muted"}>
+                          {item.connectable ? "Disponível" : "Suportado"}
                         </Badge>
                       </div>
                     ))}

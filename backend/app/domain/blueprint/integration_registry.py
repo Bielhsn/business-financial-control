@@ -35,6 +35,12 @@ INTEGRATION_REGISTRY: tuple[IntegrationDefinition, ...] = (
     IntegrationDefinition("anota_ai", "Anota AI", "Delivery"),
     IntegrationDefinition("goomer", "Goomer", "Delivery"),
     IntegrationDefinition("kds", "Sistema de cozinha (KDS)", "Restaurantes"),
+    # Infoprodutos e cursos online (a Hotmart já tem conector implementado, mas
+    # estava fora do catálogo — quem vende curso não a via na lista).
+    IntegrationDefinition("hotmart", "Hotmart", "Infoprodutos"),
+    IntegrationDefinition("kiwify", "Kiwify", "Infoprodutos"),
+    IntegrationDefinition("eduzz", "Eduzz", "Infoprodutos"),
+    IntegrationDefinition("monetizze", "Monetizze", "Infoprodutos"),
     # E-commerce
     IntegrationDefinition("shopify", "Shopify", "E-commerce"),
     IntegrationDefinition("nuvemshop", "Nuvemshop", "E-commerce"),
