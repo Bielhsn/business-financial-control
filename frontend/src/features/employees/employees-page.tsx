@@ -23,7 +23,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateEmployee, useEmployees } from "@/features/employees/use-employees";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import { extractErrorMessage } from "@/lib/api";
+import { exampleHint } from "@/lib/segment";
 
 const employeeSchema = z.object({
   name: z.string().min(1, "Informe o nome.").max(200),
@@ -37,6 +39,7 @@ type EmployeeForm = z.infer<typeof employeeSchema>;
 function NewEmployeeDialog({ companyId }: { companyId: string }) {
   const [open, setOpen] = useState(false);
   const createEmployee = useCreateEmployee(companyId);
+  const profile = useSegmentProfileOrDefault(companyId);
   const {
     register,
     handleSubmit,
@@ -104,7 +107,7 @@ function NewEmployeeDialog({ companyId }: { companyId: string }) {
             <Label htmlFor="employee-role">Cargo/função (opcional)</Label>
             <Input
               id="employee-role"
-              placeholder="Ex.: Barbeiro, Atendente…"
+              placeholder={exampleHint(profile.employee_role_examples)}
               {...register("role_title")}
             />
           </div>

@@ -45,7 +45,9 @@ import {
   useMarkTransactionPaid,
   useTransactions,
 } from "@/features/financial/use-financial";
+import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import { extractErrorMessage } from "@/lib/api";
+import { exampleHint } from "@/lib/segment";
 import type {
   FinancialCategoryType,
   FinancialTransactionResponse,
@@ -85,6 +87,7 @@ function NewTransactionDialog({ companyId }: { companyId: string }) {
   const { data: categories } = useCategories(companyId);
   const { data: clients } = useClients(companyId);
   const createTransaction = useCreateTransaction(companyId);
+  const profile = useSegmentProfileOrDefault(companyId);
 
   const {
     register,
@@ -273,7 +276,11 @@ function NewTransactionDialog({ companyId }: { companyId: string }) {
 
           <div className="space-y-2">
             <Label htmlFor="description">Descrição</Label>
-            <Input id="description" placeholder="Ex.: Corte + barba" {...register("description")} />
+            <Input
+              id="description"
+              placeholder={exampleHint([...profile.service_examples, ...profile.product_examples])}
+              {...register("description")}
+            />
             {errors.description && (
               <p role="alert" className="text-sm text-destructive">
                 {errors.description.message}
@@ -307,6 +314,7 @@ type CategoryForm = z.infer<typeof categorySchema>;
 function CategoriesDialog({ companyId }: { companyId: string }) {
   const { data: categories } = useCategories(companyId);
   const createCategory = useCreateCategory(companyId);
+  const profile = useSegmentProfileOrDefault(companyId);
   const seedFromBlueprint = useSeedCategoriesFromBlueprint(companyId);
   const seedFromSegment = useSeedCategoriesFromSegment(companyId);
 
@@ -395,7 +403,11 @@ function CategoriesDialog({ companyId }: { companyId: string }) {
         <form onSubmit={onSubmit} className="flex items-end gap-2" noValidate>
           <div className="flex-1 space-y-2">
             <Label htmlFor="category-name">Nova categoria</Label>
-            <Input id="category-name" placeholder="Ex.: Vendas online" {...register("name")} />
+            <Input
+              id="category-name"
+              placeholder={exampleHint(profile.income_categories)}
+              {...register("name")}
+            />
             {errors.name && (
               <p role="alert" className="text-sm text-destructive">
                 {errors.name.message}

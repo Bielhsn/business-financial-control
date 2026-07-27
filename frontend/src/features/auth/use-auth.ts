@@ -13,6 +13,8 @@ interface LoginInput {
 
 interface RegisterInput extends LoginInput {
   full_name: string;
+  phone?: string | null;
+  job_role?: string | null;
 }
 
 export function useLogin() {

@@ -12,6 +12,8 @@ export interface UserResponse {
   full_name: string;
   is_active: boolean;
   is_verified: boolean;
+  phone: string | null;
+  job_role: string | null;
   created_at: string;
 }
 
@@ -298,6 +300,7 @@ export interface SegmentProfileResponse {
   service_examples: string[];
   product_examples: string[];
   catalog_categories: string[];
+  employee_role_examples: string[];
   income_categories: string[];
   expense_categories: string[];
   kpis: string[];

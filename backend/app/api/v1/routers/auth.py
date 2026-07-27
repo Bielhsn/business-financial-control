@@ -72,7 +72,11 @@ async def register(
 ) -> User:
     use_case = RegisterUserUseCase(user_repository, password_hasher, settings)
     user = await use_case.execute(
-        email=payload.email, password=payload.password, full_name=payload.full_name
+        email=payload.email,
+        password=payload.password,
+        full_name=payload.full_name,
+        phone=payload.phone,
+        job_role=payload.job_role,
     )
     audit_event("user_registered", user_id=user.id)
     # Se a verificação por e-mail está ligada, já dispara o código de confirmação.

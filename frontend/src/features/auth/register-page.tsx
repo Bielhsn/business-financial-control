@@ -18,7 +18,21 @@ const registerSchema = z.object({
   full_name: z.string().min(1, "Informe seu nome.").max(200),
   email: z.string().email("Informe um e-mail válido."),
   password: z.string().min(8, "A senha deve ter ao menos 8 caracteres.").max(128),
+  phone: z.string().max(40).optional(),
+  job_role: z.string().max(100).optional(),
 });
+
+/** Papéis oferecidos no cadastro. Servem para calibrar a linguagem do produto e
+ * o contexto da IA — um dono e um contador da mesma empresa precisam de recortes
+ * diferentes da mesma informação. */
+const JOB_ROLES = [
+  "Dono(a) do negócio",
+  "Sócio(a)",
+  "Gerente",
+  "Financeiro",
+  "Contador(a)",
+  "Outro",
+];
 
 type RegisterForm = z.infer<typeof registerSchema>;
 
@@ -121,6 +135,38 @@ export function RegisterPage() {
                   </p>
                 )}
               </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefone (opcional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="(11) 99999-8888"
+                    {...register("phone")}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Para suporte e recuperação da conta.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="job_role">Sua função (opcional)</Label>
+                  <select
+                    id="job_role"
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    {...register("job_role")}
+                  >
+                    <option value="">Prefiro não informar</option>
+                    {JOB_ROLES.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-muted-foreground">Ajusta o painel ao seu dia a dia.</p>
+                </div>
+              </div>
+
               <Button type="submit" className="w-full" disabled={isPending}>
                 {isPending ? "Criando conta..." : "Criar conta"}
               </Button>

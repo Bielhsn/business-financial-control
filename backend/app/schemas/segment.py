@@ -39,6 +39,7 @@ class SegmentProfileResponse(BaseModel):
     service_examples: list[str]
     product_examples: list[str]
     catalog_categories: list[str]
+    employee_role_examples: list[str]
     income_categories: list[str]
     expense_categories: list[str]
     kpis: list[str]
@@ -78,6 +79,7 @@ def to_segment_profile_response(profile: SegmentProfile) -> SegmentProfileRespon
         service_examples=list(profile.service_examples),
         product_examples=list(profile.product_examples),
         catalog_categories=list(profile.catalog_categories),
+        employee_role_examples=list(profile.employee_role_examples),
         income_categories=list(profile.income_categories),
         expense_categories=list(profile.expense_categories),
         kpis=[metric.value for metric in profile.kpis],

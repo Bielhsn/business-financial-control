@@ -33,6 +33,7 @@ export const GENERIC_SEGMENT_PROFILE: SegmentProfileResponse = {
   service_examples: [],
   product_examples: [],
   catalog_categories: [],
+  employee_role_examples: [],
   income_categories: ["Vendas", "Serviços"],
   expense_categories: ["Fornecedores", "Aluguel", "Salários", "Impostos", "Marketing"],
   kpis: ["total_revenue", "total_expenses", "profit", "active_clients"],
