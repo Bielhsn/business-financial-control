@@ -15,6 +15,9 @@ class IntegrationCatalogItemResponse(BaseModel):
     name: str
     group: str
     connectable: bool
+    # Qual conector atende esta plataforma. É o que permite a tela abrir o
+    # fluxo certo (credenciais ou OAuth) em vez de só exibir um selo.
+    provider: str | None = None
 
 
 class IntegrationCatalogResponse(BaseModel):
@@ -29,6 +32,7 @@ def build_integration_catalog() -> IntegrationCatalogResponse:
                 name=item.name,
                 group=item.group,
                 connectable=item.is_connectable,
+                provider=item.connector_provider,
             )
             for item in INTEGRATION_REGISTRY
         ]

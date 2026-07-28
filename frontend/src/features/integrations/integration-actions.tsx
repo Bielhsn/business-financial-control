@@ -1,10 +1,25 @@
-import { Link2, Plug, RefreshCw, Trash2 } from "lucide-react";
+/**
+ * Ações de uma integração, no estado real da conexão.
+ *
+ * Antes existiam dois mundos: um cartão "Conexões automáticas" com botões que
+ * funcionavam, e as listas de recomendadas/catálogo que só desenhavam um selo
+ * "Disponível" sem nada para clicar. Quem via a recomendação para o seu segmento
+ * não tinha como agir sobre ela.
+ *
+ * Aqui a decisão é uma só e vale para qualquer lugar que liste integrações:
+ *
+ *   sem conector          → diz que ainda não conecta, sem prometer botão
+ *   conector, sem conexão → "Conectar" abre o fluxo certo (credenciais ou OAuth)
+ *   conectada             → "Sincronizar" e "Desconectar", com o status real
+ *
+ * O estado vem das conexões persistidas no backend, não de um rótulo fixo.
+ */
+import { Link2, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -17,9 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  useAvailableConnectors,
   useConnectProvider,
-  useConnections,
   useDisconnectProvider,
   useOAuthAuthorize,
   useSyncProvider,
@@ -27,7 +40,8 @@ import {
 import { extractErrorMessage } from "@/lib/api";
 import type { ConnectionResponse, ConnectorDefinitionResponse } from "@/lib/api-types";
 
-function ConnectDialog({
+/** Conexão por credenciais: o lojista cola as chaves do aplicativo dele. */
+function CredentialsConnectDialog({
   companyId,
   connector,
 }: {
@@ -73,9 +87,9 @@ function ConnectDialog({
         <div className="space-y-4">
           {connector.credential_fields.map((field) => (
             <div key={field.key} className="space-y-2">
-              <Label htmlFor={`cred-${field.key}`}>{field.label}</Label>
+              <Label htmlFor={`cred-${connector.provider}-${field.key}`}>{field.label}</Label>
               <Input
-                id={`cred-${field.key}`}
+                id={`cred-${connector.provider}-${field.key}`}
                 type={field.secret ? "password" : "text"}
                 autoComplete="off"
                 value={values[field.key] ?? ""}
@@ -103,6 +117,7 @@ function ConnectDialog({
   );
 }
 
+/** Conexão por OAuth: redireciona o lojista para autorizar no provedor. */
 function OAuthConnectButton({
   companyId,
   connector,
@@ -113,6 +128,7 @@ function OAuthConnectButton({
   const [open, setOpen] = useState(false);
   const [shop, setShop] = useState("");
   const authorize = useOAuthAuthorize(companyId);
+  // A Shopify precisa saber qual loja autorizar antes do redirect.
   const needsShop = connector.provider === "shopify";
 
   const start = (payload: { provider: string; shop?: string }) =>
@@ -128,7 +144,7 @@ function OAuthConnectButton({
         onClick={() => start({ provider: connector.provider })}
         disabled={authorize.isPending}
       >
-        <Link2 /> {authorize.isPending ? "Redirecionando…" : "Conectar"}
+        <Link2 /> {authorize.isPending ? "Autorizando…" : "Conectar"}
       </Button>
     );
   }
@@ -170,7 +186,7 @@ function OAuthConnectButton({
             }}
             disabled={authorize.isPending}
           >
-            {authorize.isPending ? "Redirecionando…" : "Autorizar"}
+            {authorize.isPending ? "Autorizando…" : "Autorizar"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -178,7 +194,8 @@ function OAuthConnectButton({
   );
 }
 
-function ConnectedRow({
+/** Conexão ativa: sincronizar sob demanda ou desfazer. */
+function ConnectedActions({
   companyId,
   connector,
   connection,
@@ -190,114 +207,90 @@ function ConnectedRow({
   const sync = useSyncProvider(companyId);
   const disconnect = useDisconnectProvider(companyId);
 
-  const runSync = () =>
-    sync.mutate(connector.provider, {
-      onSuccess: (result) =>
-        toast.success(
-          `${connector.name}: ${result.imported} importado(s), ${result.skipped} já existiam.`,
-        ),
-      onError: (error) => toast.error(extractErrorMessage(error)),
-    });
-
-  const runDisconnect = () =>
-    disconnect.mutate(connector.provider, {
-      onSuccess: () => toast.success(`${connector.name} desconectada.`),
-      onError: (error) => toast.error(extractErrorMessage(error)),
-    });
-
   return (
-    <div className="rounded-lg border p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p className="flex items-center gap-2 text-sm font-medium">
-            {connector.name}
-            {connection.status === "connected" ? (
-              <Badge variant="success">Conectada</Badge>
-            ) : (
-              <Badge variant="destructive">Erro</Badge>
-            )}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {connection.last_synced_at
-              ? `Última sincronização: ${new Date(connection.last_synced_at).toLocaleString("pt-BR")}`
-              : "Ainda não sincronizada."}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <Button size="sm" variant="secondary" onClick={runSync} disabled={sync.isPending}>
-            <RefreshCw className={sync.isPending ? "animate-spin" : ""} />
-            {sync.isPending ? "Sincronizando…" : "Sincronizar agora"}
-          </Button>
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label={`Desconectar ${connector.name}`}
-            onClick={runDisconnect}
-            disabled={disconnect.isPending}
-          >
-            <Trash2 />
-          </Button>
-        </div>
-      </div>
-      {connection.status === "error" && connection.last_error && (
-        <p className="mt-2 text-xs text-destructive">{connection.last_error}</p>
-      )}
+    <div className="flex items-center gap-1">
+      <Button
+        size="sm"
+        variant="secondary"
+        onClick={() =>
+          sync.mutate(connector.provider, {
+            onSuccess: (result) =>
+              toast.success(
+                `${connector.name}: ${result.imported} importado(s), ${result.skipped} já existiam.`,
+              ),
+            onError: (error) => toast.error(extractErrorMessage(error)),
+          })
+        }
+        disabled={sync.isPending}
+      >
+        <RefreshCw className={sync.isPending ? "animate-spin" : ""} />
+        {sync.isPending ? "Sincronizando…" : "Sincronizar"}
+      </Button>
+      <Button
+        size="icon-sm"
+        variant="ghost"
+        aria-label={`Desconectar ${connector.name}`}
+        onClick={() =>
+          disconnect.mutate(connector.provider, {
+            onSuccess: () => toast.success(`${connector.name} desconectada.`),
+            onError: (error) => toast.error(extractErrorMessage(error)),
+          })
+        }
+        disabled={disconnect.isPending}
+      >
+        <Trash2 />
+      </Button>
+      {connection.status === "error" && <Badge variant="destructive">Erro</Badge>}
     </div>
   );
 }
 
-export function ConnectorsCard({ companyId }: { companyId: string }) {
-  const { data: connectors } = useAvailableConnectors(companyId);
-  const { data: connections } = useConnections(companyId);
-
-  if (!connectors || connectors.length === 0) {
-    return null;
+export function IntegrationActions({
+  companyId,
+  connector,
+  connection,
+}: {
+  companyId: string;
+  /** Ausente quando a plataforma ainda não tem conector implementado. */
+  connector: ConnectorDefinitionResponse | undefined;
+  connection: ConnectionResponse | undefined;
+}) {
+  // Sem conector, ser honesto vale mais que um selo bonito: prometer
+  // "Disponível" para algo que não conecta é o defeito que estamos corrigindo.
+  if (!connector) {
+    return (
+      <Badge variant="muted" title="Ainda não há conexão automática para esta plataforma">
+        Sem conexão automática
+      </Badge>
+    );
   }
-
-  const connectionByProvider = new Map((connections ?? []).map((c) => [c.provider, c]));
-
-  return (
-    <Card className="border-primary/40">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-base">
-          <Plug className="size-4 text-primary" /> Conexões automáticas
-        </CardTitle>
-        <CardDescription>
-          Conecte a conta e sincronize vendas e reembolsos direto no seu financeiro — sem digitar
-          nada à mão.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {connectors.map((connector) => {
-          const connection = connectionByProvider.get(connector.provider);
-          if (connection) {
-            return (
-              <ConnectedRow
-                key={connector.provider}
-                companyId={companyId}
-                connector={connector}
-                connection={connection}
-              />
-            );
-          }
-          return (
-            <div
-              key={connector.provider}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium">{connector.name}</p>
-                <p className="text-xs text-muted-foreground">{connector.description}</p>
-              </div>
-              {connector.auth_type === "oauth" ? (
-                <OAuthConnectButton companyId={companyId} connector={connector} />
-              ) : (
-                <ConnectDialog companyId={companyId} connector={connector} />
-              )}
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
+  if (connection) {
+    return <ConnectedActions companyId={companyId} connector={connector} connection={connection} />;
+  }
+  return connector.auth_type === "oauth" ? (
+    <OAuthConnectButton companyId={companyId} connector={connector} />
+  ) : (
+    <CredentialsConnectDialog companyId={companyId} connector={connector} />
   );
+}
+
+/** Selo do estado atual, para acompanhar as ações na listagem. */
+export function IntegrationStatusBadge({
+  connector,
+  connection,
+}: {
+  connector: ConnectorDefinitionResponse | undefined;
+  connection: ConnectionResponse | undefined;
+}) {
+  if (connection) {
+    return connection.status === "connected" ? (
+      <Badge variant="success">Conectada</Badge>
+    ) : (
+      <Badge variant="destructive">Erro na conexão</Badge>
+    );
+  }
+  if (connector) {
+    return <Badge variant="secondary">Pronta para conectar</Badge>;
+  }
+  return null;
 }

@@ -8,10 +8,13 @@ class IntegrationDefinition:
     group: str
 
     @property
-    def is_connectable(self) -> bool:
-        """True quando existe conector implementado — ou seja, quando o botão
-        "Conectar" leva a um fluxo real. O resto do catálogo mostra que a
-        plataforma é suportada pelo produto, sem prometer conexão que não existe.
+    def connector_provider(self) -> str | None:
+        """Qual conector atende esta plataforma, ou None se ainda não existe.
+
+        É o elo que permite a tela sair do rótulo e oferecer ação: com o
+        provider em mãos, o botão "Conectar" sabe qual fluxo abrir. Sem ele, a
+        listagem só conseguia exibir um selo — que foi exatamente o problema de
+        mostrar "Disponível" sem nada para clicar.
 
         Import local evita ciclo: o registro de conectores é infraestrutura.
         """
@@ -19,7 +22,15 @@ class IntegrationDefinition:
 
         # O id do catálogo e o provider do conector divergem em um caso histórico.
         provider = "mercadolivre" if self.id == "mercado_livre" else self.id
-        return provider in CONNECTOR_PROVIDERS
+        return provider if provider in CONNECTOR_PROVIDERS else None
+
+    @property
+    def is_connectable(self) -> bool:
+        """True quando existe conector implementado — ou seja, quando o botão
+        "Conectar" leva a um fluxo real. O resto do catálogo mostra que a
+        plataforma é suportada pelo produto, sem prometer conexão que não existe.
+        """
+        return self.connector_provider is not None
 
 
 # Catálogo fechado de integrações que a plataforma conhece. A IA seleciona as

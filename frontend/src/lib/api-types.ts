@@ -265,6 +265,9 @@ export interface IntegrationCatalogItem {
   group: string;
   /** Tem conector implementado — só então "Conectar" leva a um fluxo real. */
   connectable: boolean;
+  /** Qual conector atende a plataforma; null quando ainda não existe. É o que
+   * permite a listagem abrir o fluxo certo em vez de só exibir um selo. */
+  provider: string | null;
 }
 
 export interface SegmentTerminology {
