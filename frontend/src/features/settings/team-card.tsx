@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PaginatedList } from "@/components/paginated-list";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -115,8 +116,13 @@ export function TeamCard({ companyId }: { companyId: string }) {
         {/* Membros */}
         <div className="space-y-2">
           <p className="text-sm font-medium">Membros ({members?.length ?? 0})</p>
-          <ul className="divide-y rounded-lg border">
-            {(members ?? []).map((member) => (
+          <PaginatedList
+            as="ul"
+            items={members ?? []}
+            label="membros"
+            className="divide-y rounded-lg border"
+          >
+            {(member) => (
               <li
                 key={member.user_id}
                 className="flex flex-wrap items-center justify-between gap-2 p-3"
@@ -170,16 +176,21 @@ export function TeamCard({ companyId }: { companyId: string }) {
                   )}
                 </div>
               </li>
-            ))}
-          </ul>
+            )}
+          </PaginatedList>
         </div>
 
         {/* Convites pendentes */}
         {(invitations?.length ?? 0) > 0 && (
           <div className="space-y-2">
             <p className="text-sm font-medium">Convites pendentes</p>
-            <ul className="divide-y rounded-lg border">
-              {(invitations ?? []).map((inv) => (
+            <PaginatedList
+              as="ul"
+              items={invitations ?? []}
+              label="convites"
+              className="divide-y rounded-lg border"
+            >
+              {(inv) => (
                 <li key={inv.id} className="flex items-center justify-between gap-2 p-3">
                   <div className="flex min-w-0 items-center gap-2">
                     <Mail className="size-4 shrink-0 text-muted-foreground" />
@@ -201,8 +212,8 @@ export function TeamCard({ companyId }: { companyId: string }) {
                     Revogar
                   </Button>
                 </li>
-              ))}
-            </ul>
+              )}
+            </PaginatedList>
           </div>
         )}
       </CardContent>

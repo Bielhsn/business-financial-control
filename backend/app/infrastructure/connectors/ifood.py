@@ -1,9 +1,12 @@
-"""Conector do iFood: lê as vendas da loja já autorizada e as traduz para
-`NormalizedSale`.
+"""Conector do iFood: autentica a loja e traduz as vendas para `NormalizedSale`.
 
-O fluxo de OAuth (o lojista autorizar a própria loja) já é resolvido pelo
-framework genérico — este conector cuida do passo seguinte: usar o token de
-acesso guardado para buscar as vendas na API do iFood.
+Ao contrário dos outros provedores OAuth da plataforma, o iFood **não** tem
+authorization-code por redirect — não existe endpoint `/oauth/authorize`, e
+apontar para ele devolve o 404 do gateway ("no Route matched with those
+values"). O acesso acontece por client_credentials com as chaves do aplicativo
+que o próprio lojista registra no Portal do Desenvolvedor. Por isso a
+autenticação mora aqui, e não no cliente OAuth genérico (que segue o padrão
+snake_case correto para Shopify e Mercado Livre).
 
 Sobre o mapeamento: os nomes dos campos seguem a documentação da API do iFood
 (Merchant + Financial). Como o formato exato precisa ser confirmado contra uma
@@ -23,6 +26,7 @@ from app.domain.connector.entities import NormalizedSale
 # Base da API do iFood. Parametrizável no construtor para os testes usarem um
 # transporte mock (httpx.MockTransport) sem tocar a rede.
 _DEFAULT_BASE_URL = "https://merchant-api.ifood.com.br"
+_TOKEN_PATH = "/authentication/v1.0/oauth/token"
 _MAX_PAGES = 50
 _PAGE_SIZE = 100
 
@@ -33,7 +37,7 @@ _REFUND_TYPES = frozenset(
 
 
 class IFoodConnector:
-    """Conector do iFood: autentica com o token OAuth já autorizado e traduz o
+    """Conector do iFood: troca as chaves do aplicativo por um token e traduz o
     histórico de vendas para `NormalizedSale`."""
 
     provider = "ifood"
@@ -50,23 +54,64 @@ class IFoodConnector:
     def _client(self) -> httpx.AsyncClient:
         return httpx.AsyncClient(timeout=30.0, transport=self._transport)
 
-    @staticmethod
-    def _access_token(credentials: dict[str, str]) -> str:
+    async def _resolve_token(self, client: httpx.AsyncClient, credentials: dict[str, str]) -> str:
+        """Obtém o token de acesso. O caminho normal é trocar Client ID/Secret por
+        um token; um `access_token` já guardado é aceito para conexões antigas."""
+        client_id = credentials.get("client_id", "").strip()
+        client_secret = credentials.get("client_secret", "").strip()
+        if client_id and client_secret:
+            return await self._request_token(client, client_id, client_secret)
+
         token = credentials.get("access_token", "")
         if not token:
-            raise ConnectorError("Conexão com o iFood expirada ou incompleta. Reconecte a loja.")
+            raise ConnectorError(
+                "Informe o Client ID e o Client Secret do iFood "
+                "(Portal do Desenvolvedor → seu aplicativo). Reconecte a loja."
+            )
+        return token
+
+    async def _request_token(
+        self, client: httpx.AsyncClient, client_id: str, client_secret: str
+    ) -> str:
+        """Autentica pelo modelo centralizado (client_credentials).
+
+        Atenção ao detalhe que não se descobre lendo a especificação de OAuth2: o
+        iFood espera os campos do formulário em **camelCase** (`grantType`,
+        `clientId`, `clientSecret`). Enviar o snake_case do padrão OAuth2 é aceito
+        pela rota e recusado com "Invalid grant type null" — um erro que parece de
+        credencial, mas é de nomenclatura.
+        """
+        try:
+            response = await client.post(
+                f"{self._base_url}{_TOKEN_PATH}",
+                data={
+                    "grantType": "client_credentials",
+                    "clientId": client_id,
+                    "clientSecret": client_secret,
+                },
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+        except httpx.HTTPError as exc:
+            raise ConnectorError("Não foi possível conectar ao iFood.") from exc
+        if response.status_code >= 400:
+            raise ConnectorError(_token_error_message(response))
+
+        payload = response.json()
+        token = payload.get("accessToken") or payload.get("access_token")
+        if not isinstance(token, str) or not token:
+            raise ConnectorError("O iFood não retornou um token de acesso.")
         return token
 
     async def test_connection(self, credentials: dict[str, str]) -> None:
-        token = self._access_token(credentials)
         async with self._client() as client:
+            token = await self._resolve_token(client, credentials)
             await self._list_merchant_ids(client, token, credentials)
 
     async def fetch_sales(
         self, credentials: dict[str, str], *, since: datetime | None
     ) -> list[NormalizedSale]:
-        token = self._access_token(credentials)
         async with self._client() as client:
+            token = await self._resolve_token(client, credentials)
             merchant_ids = await self._list_merchant_ids(client, token, credentials)
             sales: list[NormalizedSale] = []
             for merchant_id in merchant_ids:
@@ -133,6 +178,19 @@ class IFoodConnector:
             if len(records) < _PAGE_SIZE:
                 break
         return sales
+
+
+def _token_error_message(response: httpx.Response) -> str:
+    """O iFood responde `{"error": {"code": ..., "message": ...}}`. Repassar a
+    mensagem original poupa o lojista de adivinhar o que está errado."""
+    detail = ""
+    try:
+        error = response.json().get("error")
+    except ValueError:
+        error = None
+    if isinstance(error, dict) and isinstance(error.get("message"), str):
+        detail = f" ({error['message']})"
+    return f"O iFood recusou as credenciais do aplicativo{detail}."
 
 
 def _extract_records(payload: object) -> list[dict[str, object]]:

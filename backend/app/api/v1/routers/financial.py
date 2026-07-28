@@ -60,6 +60,7 @@ from app.schemas.financial import (
     UpdateCategoryRequest,
     UpdateTransactionRequest,
 )
+from app.schemas.pagination import Page
 
 router = APIRouter(prefix="/companies/{company_id}", tags=["financial"])
 
@@ -284,7 +285,7 @@ async def import_transactions(
     )
 
 
-@router.get("/transactions", response_model=list[FinancialTransactionResponse])
+@router.get("/transactions", response_model=Page[FinancialTransactionResponse])
 async def list_transactions(
     company_context: Annotated[CompanyContext, Depends(get_company_context)],
     transaction_repository: Annotated[
@@ -292,9 +293,25 @@ async def list_transactions(
     ],
     type_filter: Annotated[FinancialCategoryType | None, Query(alias="type")] = None,
     status_filter: Annotated[TransactionStatus | None, Query(alias="status")] = None,
-) -> list[FinancialTransactionResponse]:
-    transactions = await transaction_repository.list_all(type=type_filter, status=status_filter)
-    return [_transaction_to_response(transaction) for transaction in transactions]
+    limit: Annotated[int, Query(ge=1, le=100)] = 5,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> Page[FinancialTransactionResponse]:
+    """Lançamentos paginados no banco.
+
+    É a coleção que mais cresce: uma loja com dois anos de histórico tem
+    milhares de linhas, e devolver todas para desenhar cinco era desperdício de
+    banda e de memória do navegador. O teto de 100 protege o servidor de um
+    cliente pedindo a base inteira de uma vez.
+    """
+    transactions, total = await transaction_repository.list_page(
+        type=type_filter, status=status_filter, limit=limit, offset=offset
+    )
+    return Page(
+        items=[_transaction_to_response(transaction) for transaction in transactions],
+        total=total,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.patch("/transactions/{transaction_id}", response_model=FinancialTransactionResponse)

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, CircleDollarSign, Plus, Wallet, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { DEFAULT_PAGE_SIZE, Pagination } from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -536,11 +537,27 @@ export function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<"all" | FinancialCategoryType>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | TransactionStatus>("all");
 
+  const [page, setPage] = useState(1);
+
   const filters = {
     ...(typeFilter !== "all" ? { type: typeFilter } : {}),
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
   };
-  const { data: transactions, isLoading } = useTransactions(id, filters);
+  // Aqui a paginação é do servidor: o histórico financeiro é a coleção que mais
+  // cresce, e buscar tudo para desenhar cinco linhas não escala.
+  const { data: transactionPage, isLoading } = useTransactions(id, filters, {
+    limit: DEFAULT_PAGE_SIZE,
+    offset: (page - 1) * DEFAULT_PAGE_SIZE,
+  });
+  const transactions = transactionPage?.items ?? [];
+  const total = transactionPage?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / DEFAULT_PAGE_SIZE));
+
+  // Trocar o filtro encolhe o resultado — sem voltar para a primeira página o
+  // usuário cairia numa página que não existe mais e veria a lista vazia.
+  useEffect(() => {
+    setPage(1);
+  }, [typeFilter, statusFilter]);
   const { data: categories } = useCategories(id);
   const categoryNames = useMemo(
     () => new Map((categories ?? []).map((c) => [c.id, c.name])),
@@ -595,10 +612,10 @@ export function TransactionsPage() {
         />
       )}
 
-      {(transactions?.length ?? 0) > 0 && (
+      {total > 0 && (
         <Card>
           <CardContent className="p-0">
-            {(transactions ?? []).map((transaction) => (
+            {transactions.map((transaction) => (
               <TransactionRow
                 key={transaction.id}
                 transaction={transaction}
@@ -607,6 +624,16 @@ export function TransactionsPage() {
                 currency={currency}
               />
             ))}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              rangeStart={(page - 1) * DEFAULT_PAGE_SIZE + 1}
+              rangeEnd={Math.min(page * DEFAULT_PAGE_SIZE, total)}
+              onPageChange={setPage}
+              label="lançamentos"
+              className="px-4 pb-3"
+            />
           </CardContent>
         </Card>
       )}

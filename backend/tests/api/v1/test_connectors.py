@@ -111,7 +111,7 @@ def test_sync_imports_sales_into_financial(
 
     transactions = client.get(
         f"/api/v1/companies/{company_id}/transactions", headers=headers
-    ).json()
+    ).json()["items"]
     assert any(t["amount_cents"] == 19700 and t["status"] == "paid" for t in transactions)
 
 

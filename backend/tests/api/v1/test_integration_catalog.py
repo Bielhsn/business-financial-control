@@ -36,3 +36,29 @@ def test_connectable_reflects_real_connectors(client: TestClient) -> None:
 
 def test_catalog_requires_authentication(client: TestClient) -> None:
     assert client.get("/api/v1/integrations/catalog").status_code == 401
+
+
+def test_catalog_exposes_provider_for_connectable_items(client: TestClient) -> None:
+    """`connectable` sem `provider` seria uma promessa vazia: a tela precisa do
+    provider para saber qual fluxo abrir. Os dois campos andam juntos."""
+    items = client.get("/api/v1/integrations/catalog", headers=_auth_header(client)).json()["items"]
+
+    for item in items:
+        if item["connectable"]:
+            assert item["provider"], f"{item['id']} diz conectável mas não aponta conector"
+        else:
+            assert item["provider"] is None
+
+
+def test_every_connector_provider_is_reachable_from_the_catalog() -> None:
+    """Todo conector implementado precisa aparecer no catálogo. Um conector que
+    existe e não é listado é trabalho pronto que ninguém consegue usar — foi o
+    que aconteceu com a Hotmart."""
+    from app.domain.blueprint.integration_registry import INTEGRATION_REGISTRY
+    from app.domain.connector.registry import CONNECTOR_PROVIDERS
+
+    no_catalogo = {
+        item.connector_provider for item in INTEGRATION_REGISTRY if item.connector_provider
+    }
+
+    assert no_catalogo >= CONNECTOR_PROVIDERS

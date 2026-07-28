@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PaginatedList } from "@/components/paginated-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -472,16 +473,16 @@ export function AgendaPage() {
       )}
 
       {sorted.length > 0 && (
-        <div className="space-y-3">
-          {sorted.map((appointment) => (
+        <PaginatedList items={sorted} label="agendamentos" className="space-y-3">
+          {(appointment) => (
             <AppointmentCard
               key={appointment.id}
               appointment={appointment}
               companyId={id}
               currency={currency}
             />
-          ))}
-        </div>
+          )}
+        </PaginatedList>
       )}
 
       <p className="mt-6 flex items-center gap-1.5 text-xs text-muted-foreground">

@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PaginatedList } from "@/components/paginated-list";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -146,26 +147,28 @@ export function EmployeesPage() {
       {(employees?.length ?? 0) > 0 && (
         <Card>
           <CardContent className="p-0">
-            {(employees ?? []).map((employee) => (
-              <div
-                key={employee.id}
-                className="flex items-center justify-between gap-3 border-b px-5 py-3 last:border-b-0"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-                    {employee.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{employee.name}</p>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {[employee.role_title, employee.email, employee.phone]
-                        .filter(Boolean)
-                        .join(" · ") || "Sem detalhes"}
-                    </p>
+            <PaginatedList items={employees ?? []} label="pessoas" paginationClassName="px-5 pb-3">
+              {(employee) => (
+                <div
+                  key={employee.id}
+                  className="flex items-center justify-between gap-3 border-b px-5 py-3 last:border-b-0"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {employee.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{employee.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {[employee.role_title, employee.email, employee.phone]
+                          .filter(Boolean)
+                          .join(" · ") || "Sem detalhes"}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )}
+            </PaginatedList>
           </CardContent>
         </Card>
       )}

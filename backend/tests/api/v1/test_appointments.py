@@ -82,7 +82,7 @@ def test_completing_appointment_creates_revenue_transaction(client: TestClient) 
 
     transactions = client.get(
         f"/api/v1/companies/{company_id}/transactions", headers=headers
-    ).json()
+    ).json()["items"]
     assert any(t["amount_cents"] == 6000 and t["status"] == "paid" for t in transactions)
 
 

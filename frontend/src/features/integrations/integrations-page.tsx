@@ -4,16 +4,22 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
+import { PaginatedList } from "@/components/paginated-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
-import { ConnectorsCard } from "@/features/integrations/connectors-card";
+import {
+  IntegrationActions,
+  IntegrationStatusBadge,
+} from "@/features/integrations/integration-actions";
+import { useAvailableConnectors, useConnections } from "@/features/integrations/use-connectors";
 import { SalesAnalyticsCard } from "@/features/integrations/sales-analytics-card";
 import { useImportTransactions } from "@/features/integrations/use-import-transactions";
 import { useCompanyCurrency } from "@/features/companies/use-company-currency";
 import { extractErrorMessage } from "@/lib/api";
 import { parseImportCsv, type ImportParseResult } from "@/lib/csv";
+import type { IntegrationCatalogItem } from "@/lib/api-types";
 import { useIntegrationCatalog } from "@/features/integrations/use-integration-catalog";
 import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import { formatCents } from "@/lib/utils";
@@ -160,6 +166,50 @@ function CsvImportCard({ companyId }: { companyId: string }) {
   );
 }
 
+/**
+ * Uma integração na listagem, com o estado verdadeiro da conexão.
+ *
+ * O mesmo componente serve a recomendadas e ao catálogo completo: a diferença
+ * entre as duas listas é de curadoria, não de capacidade — se o conector existe,
+ * dá para conectar dos dois lugares.
+ */
+function IntegrationRow({ item, companyId }: { item: IntegrationCatalogItem; companyId: string }) {
+  const { data: connectors } = useAvailableConnectors(companyId);
+  const { data: connections } = useConnections(companyId);
+
+  const connector = item.provider
+    ? (connectors ?? []).find((c) => c.provider === item.provider)
+    : undefined;
+  const connection = item.provider
+    ? (connections ?? []).find((c) => c.provider === item.provider)
+    : undefined;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
+      <div className="min-w-0">
+        <p className="flex flex-wrap items-center gap-2 text-sm font-medium">
+          {item.name}
+          <IntegrationStatusBadge connector={connector} connection={connection} />
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {connection?.last_synced_at
+            ? `Última sincronização: ${new Date(connection.last_synced_at).toLocaleString("pt-BR")}`
+            : item.group}
+        </p>
+        {connection?.status === "error" && connection.last_error && (
+          <p className="mt-1 text-xs text-destructive">{connection.last_error}</p>
+        )}
+      </div>
+      <IntegrationActions
+        companyId={companyId}
+        name={item.name}
+        connector={connector}
+        connection={connection}
+      />
+    </div>
+  );
+}
+
 export function IntegrationsPage() {
   const { companyId } = useParams<{ companyId: string }>();
   const id = companyId ?? "";
@@ -210,8 +260,6 @@ export function IntegrationsPage() {
       />
 
       <div className="space-y-6">
-        <ConnectorsCard companyId={id} />
-
         <SalesAnalyticsCard companyId={id} />
 
         <CsvImportCard companyId={id} />
@@ -247,24 +295,13 @@ export function IntegrationsPage() {
                 <Wand2 className="size-4 text-primary" /> Recomendadas para o seu segmento
               </CardTitle>
               <CardDescription>
-                Selecionadas pela IA no blueprint da sua empresa — as conexões que fazem sentido
-                real para este tipo de negócio.
+                Escolhidas pelo perfil do seu segmento — as conexões que fazem sentido para este
+                tipo de negócio. As que já têm conector podem ser ligadas aqui mesmo.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <CardContent className="space-y-3">
               {recommended.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-primary/30 bg-accent/40 p-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{item.name}</p>
-                    <p className="text-xs text-muted-foreground">{item.group}</p>
-                  </div>
-                  <Badge variant={item.connectable ? "secondary" : "muted"}>
-                    {item.connectable ? "Disponível" : "Suportado"}
-                  </Badge>
-                </div>
+                <IntegrationRow key={item.id} item={item} companyId={id} />
               ))}
             </CardContent>
           </Card>
@@ -273,8 +310,8 @@ export function IntegrationsPage() {
         {recommended.length === 0 && (
           <Card>
             <CardContent className="py-6 text-center text-sm text-muted-foreground">
-              Gere o blueprint com IA (no onboarding da empresa) para ver aqui as integrações
-              recomendadas para o seu segmento.
+              Informe o segmento da empresa nas configurações para ver aqui as integrações
+              recomendadas para o seu negócio.
             </CardContent>
           </Card>
         )}
@@ -300,20 +337,14 @@ export function IntegrationsPage() {
                     <Plug className="size-4 text-primary" /> {group}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {others
-                    .filter((item) => item.group === group)
-                    .map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center justify-between rounded-lg border p-3"
-                      >
-                        <p className="text-sm font-medium">{item.name}</p>
-                        <Badge variant={item.connectable ? "secondary" : "muted"}>
-                          {item.connectable ? "Disponível" : "Suportado"}
-                        </Badge>
-                      </div>
-                    ))}
+                <CardContent>
+                  <PaginatedList
+                    items={others.filter((item) => item.group === group)}
+                    label="integrações"
+                    className="space-y-3"
+                  >
+                    {(item) => <IntegrationRow key={item.id} item={item} companyId={id} />}
+                  </PaginatedList>
                 </CardContent>
               </Card>
             ))}

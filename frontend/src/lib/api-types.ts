@@ -265,6 +265,9 @@ export interface IntegrationCatalogItem {
   group: string;
   /** Tem conector implementado — só então "Conectar" leva a um fluxo real. */
   connectable: boolean;
+  /** Qual conector atende a plataforma; null quando ainda não existe. É o que
+   * permite a listagem abrir o fluxo certo em vez de só exibir um selo. */
+  provider: string | null;
 }
 
 export interface SegmentTerminology {
@@ -737,4 +740,16 @@ export interface AdminOverviewResponse {
   segments: AdminSegmentMetric[];
   subscriptions: AdminSubscriptionMetrics;
   system: AdminSystemMetrics;
+}
+
+/**
+ * Envelope de listas paginadas no servidor. `total` é quantos registros casam
+ * com o filtro — não quantos vieram nesta página; é ele que permite dizer
+ * "1–5 de 312" e calcular quantas páginas existem.
+ */
+export interface Page<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
 }

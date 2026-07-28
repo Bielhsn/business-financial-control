@@ -79,21 +79,33 @@ CONNECTOR_REGISTRY: tuple[ConnectorDefinition, ...] = (
             client_secret_env="SHOPIFY_CLIENT_SECRET",
         ),
     ),
+    # O iFood NÃO usa authorization-code por redirect: não existe endpoint
+    # `/oauth/authorize` (o gateway responde "no Route matched with those
+    # values"). São dois modelos:
+    #   - centralizado: o lojista registra o próprio aplicativo e usa
+    #     client_credentials para acessar as lojas dele — é o que está aqui;
+    #   - distribuído: o integrador atende lojas de terceiros e a autorização
+    #     acontece por `userCode` (o lojista digita um código no portal do
+    #     iFood), o que exige homologação do app como distribuidor.
+    # Por isso o iFood entra como "credentials" (o lojista cola as chaves do
+    # aplicativo dele), e não pelo fluxo genérico de OAuth por redirect.
     ConnectorDefinition(
         provider="ifood",
         name="iFood",
         group="Delivery",
         description="Sincroniza pedidos, cancelamentos e repasses do iFood.",
-        credential_fields=(),
-        capabilities=("sales", "orders", "refunds", "cancellations"),
-        auth_type="oauth",
-        oauth=OAuthConfig(
-            authorize_url="https://merchant-api.ifood.com.br/authentication/v1.0/oauth/authorize",
-            token_url="https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token",
-            scopes=("merchant", "order"),
-            client_id_env="IFOOD_CLIENT_ID",
-            client_secret_env="IFOOD_CLIENT_SECRET",
+        credential_fields=(
+            CredentialField(
+                "client_id",
+                "Client ID",
+                secret=False,
+                help_text=(
+                    "Portal do Desenvolvedor iFood → seu aplicativo → Credenciais. " "É um UUID."
+                ),
+            ),
+            CredentialField("client_secret", "Client Secret", secret=True),
         ),
+        capabilities=("sales", "orders", "refunds", "cancellations"),
     ),
 )
 

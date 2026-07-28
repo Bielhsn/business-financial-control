@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { DEFAULT_PAGE_SIZE } from "@/components/ui/pagination";
 import { api } from "@/lib/api";
 import type {
+  Page,
   FinancialCategoryResponse,
   FinancialCategoryType,
   FinancialTransactionResponse,
@@ -41,16 +43,33 @@ export interface TransactionFilters {
   status?: TransactionStatus;
 }
 
-export function useTransactions(companyId: string, filters: TransactionFilters = {}) {
+/**
+ * Lançamentos paginados no servidor.
+ *
+ * É a coleção que mais cresce — uma loja com anos de histórico tem milhares de
+ * linhas. Buscar tudo para desenhar cinco desperdiça banda e memória do
+ * navegador, então a página vai como parâmetro e o total volta junto para a
+ * interface saber quantas páginas existem.
+ *
+ * `placeholderData` mantém a página anterior na tela durante a troca: sem isso
+ * a lista pisca em branco a cada clique na paginação.
+ */
+export function useTransactions(
+  companyId: string,
+  filters: TransactionFilters = {},
+  page: { limit: number; offset: number } = { limit: DEFAULT_PAGE_SIZE, offset: 0 },
+) {
+  const params = { ...filters, limit: page.limit, offset: page.offset };
   return useQuery({
-    queryKey: ["companies", companyId, "transactions", filters],
+    queryKey: ["companies", companyId, "transactions", params],
     queryFn: async () => {
-      const { data } = await api.get<FinancialTransactionResponse[]>(
+      const { data } = await api.get<Page<FinancialTransactionResponse>>(
         `/companies/${companyId}/transactions`,
-        { params: filters },
+        { params },
       );
       return data;
     },
+    placeholderData: (previous) => previous,
   });
 }
 
