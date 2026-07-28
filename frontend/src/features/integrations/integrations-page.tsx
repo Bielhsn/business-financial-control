@@ -200,7 +200,12 @@ function IntegrationRow({ item, companyId }: { item: IntegrationCatalogItem; com
           <p className="mt-1 text-xs text-destructive">{connection.last_error}</p>
         )}
       </div>
-      <IntegrationActions companyId={companyId} connector={connector} connection={connection} />
+      <IntegrationActions
+        companyId={companyId}
+        name={item.name}
+        connector={connector}
+        connection={connection}
+      />
     </div>
   );
 }

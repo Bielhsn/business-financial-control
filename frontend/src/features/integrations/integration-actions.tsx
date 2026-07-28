@@ -8,11 +8,17 @@
  *
  * Aqui a decisão é uma só e vale para qualquer lugar que liste integrações:
  *
- *   sem conector          → diz que ainda não conecta, sem prometer botão
+ *   sem conector ainda    → "Conectar" abre o que falta e a alternativa por CSV
  *   conector, sem conexão → "Conectar" abre o fluxo certo (credenciais ou OAuth)
  *   conectada             → "Sincronizar" e "Desconectar", com o status real
  *
- * O estado vem das conexões persistidas no backend, não de um rótulo fixo.
+ * O botão aparece em todas para a afordância ser uniforme — quem usa não
+ * deveria ter que descobrir quais integrações "têm botão". O que muda é o que o
+ * clique entrega, e nunca é um beco sem saída nem um sucesso falso.
+ *
+ * O estado vem das conexões persistidas no backend, não de um rótulo fixo:
+ * assim que o conector de um provedor entra no registro, esta tela passa a
+ * mostrar o fluxo real sozinha.
  */
 import { Link2, RefreshCw, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -245,24 +251,67 @@ function ConnectedActions({
   );
 }
 
+/**
+ * Botão de conexão para plataformas cujo conector ainda está sendo construído.
+ *
+ * A afordância fica igual à das demais — quem usa não deveria ter que descobrir
+ * quais integrações "têm botão" —, mas o clique não finge sucesso: abre o que
+ * falta para ligar aquela plataforma e o caminho que já funciona enquanto isso.
+ * Um botão que não faz nada ao ser clicado seria pior que nenhum botão.
+ *
+ * Quando o conector do provedor entrar no registro do backend, esta tela passa
+ * a mostrar o fluxo real sozinha, sem alteração aqui.
+ */
+function PendingConnectDialog({ name }: { name: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button size="sm" variant="outline">
+          <Link2 /> Conectar
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Conectar {name}</DialogTitle>
+          <DialogDescription>
+            A conexão automática com {name} está em construção. Assim que o conector for liberado, o
+            botão abre a autorização aqui mesmo — sem você precisar refazer nada.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+          <p className="font-medium">Enquanto isso</p>
+          <p className="mt-1 text-muted-foreground">
+            A importação de CSV cobre qualquer plataforma que exporte planilhas: exporte o extrato
+            de vendas do {name} e traga por “Importar extrato (CSV)” nesta mesma página.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => setOpen(false)}>
+            Entendi
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function IntegrationActions({
   companyId,
+  name,
   connector,
   connection,
 }: {
   companyId: string;
+  /** Nome da plataforma — usado quando ainda não há conector para nomeá-la. */
+  name: string;
   /** Ausente quando a plataforma ainda não tem conector implementado. */
   connector: ConnectorDefinitionResponse | undefined;
   connection: ConnectionResponse | undefined;
 }) {
-  // Sem conector, ser honesto vale mais que um selo bonito: prometer
-  // "Disponível" para algo que não conecta é o defeito que estamos corrigindo.
   if (!connector) {
-    return (
-      <Badge variant="muted" title="Ainda não há conexão automática para esta plataforma">
-        Sem conexão automática
-      </Badge>
-    );
+    return <PendingConnectDialog name={name} />;
   }
   if (connection) {
     return <ConnectedActions companyId={companyId} connector={connector} connection={connection} />;
@@ -292,5 +341,5 @@ export function IntegrationStatusBadge({
   if (connector) {
     return <Badge variant="secondary">Pronta para conectar</Badge>;
   }
-  return null;
+  return <Badge variant="muted">Em construção</Badge>;
 }
