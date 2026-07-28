@@ -99,6 +99,33 @@ class BeanieFinancialTransactionRepository:
         documents = await FinancialTransactionDocument.find(query).to_list()
         return [_to_entity(document) for document in documents]
 
+    async def list_page(
+        self,
+        *,
+        type: FinancialCategoryType | None = None,
+        status: TransactionStatus | None = None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[FinancialTransaction], int]:
+        query: dict[str, object] = {"company_id": get_current_company_id()}
+        if type is not None:
+            query["type"] = type.value
+        if status is not None:
+            query["status"] = status.value
+
+        # Ordem estável: mais recentes primeiro, com o id como desempate. Sem o
+        # desempate, dois lançamentos criados no mesmo instante podem trocar de
+        # lugar entre uma página e outra — e um deles some da listagem.
+        cursor = (
+            FinancialTransactionDocument.find(query)
+            .sort("-created_at", "-_id")
+            .skip(offset)
+            .limit(limit)
+        )
+        documents = await cursor.to_list()
+        total = await FinancialTransactionDocument.find(query).count()
+        return [_to_entity(document) for document in documents], total
+
     async def list_paid_for_client(self, client_id: str) -> list[FinancialTransaction]:
         documents = await FinancialTransactionDocument.find(
             {

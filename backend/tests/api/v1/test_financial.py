@@ -176,7 +176,66 @@ def test_create_and_list_transactions(client: TestClient) -> None:
 
     list_response = client.get(f"/api/v1/companies/{company_id}/transactions", headers=headers)
     assert list_response.status_code == 200
-    assert len(list_response.json()) == 1
+    page = list_response.json()
+    assert len(page["items"]) == 1
+    assert page["total"] == 1
+
+
+def test_transactions_are_paginated_server_side(client: TestClient) -> None:
+    """A tela mostra 5 por vez, mas nenhum registro pode ficar inalcançável:
+    percorrendo as páginas o conjunto tem que fechar com o total, sem repetir
+    nem perder linha."""
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+    category_id = _create_category(client, headers, company_id)
+
+    for n in range(12):
+        client.post(
+            f"/api/v1/companies/{company_id}/transactions",
+            json={
+                "category_id": category_id,
+                "type": "income",
+                "amount_cents": 1000 + n,
+                "description": f"Atendimento {n}",
+            },
+            headers=headers,
+        )
+
+    primeira = client.get(
+        f"/api/v1/companies/{company_id}/transactions?limit=5&offset=0", headers=headers
+    ).json()
+    assert primeira["total"] == 12
+    assert primeira["limit"] == 5
+    assert len(primeira["items"]) == 5
+
+    vistos: list[str] = []
+    for offset in (0, 5, 10):
+        pagina = client.get(
+            f"/api/v1/companies/{company_id}/transactions?limit=5&offset={offset}",
+            headers=headers,
+        ).json()
+        vistos.extend(item["id"] for item in pagina["items"])
+
+    assert len(vistos) == 12
+    assert len(set(vistos)) == 12  # nenhuma linha repetida entre páginas
+
+    # A última página fecha com o resto, sem estourar.
+    ultima = client.get(
+        f"/api/v1/companies/{company_id}/transactions?limit=5&offset=10", headers=headers
+    ).json()
+    assert len(ultima["items"]) == 2
+
+
+def test_transactions_pagination_rejects_abusive_limit(client: TestClient) -> None:
+    """O teto protege o servidor de um cliente pedindo a base inteira."""
+    headers = _auth_header(client, "dono@example.com")
+    company_id = _create_company(client, headers)
+
+    response = client.get(
+        f"/api/v1/companies/{company_id}/transactions?limit=5000", headers=headers
+    )
+
+    assert response.status_code == 422
 
 
 def test_create_transaction_rejects_mismatched_category_type(client: TestClient) -> None:
@@ -405,7 +464,7 @@ def test_import_transactions_in_bulk(client: TestClient) -> None:
     assert body["categories_created"] == 2  # "Vendas" + "Importados"
 
     list_response = client.get(f"/api/v1/companies/{company_id}/transactions", headers=headers)
-    assert len(list_response.json()) == 2
+    assert len(list_response.json()["items"]) == 2
 
 
 def test_import_rejects_zero_amount(client: TestClient) -> None:

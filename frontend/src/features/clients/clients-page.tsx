@@ -16,6 +16,7 @@ import { z } from "zod";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PaginatedList } from "@/components/paginated-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -584,8 +585,8 @@ function ClientReturnView({
         A última visita é preenchida sozinha quando você registra uma venda paga do cliente no
         Financeiro. Use “Registrar atendimento” apenas para visitas sem venda.
       </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {sorted.map((client) => (
+      <PaginatedList items={sorted} label="clientes" className="grid gap-3 sm:grid-cols-2">
+        {(client) => (
           <ClientReturnCard
             key={client.id}
             client={client}
@@ -593,8 +594,8 @@ function ClientReturnView({
             companyName={companyName}
             messageTemplate={messageTemplate}
           />
-        ))}
-      </div>
+        )}
+      </PaginatedList>
     </div>
   );
 }
@@ -661,14 +662,16 @@ export function ClientsPage() {
       {hasClients && tab === "list" && (
         <Card>
           <CardContent className="p-0">
-            {(clients ?? []).map((client) => (
-              <ClientDetailDialog
-                key={client.id}
-                client={client}
-                companyId={id}
-                customFieldDefs={blueprint?.client_custom_fields ?? []}
-              />
-            ))}
+            <PaginatedList items={clients ?? []} label="clientes" paginationClassName="px-4 pb-3">
+              {(client) => (
+                <ClientDetailDialog
+                  key={client.id}
+                  client={client}
+                  companyId={id}
+                  customFieldDefs={blueprint?.client_custom_fields ?? []}
+                />
+              )}
+            </PaginatedList>
           </CardContent>
         </Card>
       )}

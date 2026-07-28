@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PaginatedList } from "@/components/paginated-list";
 import { Input } from "@/components/ui/input";
 import { useApiKeys, useCreateApiKey, useRevokeApiKey } from "@/features/settings/use-api-keys";
 import { extractErrorMessage } from "@/lib/api";
@@ -80,41 +81,43 @@ export function ApiKeysCard({ companyId }: { companyId: string }) {
           {(keys ?? []).length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhuma chave criada ainda.</p>
           )}
-          {(keys ?? []).map((key) => (
-            <div
-              key={key.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-            >
-              <div className="min-w-0">
-                <p className="flex items-center gap-2 text-sm font-medium">
-                  {key.name}
-                  {key.revoked && <Badge variant="destructive">Revogada</Badge>}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  <code>{key.prefix}…</code> ·{" "}
-                  {key.last_used_at
-                    ? `último uso ${new Date(key.last_used_at).toLocaleDateString("pt-BR")}`
-                    : "nunca usada"}
-                </p>
+          <PaginatedList items={keys ?? []} label="chaves">
+            {(key) => (
+              <div
+                key={key.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
+              >
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    {key.name}
+                    {key.revoked && <Badge variant="destructive">Revogada</Badge>}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <code>{key.prefix}…</code> ·{" "}
+                    {key.last_used_at
+                      ? `último uso ${new Date(key.last_used_at).toLocaleDateString("pt-BR")}`
+                      : "nunca usada"}
+                  </p>
+                </div>
+                {!key.revoked && (
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label={`Revogar ${key.name}`}
+                    onClick={() =>
+                      revokeKey.mutate(key.id, {
+                        onSuccess: () => toast.success("Chave revogada."),
+                        onError: (error) => toast.error(extractErrorMessage(error)),
+                      })
+                    }
+                    disabled={revokeKey.isPending}
+                  >
+                    <Trash2 />
+                  </Button>
+                )}
               </div>
-              {!key.revoked && (
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={`Revogar ${key.name}`}
-                  onClick={() =>
-                    revokeKey.mutate(key.id, {
-                      onSuccess: () => toast.success("Chave revogada."),
-                      onError: (error) => toast.error(extractErrorMessage(error)),
-                    })
-                  }
-                  disabled={revokeKey.isPending}
-                >
-                  <Trash2 />
-                </Button>
-              )}
-            </div>
-          ))}
+            )}
+          </PaginatedList>
         </div>
       </CardContent>
     </Card>

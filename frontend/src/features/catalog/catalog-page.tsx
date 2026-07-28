@@ -8,6 +8,7 @@ import { z } from "zod";
 
 import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { PaginatedList } from "@/components/paginated-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -254,11 +255,9 @@ export function CatalogPage() {
       )}
 
       {(items?.length ?? 0) > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {(items ?? []).map((item) => (
-            <ItemCard key={item.id} item={item} companyId={id} currency={currency} />
-          ))}
-        </div>
+        <PaginatedList items={items ?? []} label="itens" className="grid gap-3 sm:grid-cols-2">
+          {(item) => <ItemCard key={item.id} item={item} companyId={id} currency={currency} />}
+        </PaginatedList>
       )}
     </div>
   );

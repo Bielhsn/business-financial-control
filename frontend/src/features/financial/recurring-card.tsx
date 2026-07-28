@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PaginatedList } from "@/components/paginated-list";
 import {
   Dialog,
   DialogContent,
@@ -274,8 +275,8 @@ export function RecurringCard({ companyId }: { companyId: string }) {
             description="Cadastre despesas e receitas fixas para que virem lançamentos sozinhas."
           />
         ) : (
-          <ul className="divide-y">
-            {items.map((item) => (
+          <PaginatedList as="ul" items={items} label="recorrências" className="divide-y">
+            {(item) => (
               <li key={item.id} className="flex items-center justify-between gap-3 py-3">
                 <div className="min-w-0">
                   <p className="truncate font-medium">{item.description}</p>
@@ -300,8 +301,8 @@ export function RecurringCard({ companyId }: { companyId: string }) {
                   </Button>
                 </div>
               </li>
-            ))}
-          </ul>
+            )}
+          </PaginatedList>
         )}
       </CardContent>
     </Card>

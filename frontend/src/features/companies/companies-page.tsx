@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { PaginatedList } from "@/components/paginated-list";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsPlatformAdmin } from "@/features/admin/use-admin";
 import { useMyCompanies } from "@/features/companies/use-companies";
@@ -76,8 +77,8 @@ export function CompaniesPage() {
         </Card>
       )}
 
-      <div className="space-y-3">
-        {companies?.map(({ company, role }, index) => (
+      <PaginatedList items={companies ?? []} label="empresas" className="space-y-3">
+        {({ company, role }, index) => (
           <motion.div
             key={company.id}
             initial={{ opacity: 0, y: 8 }}
@@ -106,8 +107,8 @@ export function CompaniesPage() {
               </Card>
             </Link>
           </motion.div>
-        ))}
-      </div>
+        )}
+      </PaginatedList>
     </div>
   );
 }

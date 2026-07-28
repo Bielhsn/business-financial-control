@@ -520,6 +520,20 @@ class FakeFinancialTransactionRepository:
             results = [t for t in results if t.status == status]
         return results
 
+    async def list_page(
+        self,
+        *,
+        type: FinancialCategoryType | None = None,
+        status: TransactionStatus | None = None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[FinancialTransaction], int]:
+        results = await self.list_all(type=type, status=status)
+        # Espelha a ordenação do repositório real (mais recentes primeiro): sem
+        # isso o teste passaria com uma ordem que a produção não entrega.
+        results.sort(key=lambda t: (t.created_at, t.id), reverse=True)
+        return results[offset : offset + limit], len(results)
+
     async def update(self, transaction_id: str, **fields: object) -> FinancialTransaction | None:
         transaction = self._transactions.get(transaction_id)
         if transaction is None:

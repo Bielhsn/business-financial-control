@@ -738,3 +738,15 @@ export interface AdminOverviewResponse {
   subscriptions: AdminSubscriptionMetrics;
   system: AdminSystemMetrics;
 }
+
+/**
+ * Envelope de listas paginadas no servidor. `total` é quantos registros casam
+ * com o filtro — não quantos vieram nesta página; é ele que permite dizer
+ * "1–5 de 312" e calcular quantas páginas existem.
+ */
+export interface Page<T> {
+  items: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}

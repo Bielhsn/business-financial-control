@@ -59,6 +59,27 @@ class FinancialTransactionRepository(Protocol):
         status: TransactionStatus | None = None,
     ) -> list[FinancialTransaction]: ...
 
+    async def list_page(
+        self,
+        *,
+        type: FinancialCategoryType | None = None,
+        status: TransactionStatus | None = None,
+        limit: int,
+        offset: int,
+    ) -> tuple[list[FinancialTransaction], int]:
+        """Uma página de lançamentos e o total que casa com o filtro.
+
+        Existe separado de `list_all` porque a tela não precisa — e num negócio
+        com anos de histórico, não aguenta — carregar tudo para mostrar cinco
+        linhas. O total volta junto porque a interface diz "1–5 de 312": sem ele
+        não dá para saber quantas páginas existem.
+
+        A ordenação é responsabilidade da implementação e precisa ser estável;
+        sem ordem definida, o Mongo pode devolver o mesmo registro em duas
+        páginas e omitir outro.
+        """
+        ...
+
     async def list_paid_for_client(self, client_id: str) -> list[FinancialTransaction]: ...
 
     async def update(
