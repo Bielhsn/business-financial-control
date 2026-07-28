@@ -37,9 +37,27 @@ interface ButtonProps
   asChild?: boolean;
 }
 
-function Button({ className, variant, size, asChild = false, ...props }: ButtonProps) {
+/**
+ * `type` é "button" por padrão — de propósito.
+ *
+ * O HTML assume `type="submit"` para todo <button> dentro de um <form>. Isso
+ * transforma qualquer botão auxiliar (adicionar variação, remover linha, marcar
+ * como pago) num gatilho de envio: o formulário submete, a mutação roda e a
+ * modal fecha sozinha no meio do preenchimento. O padrão inverso torna o envio
+ * uma escolha explícita — quem submete declara `type="submit"`.
+ *
+ * Com `asChild` o tipo não é forçado: quem recebe as props é um elemento
+ * arbitrário (Link, div), e "type" nem sempre faz sentido lá.
+ */
+function Button({ className, variant, size, asChild = false, type, ...props }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
-  return <Comp className={cn(buttonVariants({ variant, size, className }))} {...props} />;
+  return (
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      {...(asChild ? (type ? { type } : {}) : { type: type ?? "button" })}
+      {...props}
+    />
+  );
 }
 
 export { Button, buttonVariants };

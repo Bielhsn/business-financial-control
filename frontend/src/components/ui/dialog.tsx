@@ -12,18 +12,29 @@ const DialogClose = DialogPrimitive.Close;
  * Selects, dropdowns e popovers do Radix renderizam em portal — o conteúdo deles
  * fica FORA do DOM do dialog. Sem este guarda, escolher uma opção no select conta
  * como "clique fora" e o dialog inteiro fecha junto, perdendo o que o usuário
- * digitou. Aqui, eventos vindos de qualquer camada flutuante do Radix são
- * ignorados: só clique no overlay de verdade fecha.
+ * digitou. Aqui, eventos vindos de qualquer camada flutuante são ignorados: só
+ * clique no overlay de verdade fecha.
+ *
+ * A lista cobre seletor por atributo do Radix (popper/select/dropdown) e também
+ * o toaster do sonner, que aparece por cima da modal — um aviso de erro que
+ * fechasse o formulário ao ser tocado seria o pior momento possível para perder
+ * o que foi digitado.
  */
+const FLOATING_LAYER_SELECTORS = [
+  "[data-radix-popper-content-wrapper]",
+  "[data-radix-select-content]",
+  "[data-radix-select-viewport]",
+  "[data-radix-menu-content]",
+  "[role='listbox']",
+  "[role='menu']",
+  "[data-sonner-toaster]",
+] as const;
+
 function isInsideFloatingLayer(target: EventTarget | null): boolean {
   if (!(target instanceof Element)) {
     return false;
   }
-  return (
-    target.closest("[data-radix-popper-content-wrapper]") !== null ||
-    target.closest("[role='listbox']") !== null ||
-    target.closest("[role='menu']") !== null
-  );
+  return FLOATING_LAYER_SELECTORS.some((selector) => target.closest(selector) !== null);
 }
 
 function DialogContent({
