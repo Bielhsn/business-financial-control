@@ -151,6 +151,42 @@ async def test_rejected_token_raises_connector_error() -> None:
         )
 
 
+async def test_first_sync_still_sends_a_date_range() -> None:
+    """A consulta financeira do iFood é por período e o intervalo não é
+    opcional — omiti-lo fazia a API recusar com "recusou a consulta de vendas".
+    Na primeira sincronização não há "desde quando", então vai uma janela
+    padrão em vez de nada."""
+    seen: dict[str, str] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/merchants"):
+            return httpx.Response(200, json=[{"id": "m1"}])
+        seen["begin"] = request.url.params.get("beginLocalDate", "")
+        seen["end"] = request.url.params.get("endLocalDate", "")
+        return httpx.Response(200, json={"sales": []})
+
+    await _make_connector(handler, com_chaves=False).fetch_sales({"access_token": "t"}, since=None)
+
+    assert seen["begin"], "sem beginLocalDate a API recusa a consulta"
+    assert seen["end"], "sem endLocalDate a API recusa a consulta"
+    assert seen["begin"] < seen["end"]
+
+
+async def test_sales_error_carries_the_reason_given_by_ifood() -> None:
+    """Um 403 de permissão e um 400 de parâmetro chegavam ao lojista com a mesma
+    frase genérica — sem o motivo original não há o que corrigir."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/merchants"):
+            return httpx.Response(200, json=[{"id": "m1"}])
+        return httpx.Response(403, json={"message": "Access denied to financial scope"})
+
+    with pytest.raises(ConnectorError, match="Access denied to financial scope"):
+        await _make_connector(handler, com_chaves=False).fetch_sales(
+            {"access_token": "t"}, since=None
+        )
+
+
 async def test_since_filter_is_sent_as_begin_local_date() -> None:
     seen: dict[str, str] = {}
 

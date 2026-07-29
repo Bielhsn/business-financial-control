@@ -18,7 +18,7 @@ testes. Assim, no dia em que as credenciais reais existirem, valida-se o formato
 e liga-se a sincronização sem tocar no motor de sync, na API ou no frontend.
 """
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
@@ -31,6 +31,8 @@ _DEFAULT_BASE_URL = "https://merchant-api.ifood.com.br"
 _TOKEN_PATH = "/authentication/v1.0/oauth/token"
 _MAX_PAGES = 50
 _PAGE_SIZE = 100
+# Janela da primeira sincronização, quando ainda não há "desde quando".
+_DEFAULT_WINDOW_DAYS = 90
 
 # `type` do registro financeiro que representa estorno/cancelamento (vira despesa).
 _REFUND_TYPES = frozenset(
@@ -148,9 +150,7 @@ class IFoodConnector:
         except httpx.HTTPError as exc:
             raise ConnectorError("Não foi possível conectar ao iFood.") from exc
         if response.status_code >= 400:
-            raise ConnectorError(
-                "O iFood recusou o acesso à loja (token inválido ou sem permissão)."
-            )
+            raise ConnectorError(_ifood_error_message(response, "o acesso à loja"))
 
         payload = response.json()
         merchants = payload if isinstance(payload, list) else payload.get("merchants", [])
@@ -175,17 +175,25 @@ class IFoodConnector:
     ) -> list[NormalizedSale]:
         headers = {"Authorization": f"Bearer {token}"}
         url = f"{self._base_url}/financial/v3.0/merchants/{merchant_id}/sales"
+        # A consulta financeira do iFood é por período, e o intervalo não é
+        # opcional. Na primeira sincronização não existe "desde quando", então
+        # a janela padrão cobre os últimos meses em vez de omitir as datas — o
+        # que fazia a API recusar a consulta.
+        begin, end = _sales_window(since)
         sales: list[NormalizedSale] = []
         for page in range(1, _MAX_PAGES + 1):
-            params: dict[str, str | int] = {"page": page, "size": _PAGE_SIZE}
-            if since is not None:
-                params["beginLocalDate"] = since.date().isoformat()
+            params: dict[str, str | int] = {
+                "page": page,
+                "size": _PAGE_SIZE,
+                "beginLocalDate": begin,
+                "endLocalDate": end,
+            }
             try:
                 response = await client.get(url, headers=headers, params=params)
             except httpx.HTTPError as exc:
                 raise ConnectorError("Falha ao buscar vendas no iFood.") from exc
             if response.status_code >= 400:
-                raise ConnectorError("O iFood recusou a consulta de vendas.")
+                raise ConnectorError(_ifood_error_message(response, "consultar as vendas"))
 
             records = _extract_records(response.json())
             for record in records:
@@ -197,17 +205,48 @@ class IFoodConnector:
         return sales
 
 
-def _token_error_message(response: httpx.Response) -> str:
-    """O iFood responde `{"error": {"code": ..., "message": ...}}`. Repassar a
-    mensagem original poupa o lojista de adivinhar o que está errado."""
-    detail = ""
+def _sales_window(since: datetime | None) -> tuple[str, str]:
+    """Intervalo da consulta financeira, em datas locais (AAAA-MM-DD)."""
+    end = datetime.now(UTC).date()
+    begin = since.date() if since is not None else end - timedelta(days=_DEFAULT_WINDOW_DAYS)
+    return begin.isoformat(), end.isoformat()
+
+
+def _ifood_detail(response: httpx.Response) -> str:
+    """Extrai a mensagem que o iFood devolveu, nos dois formatos que ele usa:
+    `{"error": {"message": ...}}` na autenticação e `{"message": ...}` no
+    gateway."""
     try:
-        error = response.json().get("error")
+        payload = response.json()
     except ValueError:
-        error = None
-    if isinstance(error, dict) and isinstance(error.get("message"), str):
-        detail = f" ({error['message']})"
-    return f"O iFood recusou as credenciais do aplicativo{detail}."
+        return ""
+    if isinstance(payload, dict):
+        error = payload.get("error")
+        if isinstance(error, dict):
+            nested = error.get("message")
+            if isinstance(nested, str):
+                return nested
+        message = payload.get("message")
+        if isinstance(message, str):
+            return message
+    return ""
+
+
+def _ifood_error_message(response: httpx.Response, acao: str) -> str:
+    """Repassa o motivo dado pelo iFood em vez de um "recusou" genérico.
+
+    Sem o motivo original, um 403 de permissão e um 400 de parâmetro chegam ao
+    lojista com a mesma frase — e não há como saber o que corrigir.
+    """
+    detail = _ifood_detail(response)
+    sufixo = f": {detail}" if detail else "."
+    return f"O iFood recusou {acao} (HTTP {response.status_code}){sufixo}"
+
+
+def _token_error_message(response: httpx.Response) -> str:
+    detail = _ifood_detail(response)
+    sufixo = f" ({detail})" if detail else ""
+    return f"O iFood recusou as credenciais do aplicativo{sufixo}."
 
 
 def _extract_records(payload: object) -> list[dict[str, object]]:
