@@ -20,7 +20,12 @@ def split_credentials(
     for field in definition.credential_fields:
         value = credentials.get(field.key, "").strip()
         if not value:
-            raise ValidationError(f"O campo '{field.label}' é obrigatório.")
+            if field.required:
+                raise ValidationError(f"O campo '{field.label}' é obrigatório.")
+            # Opcional em branco não vira credencial vazia: guardar "" faria o
+            # conector enviar um campo vazio ao provedor, que é diferente de
+            # não enviar — e alguns respondem erro justamente por isso.
+            continue
         if field.secret:
             secrets[field.key] = value
         else:

@@ -495,6 +495,8 @@ export interface CredentialFieldResponse {
   label: string;
   secret: boolean;
   help_text: string | null;
+  /** Nem todo provedor entrega o par completo — campo opcional não barra o envio. */
+  required: boolean;
 }
 
 export interface ConnectorDefinitionResponse {

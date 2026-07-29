@@ -5,7 +5,8 @@ from app.infrastructure.database.mongodb import ping_database
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health")
+# Mesma razão da raiz: a sonda de saúde costuma usar HEAD.
+@router.api_route("/health", methods=["GET", "HEAD"])
 async def health_check() -> dict[str, str]:
     database_status = "ok" if await ping_database() else "unavailable"
     return {"status": "ok", "database": database_status}

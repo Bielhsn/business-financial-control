@@ -1,6 +1,6 @@
 import httpx
 
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
 from app.core.exceptions import AIProviderNotConfiguredError, ValidationError
 from app.domain.connector.oauth import OAuthProvider
 from app.domain.connector.ports import Connector
@@ -21,10 +21,20 @@ _BUILDERS: dict[str, type[Connector]] = {
 }
 
 
-def build_connector(provider: str) -> Connector:
+def build_connector(provider: str, settings: Settings | None = None) -> Connector:
     builder = _BUILDERS.get(provider)
     if builder is None:
         raise ValidationError(f"Provedor de integração '{provider}' não é suportado.")
+
+    # O iFood autentica com as chaves do aplicativo da PLATAFORMA (ver o módulo
+    # do conector): elas vêm do ambiente do servidor, não das credenciais que o
+    # lojista digitou. Os demais conectores usam só o que o lojista informou.
+    if provider == "ifood":
+        resolved = settings or get_settings()
+        return IFoodConnector(
+            client_id=resolved.ifood_client_id,
+            client_secret=resolved.ifood_client_secret,
+        )
     return builder()
 
 

@@ -59,8 +59,10 @@ function CredentialsConnectDialog({
   const connect = useConnectProvider(companyId);
 
   const submit = () => {
+    // Só os campos essenciais barram o envio: alguns provedores entregam
+    // apenas uma das chaves, e exigir a que não existe travaria a conexão.
     for (const field of connector.credential_fields) {
-      if (!values[field.key]?.trim()) {
+      if (field.required && !values[field.key]?.trim()) {
         toast.error(`Informe ${field.label}.`);
         return;
       }
@@ -93,7 +95,12 @@ function CredentialsConnectDialog({
         <div className="space-y-4">
           {connector.credential_fields.map((field) => (
             <div key={field.key} className="space-y-2">
-              <Label htmlFor={`cred-${connector.provider}-${field.key}`}>{field.label}</Label>
+              <Label htmlFor={`cred-${connector.provider}-${field.key}`}>
+                {field.label}
+                {!field.required && (
+                  <span className="ml-1 font-normal text-muted-foreground">(opcional)</span>
+                )}
+              </Label>
               <Input
                 id={`cred-${connector.provider}-${field.key}`}
                 type={field.secret ? "password" : "text"}

@@ -51,6 +51,10 @@ register_exception_handlers(app)
 app.include_router(api_router, prefix=settings.api_v1_prefix)
 
 
-@app.get("/")
+# HEAD junto de GET: balanceadores e monitores de uptime (o health check da
+# Render entre eles) sondam com HEAD, e o `@app.get` do FastAPI — ao contrário
+# de uma rota Starlette pura — não registra HEAD sozinho. Sem isso a sonda leva
+# 405 e enche o log de "Method Not Allowed" num serviço que está saudável.
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root() -> dict[str, str]:
     return {"name": "business-financial-control-api", "status": "ok"}

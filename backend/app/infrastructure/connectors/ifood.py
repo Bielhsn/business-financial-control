@@ -3,10 +3,12 @@
 Ao contrário dos outros provedores OAuth da plataforma, o iFood **não** tem
 authorization-code por redirect — não existe endpoint `/oauth/authorize`, e
 apontar para ele devolve o 404 do gateway ("no Route matched with those
-values"). O acesso acontece por client_credentials com as chaves do aplicativo
-que o próprio lojista registra no Portal do Desenvolvedor. Por isso a
-autenticação mora aqui, e não no cliente OAuth genérico (que segue o padrão
-snake_case correto para Shopify e Mercado Livre).
+values"). O acesso acontece por client_credentials com as chaves do aplicativo da
+plataforma — que são da Aurum, não da loja. O lojista não tem (nem deveria ter)
+credencial de desenvolvedor: ele informa apenas qual loja dele deve ser lida, e
+as chaves ficam no ambiente do servidor. Por isso a autenticação mora aqui, e
+não no cliente OAuth genérico (que segue o padrão snake_case correto para
+Shopify e Mercado Livre).
 
 Sobre o mapeamento: os nomes dos campos seguem a documentação da API do iFood
 (Merchant + Financial). Como o formato exato precisa ser confirmado contra uma
@@ -45,9 +47,16 @@ class IFoodConnector:
     def __init__(
         self,
         *,
+        client_id: str | None = None,
+        client_secret: str | None = None,
         base_url: str = _DEFAULT_BASE_URL,
         transport: httpx.AsyncBaseTransport | None = None,
     ) -> None:
+        # Chaves do aplicativo da Aurum no Portal do Desenvolvedor, vindas do
+        # ambiente do servidor. São da plataforma, não da loja: o lojista informa
+        # apenas qual loja dele deve ser lida.
+        self._client_id = client_id
+        self._client_secret = client_secret
         self._base_url = base_url.rstrip("/")
         self._transport = transport
 
@@ -55,20 +64,25 @@ class IFoodConnector:
         return httpx.AsyncClient(timeout=30.0, transport=self._transport)
 
     async def _resolve_token(self, client: httpx.AsyncClient, credentials: dict[str, str]) -> str:
-        """Obtém o token de acesso. O caminho normal é trocar Client ID/Secret por
-        um token; um `access_token` já guardado é aceito para conexões antigas."""
-        client_id = credentials.get("client_id", "").strip()
-        client_secret = credentials.get("client_secret", "").strip()
-        if client_id and client_secret:
-            return await self._request_token(client, client_id, client_secret)
+        """Obtém o token de acesso com as chaves do aplicativo da plataforma.
+
+        Um `access_token` já guardado ainda é aceito, para conexões criadas antes
+        de as chaves migrarem para o ambiente do servidor.
+        """
+        if self._client_id and self._client_secret:
+            return await self._request_token(client, self._client_id, self._client_secret)
 
         token = credentials.get("access_token", "")
-        if not token:
-            raise ConnectorError(
-                "Informe o Client ID e o Client Secret do iFood "
-                "(Portal do Desenvolvedor → seu aplicativo). Reconecte a loja."
-            )
-        return token
+        if token:
+            return token
+
+        # Falha de configuração da plataforma, não do lojista — a mensagem
+        # precisa dizer isso, senão ele procura um erro que não é dele.
+        raise ConnectorError(
+            "A integração com o iFood ainda não está configurada nesta instalação. "
+            "O responsável pela plataforma precisa definir IFOOD_CLIENT_ID e "
+            "IFOOD_CLIENT_SECRET."
+        )
 
     async def _request_token(
         self, client: httpx.AsyncClient, client_id: str, client_secret: str
@@ -146,7 +160,10 @@ class IFoodConnector:
             if isinstance(m, dict) and isinstance(m.get("id"), str) and m["id"]
         ]
         if not ids:
-            raise ConnectorError("Nenhuma loja iFood encontrada para esta conta.")
+            raise ConnectorError(
+                "Nenhuma loja encontrada. Confirme se a loja está vinculada ao "
+                "aplicativo da Aurum no portal do iFood."
+            )
         return ids
 
     async def _fetch_merchant_sales(

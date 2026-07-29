@@ -32,9 +32,16 @@ _CANCELLATION = {
 _ZERO = {"orderId": "order-zero", "type": "SALE", "bundle": {"total": {"value": 0}}}
 
 
-def _make_connector(handler: object) -> IFoodConnector:
+def _make_connector(handler: object, *, com_chaves: bool = True) -> IFoodConnector:
+    """As chaves são do aplicativo da PLATAFORMA (ambiente do servidor), não da
+    loja. `com_chaves=False` simula a instalação sem configurar."""
     transport = httpx.MockTransport(handler)  # type: ignore[arg-type]
-    return IFoodConnector(base_url=_BASE, transport=transport)
+    return IFoodConnector(
+        client_id="uuid-do-app" if com_chaves else None,
+        client_secret="segredo" if com_chaves else None,
+        base_url=_BASE,
+        transport=transport,
+    )
 
 
 async def test_fetch_sales_maps_orders_and_cancellations() -> None:
@@ -44,7 +51,9 @@ async def test_fetch_sales_maps_orders_and_cancellations() -> None:
             return httpx.Response(200, json=[{"id": "merchant-1", "name": "Lanchonete"}])
         return httpx.Response(200, json={"sales": [_SALE, _CANCELLATION, _ZERO]})
 
-    sales = await _make_connector(handler).fetch_sales({"access_token": "tok-123"}, since=None)
+    sales = await _make_connector(handler, com_chaves=False).fetch_sales(
+        {"access_token": "tok-123"}, since=None
+    )
 
     # O registro de valor zero é ignorado; venda e cancelamento são mapeados.
     assert len(sales) == 2
@@ -76,7 +85,7 @@ async def test_fetch_sales_uses_stored_merchant_id_and_paginates() -> None:
             )
         return httpx.Response(200, json={"sales": [dict(_SALE, orderId="last")]})
 
-    sales = await _make_connector(handler).fetch_sales(
+    sales = await _make_connector(handler, com_chaves=False).fetch_sales(
         {"access_token": "tok", "merchant_id": "merchant-fixo"}, since=None
     )
 
@@ -85,12 +94,16 @@ async def test_fetch_sales_uses_stored_merchant_id_and_paginates() -> None:
     assert any(s.external_id == "last" for s in sales)
 
 
-async def test_missing_credentials_raises_before_request() -> None:
+async def test_platform_without_keys_says_it_is_a_setup_problem() -> None:
+    """Sem IFOOD_CLIENT_ID/SECRET a falha é de configuração da plataforma, não
+    do lojista — a mensagem precisa dizer isso, senão ele procura um erro que
+    não é dele."""
+
     def handler(request: httpx.Request) -> httpx.Response:  # pragma: no cover
         raise AssertionError("não deveria chamar a rede")
 
-    with pytest.raises(ConnectorError, match="Client ID"):
-        await _make_connector(handler).fetch_sales({}, since=None)
+    with pytest.raises(ConnectorError, match="IFOOD_CLIENT_ID"):
+        await _make_connector(handler, com_chaves=False).fetch_sales({}, since=None)
 
 
 async def test_token_request_uses_camel_case_fields() -> None:
@@ -108,9 +121,8 @@ async def test_token_request_uses_camel_case_fields() -> None:
             return httpx.Response(200, json=[{"id": "m1"}])
         return httpx.Response(200, json={"sales": [_SALE]})
 
-    sales = await _make_connector(handler).fetch_sales(
-        {"client_id": "uuid-do-app", "client_secret": "segredo"}, since=None
-    )
+    # O lojista informa só a loja; as chaves vêm da plataforma.
+    sales = await _make_connector(handler).fetch_sales({}, since=None)
 
     assert seen["grantType"] == "client_credentials"
     assert seen["clientId"] == "uuid-do-app"
@@ -126,7 +138,7 @@ async def test_rejected_credentials_surface_ifood_message() -> None:
         )
 
     with pytest.raises(ConnectorError, match="Invalid UUID string"):
-        await _make_connector(handler).test_connection({"client_id": "x", "client_secret": "y"})
+        await _make_connector(handler).test_connection({})
 
 
 async def test_rejected_token_raises_connector_error() -> None:
@@ -134,7 +146,9 @@ async def test_rejected_token_raises_connector_error() -> None:
         return httpx.Response(401, json={"error": "unauthorized"})
 
     with pytest.raises(ConnectorError, match="recusou o acesso"):
-        await _make_connector(handler).test_connection({"access_token": "expired"})
+        await _make_connector(handler, com_chaves=False).test_connection(
+            {"access_token": "expired"}
+        )
 
 
 async def test_since_filter_is_sent_as_begin_local_date() -> None:
@@ -147,5 +161,5 @@ async def test_since_filter_is_sent_as_begin_local_date() -> None:
         return httpx.Response(200, json={"sales": []})
 
     since = datetime(2026, 6, 15, 9, 0, tzinfo=UTC)
-    await _make_connector(handler).fetch_sales({"access_token": "t"}, since=since)
+    await _make_connector(handler, com_chaves=False).fetch_sales({"access_token": "t"}, since=since)
     assert seen["begin"] == "2026-06-15"

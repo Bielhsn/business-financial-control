@@ -12,6 +12,11 @@ class CredentialField:
     label: str
     secret: bool = True
     help_text: str | None = None
+    # Nem todo provedor entrega o par completo: alguns dão só uma chave de API,
+    # outros dispensam o segredo. Pedir um campo que não existe do outro lado
+    # trava a conexão sem motivo, então cada provedor declara o que é essencial.
+    # O padrão é obrigatório — dispensar é a exceção, e precisa ser explícita.
+    required: bool = True
 
 
 @dataclass(frozen=True)
@@ -81,14 +86,18 @@ CONNECTOR_REGISTRY: tuple[ConnectorDefinition, ...] = (
     ),
     # O iFood NÃO usa authorization-code por redirect: não existe endpoint
     # `/oauth/authorize` (o gateway responde "no Route matched with those
-    # values"). São dois modelos:
-    #   - centralizado: o lojista registra o próprio aplicativo e usa
-    #     client_credentials para acessar as lojas dele — é o que está aqui;
-    #   - distribuído: o integrador atende lojas de terceiros e a autorização
-    #     acontece por `userCode` (o lojista digita um código no portal do
-    #     iFood), o que exige homologação do app como distribuidor.
-    # Por isso o iFood entra como "credentials" (o lojista cola as chaves do
-    # aplicativo dele), e não pelo fluxo genérico de OAuth por redirect.
+    # values"). A autenticação é client_credentials com as chaves do APLICATIVO.
+    #
+    # E o aplicativo é da Aurum, não do lojista: quem tem Client ID e Client
+    # Secret é o integrador, registrado uma vez no Portal do Desenvolvedor. O
+    # dono da barbearia não tem — e não deveria ter — credencial de
+    # desenvolvedor; pedir isso a ele significaria cada lojista registrar o
+    # próprio aplicativo no iFood, além de espalhar o segredo da plataforma
+    # entre todos os clientes.
+    #
+    # Por isso as chaves ficam em IFOOD_CLIENT_ID/IFOOD_CLIENT_SECRET (ambiente
+    # do servidor) e o formulário pede só o identificador da loja, que é o que o
+    # lojista realmente tem em mãos.
     ConnectorDefinition(
         provider="ifood",
         name="iFood",
@@ -96,14 +105,14 @@ CONNECTOR_REGISTRY: tuple[ConnectorDefinition, ...] = (
         description="Sincroniza pedidos, cancelamentos e repasses do iFood.",
         credential_fields=(
             CredentialField(
-                "client_id",
-                "Client ID",
+                "merchant_id",
+                "ID da loja",
                 secret=False,
                 help_text=(
-                    "Portal do Desenvolvedor iFood → seu aplicativo → Credenciais. " "É um UUID."
+                    "Portal do Parceiro iFood → sua loja. É o identificador da loja "
+                    "(UUID). A loja precisa estar vinculada ao aplicativo da Aurum."
                 ),
             ),
-            CredentialField("client_secret", "Client Secret", secret=True),
         ),
         capabilities=("sales", "orders", "refunds", "cancellations"),
     ),

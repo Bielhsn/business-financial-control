@@ -10,6 +10,8 @@ class CredentialFieldResponse(BaseModel):
     label: str
     secret: bool
     help_text: str | None
+    # O formulário usa isto para marcar "(opcional)" e não barrar o envio.
+    required: bool = True
 
 
 class ConnectorDefinitionResponse(BaseModel):
