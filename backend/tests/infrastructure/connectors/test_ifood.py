@@ -187,6 +187,25 @@ async def test_sales_error_carries_the_reason_given_by_ifood() -> None:
         )
 
 
+async def test_403_points_to_the_ifood_portal_not_to_the_app() -> None:
+    """403 aqui é sempre autorização: o token é válido (senão 401) e a rota
+    existe (senão 404). Quem lê precisa saber que o lugar de agir é o portal do
+    iFood, não as configurações do Aurum."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/merchants"):
+            return httpx.Response(200, json=[{"id": "m1"}])
+        return httpx.Response(403, json={"message": "User is forbidden to access this resource"})
+
+    with pytest.raises(ConnectorError, match="Portal do Desenvolvedor") as erro:
+        await _make_connector(handler, com_chaves=False).fetch_sales(
+            {"access_token": "t"}, since=None
+        )
+
+    # A mensagem original do iFood continua junto — ela é o que identifica o caso.
+    assert "User is forbidden" in str(erro.value)
+
+
 async def test_since_filter_is_sent_as_begin_local_date() -> None:
     seen: dict[str, str] = {}
 

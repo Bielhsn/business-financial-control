@@ -240,7 +240,18 @@ def _ifood_error_message(response: httpx.Response, acao: str) -> str:
     """
     detail = _ifood_detail(response)
     sufixo = f": {detail}" if detail else "."
-    return f"O iFood recusou {acao} (HTTP {response.status_code}){sufixo}"
+    mensagem = f"O iFood recusou {acao} (HTTP {response.status_code}){sufixo}"
+
+    # 403 aqui é sempre autorização, nunca código: o token é válido (senão viria
+    # 401) e a rota existe (senão viria 404). Dizer só "forbidden" deixa quem lê
+    # sem saber onde agir, e o lugar não é o Aurum — é o portal do iFood.
+    if response.status_code == 403:
+        mensagem += (
+            " Isso é permissão no iFood, não configuração do Aurum: o aplicativo "
+            "precisa ter o módulo financeiro liberado e a loja vinculada a ele no "
+            "Portal do Desenvolvedor."
+        )
+    return mensagem
 
 
 def _token_error_message(response: httpx.Response) -> str:
