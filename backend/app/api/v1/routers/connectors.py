@@ -85,6 +85,7 @@ async def list_available_connectors(
                         label=field.label,
                         secret=field.secret,
                         help_text=field.help_text,
+                        required=field.required,
                     )
                     for field in item.credential_fields
                 ],

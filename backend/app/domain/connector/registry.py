@@ -12,6 +12,11 @@ class CredentialField:
     label: str
     secret: bool = True
     help_text: str | None = None
+    # Nem todo provedor entrega o par completo: alguns dão só uma chave de API,
+    # outros dispensam o segredo. Pedir um campo que não existe do outro lado
+    # trava a conexão sem motivo, então cada provedor declara o que é essencial.
+    # O padrão é obrigatório — dispensar é a exceção, e precisa ser explícita.
+    required: bool = True
 
 
 @dataclass(frozen=True)
@@ -100,10 +105,23 @@ CONNECTOR_REGISTRY: tuple[ConnectorDefinition, ...] = (
                 "Client ID",
                 secret=False,
                 help_text=(
-                    "Portal do Desenvolvedor iFood → seu aplicativo → Credenciais. " "É um UUID."
+                    "Portal do Desenvolvedor iFood → seu aplicativo → Credenciais. É um UUID."
                 ),
             ),
-            CredentialField("client_secret", "Client Secret", secret=True),
+            # Continua obrigatório: a API do iFood responde "Client secret is
+            # mandatory" quando o campo não vai no corpo. O segredo é exibido
+            # uma única vez, no momento em que a credencial é gerada — quem não
+            # o encontra no portal precisa gerar a credencial de novo, não
+            # conectar sem ele.
+            CredentialField(
+                "client_secret",
+                "Client Secret",
+                secret=True,
+                help_text=(
+                    "Aparece uma única vez, quando a credencial é gerada no portal. "
+                    "Se não estiver visível, gere uma nova credencial do aplicativo."
+                ),
+            ),
         ),
         capabilities=("sales", "orders", "refunds", "cancellations"),
     ),
