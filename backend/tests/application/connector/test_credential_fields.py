@@ -67,11 +67,12 @@ def test_required_field_left_blank_still_blocks(monkeypatch) -> None:  # type: i
         split_credentials("provedor_teste", {})
 
 
-def test_ifood_still_requires_the_secret() -> None:
-    """A API do iFood responde "Client secret is mandatory" quando o campo não
-    vai no corpo — verificado contra o endpoint real. Marcar como opcional
-    deixaria o formulário passar para um erro do provedor logo em seguida."""
+def test_ifood_asks_the_merchant_only_for_the_store() -> None:
+    """Client ID e Client Secret são do aplicativo da Aurum, não da loja. Pedi-los
+    ao lojista significaria cada barbearia registrar o próprio aplicativo no
+    iFood — e espalhar o segredo da plataforma entre todos os clientes."""
     ifood = next(item for item in CONNECTOR_REGISTRY if item.provider == "ifood")
-    secret = next(f for f in ifood.credential_fields if f.key == "client_secret")
+    chaves = {field.key for field in ifood.credential_fields}
 
-    assert secret.required is True
+    assert chaves == {"merchant_id"}
+    assert not any(field.secret for field in ifood.credential_fields)
