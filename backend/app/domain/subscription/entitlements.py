@@ -6,6 +6,7 @@ frontend consultam isto para liberar/bloquear recursos.
 """
 
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 from app.domain.subscription.entities import Subscription, SubscriptionStatus
 from app.domain.subscription.plans import (
@@ -22,12 +23,41 @@ from app.domain.subscription.plans import (
 _ENTITLED_STATUSES = frozenset({SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING})
 
 
-def resolve_plan(subscription: Subscription | None) -> PlanDefinition:
-    """Plano efetivo de uma empresa. Sem assinatura, ou inadimplente/cancelada,
-    a empresa fica no plano padrão (Starter)."""
+# Tolerância para assinatura paga cujo período venceu. Processador de pagamento
+# repete cobrança e webhook chega atrasado; cortar o acesso no segundo exato
+# puniria quem está em dia por causa de latência de terceiro. Para o teste
+# gratuito não há tolerância — a data de fim é o combinado.
+_PAYMENT_GRACE = timedelta(days=3)
+
+
+def _is_within_term(subscription: Subscription, now: datetime) -> bool:
+    """O prazo da assinatura ainda vale?
+
+    Havia um buraco silencioso aqui: `trial_ends_at` e `current_period_end`
+    eram gravados e nunca lidos. Um teste iniciado ficava TRIALING para sempre,
+    então todo "teste de 14 dias" era, na prática, plano pago vitalício de
+    graça.
+    """
+    if subscription.status == SubscriptionStatus.TRIALING:
+        return subscription.trial_ends_at is None or now <= subscription.trial_ends_at
+    if subscription.status == SubscriptionStatus.ACTIVE:
+        return (
+            subscription.current_period_end is None
+            or now <= subscription.current_period_end + _PAYMENT_GRACE
+        )
+    return False
+
+
+def resolve_plan(
+    subscription: Subscription | None, *, now: datetime | None = None
+) -> PlanDefinition:
+    """Plano efetivo de uma empresa. Sem assinatura, inadimplente, cancelada ou
+    com o prazo vencido, a empresa fica no plano padrão (Starter)."""
     if subscription is None:
         return default_plan()
     if subscription.status not in _ENTITLED_STATUSES:
+        return default_plan()
+    if not _is_within_term(subscription, now or datetime.now(UTC)):
         return default_plan()
     return get_plan(subscription.tier)
 

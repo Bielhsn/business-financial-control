@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from app.domain.subscription.entities import BillingCycle, Subscription, SubscriptionStatus
 from app.domain.subscription.entitlements import (
@@ -85,3 +85,82 @@ def test_build_entitlements_mirrors_plan() -> None:
     assert ent.tier == PlanTier.PROFESSIONAL
     assert ent.max_members == plan.limits.max_members
     assert ent.features == plan.features
+
+
+# --- O prazo precisa valer ------------------------------------------------
+#
+# `trial_ends_at` e `current_period_end` eram gravados e nunca lidos: um teste
+# iniciado ficava TRIALING para sempre, e todo "teste de 14 dias" virava plano
+# pago vitalício de graça. Mesmo padrão do refresh de OAuth — campo persistido
+# sem ninguém consultar.
+
+
+def _assinatura(
+    status: SubscriptionStatus,
+    *,
+    trial_ends_at: datetime | None = None,
+    current_period_end: datetime | None = None,
+) -> Subscription:
+    agora = datetime.now(UTC)
+    return Subscription(
+        id="sub-1",
+        company_id="empresa-1",
+        tier=PlanTier.PROFESSIONAL,
+        status=status,
+        billing_cycle=BillingCycle.MONTHLY,
+        started_at=agora,
+        updated_at=agora,
+        trial_ends_at=trial_ends_at,
+        current_period_end=current_period_end,
+    )
+
+
+def test_expired_trial_falls_back_to_the_free_plan() -> None:
+    vencido = _assinatura(
+        SubscriptionStatus.TRIALING, trial_ends_at=datetime.now(UTC) - timedelta(days=1)
+    )
+
+    assert resolve_plan(vencido).tier == PlanTier.STARTER
+
+
+def test_trial_still_running_keeps_the_paid_plan() -> None:
+    vigente = _assinatura(
+        SubscriptionStatus.TRIALING, trial_ends_at=datetime.now(UTC) + timedelta(days=5)
+    )
+
+    assert resolve_plan(vigente).tier == PlanTier.PROFESSIONAL
+
+
+def test_paid_subscription_keeps_a_short_grace_after_the_period() -> None:
+    """Processador repete cobrança e webhook atrasa. Cortar no segundo exato
+    puniria quem está em dia por causa de latência de terceiro."""
+    recem_vencida = _assinatura(
+        SubscriptionStatus.ACTIVE, current_period_end=datetime.now(UTC) - timedelta(days=1)
+    )
+
+    assert resolve_plan(recem_vencida).tier == PlanTier.PROFESSIONAL
+
+
+def test_paid_subscription_expires_after_the_grace() -> None:
+    abandonada = _assinatura(
+        SubscriptionStatus.ACTIVE, current_period_end=datetime.now(UTC) - timedelta(days=30)
+    )
+
+    assert resolve_plan(abandonada).tier == PlanTier.STARTER
+
+
+def test_subscription_without_deadline_is_not_treated_as_expired() -> None:
+    """Assinatura sem data (ex.: cortesia) não pode ser derrubada por engano."""
+    sem_prazo = _assinatura(SubscriptionStatus.ACTIVE)
+
+    assert resolve_plan(sem_prazo).tier == PlanTier.PROFESSIONAL
+
+
+def test_features_follow_the_expired_plan() -> None:
+    """Não basta o plano cair: o recurso pago precisa fechar junto, senão a
+    expiração seria cosmética."""
+    vencido = _assinatura(
+        SubscriptionStatus.TRIALING, trial_ends_at=datetime.now(UTC) - timedelta(days=1)
+    )
+
+    assert has_feature(vencido, Feature.WHITE_LABEL) is False
