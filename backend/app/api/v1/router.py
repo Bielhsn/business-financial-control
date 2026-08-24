@@ -10,6 +10,7 @@ from app.api.v1.routers import (
     appointment,
     audit,
     auth,
+    billing,
     blueprint,
     catalog,
     clients,
@@ -34,6 +35,7 @@ from app.api.v1.routers import (
 )
 
 api_router = APIRouter()
+api_router.include_router(billing.router)
 api_router.include_router(health.router)
 api_router.include_router(auth.router)
 api_router.include_router(companies.router)

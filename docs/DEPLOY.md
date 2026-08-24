@@ -197,6 +197,23 @@ repositório — a base já está pronta.
 - [ ] `PLATFORM_ADMIN_EMAILS` com o seu e-mail (para o painel admin)
 - [ ] Credenciais das integrações OAuth (quando for ligá-las)
 
+## Cobrança recorrente (Asaas)
+
+Sem `ASAAS_API_KEY`, contratar plano pago responde 503 de forma limpa — o
+produto funciona, mas ninguém é cobrado.
+
+- `ASAAS_API_KEY` — chave da conta.
+- `ASAAS_WEBHOOK_TOKEN` — token combinado no painel do Asaas. **Sem ele o
+  webhook recusa tudo**, de propósito: aceitar aviso não verificado deixaria
+  qualquer um que descubra a URL marcar a própria assinatura como paga.
+- `ASAAS_SANDBOX` — `true` (padrão) usa o ambiente de teste.
+
+No painel do Asaas, aponte o webhook para
+`https://SEU-BACKEND/api/v1/billing/webhook` e use o mesmo token.
+
+Quem decide o status da assinatura é o webhook, não o checkout: a assinatura
+nasce como `past_due` e só vira `active` quando o pagamento é confirmado.
+
 ## Sincronização automática das integrações
 
 Sem `SYNC_INTERVAL_MINUTES`, as vendas só entram quando alguém clica em

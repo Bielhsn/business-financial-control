@@ -17,6 +17,7 @@ def _to_entity(document: SubscriptionDocument) -> Subscription:
         trial_ends_at=document.trial_ends_at,
         current_period_end=document.current_period_end,
         cancel_at_period_end=document.cancel_at_period_end,
+        external_id=document.external_id,
     )
 
 
@@ -37,6 +38,7 @@ class BeanieSubscriptionRepository:
         trial_ends_at: datetime | None,
         current_period_end: datetime | None,
         cancel_at_period_end: bool,
+        external_id: str | None = None,
     ) -> Subscription:
         now = datetime.now(UTC)
         document = await SubscriptionDocument.find_one(
@@ -53,6 +55,7 @@ class BeanieSubscriptionRepository:
                 trial_ends_at=trial_ends_at,
                 current_period_end=current_period_end,
                 cancel_at_period_end=cancel_at_period_end,
+                external_id=external_id,
             )
             await document.insert()
         else:
@@ -63,8 +66,18 @@ class BeanieSubscriptionRepository:
             document.trial_ends_at = trial_ends_at
             document.current_period_end = current_period_end
             document.cancel_at_period_end = cancel_at_period_end
+            # Só sobrescreve quando veio: uma troca de plano interna não pode
+            # apagar o vínculo com a cobrança já criada no provedor.
+            if external_id is not None:
+                document.external_id = external_id
             await document.save()
         return _to_entity(document)
+
+    async def get_by_external_id(self, external_id: str) -> Subscription | None:
+        document = await SubscriptionDocument.find_one(
+            SubscriptionDocument.external_id == external_id
+        )
+        return _to_entity(document) if document else None
 
     async def list_all(self) -> list[Subscription]:
         documents = await SubscriptionDocument.find_all().to_list()
