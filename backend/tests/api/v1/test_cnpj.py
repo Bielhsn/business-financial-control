@@ -1,10 +1,12 @@
 from fastapi.testclient import TestClient
 
+from tests.registration import register_payload
+
 
 def _auth_header(client: TestClient, email: str = "dono@example.com") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "s3cr3t!!", "full_name": "Usuário Teste"},
+        json=register_payload(email, "s3cr3t!!", "Usuário Teste"),
     )
     login = client.post("/api/v1/auth/login", json={"email": email, "password": "s3cr3t!!"})
     return {"Authorization": f"Bearer {login.json()['access_token']}"}

@@ -5,15 +5,23 @@ from fastapi.testclient import TestClient
 
 from app.api.v1 import deps
 from app.core.config import Settings, get_settings
+from app.core.exceptions import NotFoundError
 from app.domain.auth.google import GoogleIdentity
+from app.domain.company.cnpj_lookup import CnpjInfo
 from app.main import app
-from tests.fakes import FakeEmailSender, FakeGoogleTokenVerifier, FakeVerificationCodeRepository
+from tests.fakes import (
+    FakeCnpjLookup,
+    FakeEmailSender,
+    FakeGoogleTokenVerifier,
+    FakeVerificationCodeRepository,
+)
+from tests.registration import register_payload, valid_cnpj
 
 
 def _register_and_token(client: TestClient, email: str = "ana@example.com") -> str:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "s3cr3t!!", "full_name": "Ana"},
+        json=register_payload(email, "s3cr3t!!", "Ana"),
     )
     login = client.post("/api/v1/auth/login", json={"email": email, "password": "s3cr3t!!"})
     return login.json()["access_token"]
@@ -200,6 +208,10 @@ def test_login_blocked_when_verification_required_and_unverified(
     # Sobrescreve settings com a política de verificação LIGADA.
     from tests.fakes import (
         FakeAuditLogRepository,
+        FakeCnpjLookup,
+        FakeCompanyMembershipRepository,
+        FakeCompanyRepository,
+        FakeFinancialCategoryRepository,
         FakePasswordHasher,
         FakeRefreshTokenRepository,
         FakeTokenService,
@@ -221,12 +233,22 @@ def test_login_blocked_when_verification_required_and_unverified(
         lambda: fake_verification_code_repository
     )
     app.dependency_overrides[deps.get_email_sender] = lambda: FakeEmailSender()
+    # O cadastro cria a empresa junto com a conta, então precisa dos
+    # repositórios de empresa e do consultor de CNPJ também.
+    app.dependency_overrides[deps.get_company_repository] = lambda: FakeCompanyRepository()
+    app.dependency_overrides[deps.get_company_membership_repository] = (
+        lambda: FakeCompanyMembershipRepository()
+    )
+    app.dependency_overrides[deps.get_financial_category_repository] = (
+        lambda: FakeFinancialCategoryRepository()
+    )
+    app.dependency_overrides[deps.get_cnpj_lookup] = lambda: FakeCnpjLookup()
     try:
         # Sem "with": não dispara o lifespan (que exigiria MongoDB real).
         isolated = TestClient(app)
         isolated.post(
             "/api/v1/auth/register",
-            json={"email": "b@example.com", "password": "s3cr3t!!", "full_name": "B"},
+            json=register_payload("b@example.com", "s3cr3t!!", "B"),
         )
         login = isolated.post(
             "/api/v1/auth/login", json={"email": "b@example.com", "password": "s3cr3t!!"}
@@ -241,13 +263,13 @@ def test_register_stores_contact_and_role(client: TestClient) -> None:
     contexto (produto e IA). Ambos opcionais — não travam o onboarding."""
     response = client.post(
         "/api/v1/auth/register",
-        json={
-            "email": "gestor@example.com",
-            "password": "s3cr3t!!",
-            "full_name": "Gabriel Henrique",
-            "phone": "11999998888",
-            "job_role": "Dono",
-        },
+        json=register_payload(
+            "gestor@example.com",
+            "s3cr3t!!",
+            "Gabriel Henrique",
+            phone="11999998888",
+            job_role="Dono",
+        ),
     )
 
     assert response.status_code == 201
@@ -259,9 +281,95 @@ def test_register_stores_contact_and_role(client: TestClient) -> None:
 def test_register_without_optional_fields_still_works(client: TestClient) -> None:
     response = client.post(
         "/api/v1/auth/register",
-        json={"email": "simples@example.com", "password": "s3cr3t!!", "full_name": "Ana"},
+        json=register_payload("simples@example.com", "s3cr3t!!", "Ana"),
     )
 
     assert response.status_code == 201
     assert response.json()["phone"] is None
     assert response.json()["job_role"] is None
+
+
+# --- Cadastro em um passo: conta + primeira empresa ----------------------
+
+
+def test_register_creates_the_first_company(client: TestClient) -> None:
+    """A conta não nasce mais sem empresa. Antes, quem abandonasse o onboarding
+    ficava com um login que não levava a lugar nenhum."""
+    response = client.post(
+        "/api/v1/auth/register",
+        json=register_payload("dono@example.com", full_name="Gabriel", company_name="Barbearia X"),
+    )
+    assert response.status_code == 201
+
+    token = client.post(
+        "/api/v1/auth/login", json={"email": "dono@example.com", "password": "s3cr3t!!"}
+    ).json()["access_token"]
+    empresas = client.get("/api/v1/companies", headers={"Authorization": f"Bearer {token}"}).json()
+
+    assert len(empresas) == 1
+    assert empresas[0]["company"]["name"] == "Barbearia X"
+    assert empresas[0]["role"] == "owner"
+
+
+def test_register_rejects_mismatched_password_confirmation(client: TestClient) -> None:
+    """A comparação do frontend é conveniência, não garantia: qualquer cliente
+    pode enviar o par divergente direto na API."""
+    payload = register_payload("ana@example.com")
+    payload["password_confirmation"] = "outra-senha-bem-diferente"
+
+    response = client.post("/api/v1/auth/register", json=payload)
+
+    assert response.status_code == 422
+    assert "senhas não conferem" in response.text.lower()
+
+
+def test_register_rejects_cnpj_already_used_by_another_account(client: TestClient) -> None:
+    cnpj = valid_cnpj()
+    primeiro = client.post(
+        "/api/v1/auth/register", json=register_payload("um@example.com", cnpj=cnpj)
+    )
+    assert primeiro.status_code == 201
+
+    segundo = client.post(
+        "/api/v1/auth/register", json=register_payload("dois@example.com", cnpj=cnpj)
+    )
+
+    assert segundo.status_code == 409
+    assert "já está cadastrado" in segundo.json()["message"]
+
+
+def test_rejected_cnpj_leaves_no_orphan_account(
+    client: TestClient, fake_cnpj_lookup: FakeCnpjLookup
+) -> None:
+    """A ordem das operações é a parte que importa: validar depois de gravar
+    deixaria uma conta sem empresa toda vez que o CNPJ fosse recusado."""
+
+    async def nao_encontrado(cnpj: str) -> CnpjInfo:
+        raise NotFoundError("CNPJ não encontrado na base da Receita.")
+
+    fake_cnpj_lookup.fetch = nao_encontrado  # type: ignore[method-assign]
+
+    falhou = client.post("/api/v1/auth/register", json=register_payload("orfa@example.com"))
+    assert falhou.status_code == 422
+
+    # A conta não pode ter sobrado: o e-mail continua livre.
+    fake_cnpj_lookup.fetch = FakeCnpjLookup().fetch  # type: ignore[method-assign]
+    de_novo = client.post("/api/v1/auth/register", json=register_payload("orfa@example.com"))
+    assert de_novo.status_code == 201
+
+
+def test_register_prefills_company_from_the_receita(client: TestClient) -> None:
+    """Cidade, estado e razão social vêm da consulta — o dono não redigita o que
+    a Receita já informou."""
+    client.post("/api/v1/auth/register", json=register_payload("dono@example.com"))
+    token = client.post(
+        "/api/v1/auth/login", json={"email": "dono@example.com", "password": "s3cr3t!!"}
+    ).json()["access_token"]
+
+    empresa = client.get("/api/v1/companies", headers={"Authorization": f"Bearer {token}"}).json()[
+        0
+    ]["company"]
+
+    assert empresa["city"] == "São Paulo"
+    assert empresa["state"] == "SP"
+    assert empresa["legal_name"] == "Empresa Exemplo LTDA"

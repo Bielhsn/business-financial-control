@@ -2,6 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from tests.fakes import FakeUserRepository
+from tests.registration import register_payload
 
 REGISTER_URL = "/api/v1/auth/register"
 LOGIN_URL = "/api/v1/auth/login"
@@ -15,7 +16,7 @@ def _register(
 ) -> None:
     response = client.post(
         REGISTER_URL,
-        json={"email": email, "password": password, "full_name": "Ana Silva"},
+        json=register_payload(email, password, "Ana Silva"),
     )
     assert response.status_code == 201
 
@@ -23,7 +24,7 @@ def _register(
 def test_register_creates_a_user_and_hides_the_password(client: TestClient) -> None:
     response = client.post(
         REGISTER_URL,
-        json={"email": "ana@example.com", "password": "s3cr3t!!", "full_name": "Ana Silva"},
+        json=register_payload("ana@example.com", "s3cr3t!!", "Ana Silva"),
     )
 
     assert response.status_code == 201
@@ -37,7 +38,7 @@ def test_register_creates_a_user_and_hides_the_password(client: TestClient) -> N
 def test_register_rejects_short_password(client: TestClient) -> None:
     response = client.post(
         REGISTER_URL,
-        json={"email": "ana@example.com", "password": "short", "full_name": "Ana Silva"},
+        json=register_payload("ana@example.com", "short", "Ana Silva"),
     )
 
     assert response.status_code == 422
@@ -48,7 +49,7 @@ def test_register_rejects_duplicate_email(client: TestClient) -> None:
 
     response = client.post(
         REGISTER_URL,
-        json={"email": "ana@example.com", "password": "outrasenha", "full_name": "Ana 2"},
+        json=register_payload("ana@example.com", "outrasenha", "Ana 2"),
     )
 
     assert response.status_code == 409

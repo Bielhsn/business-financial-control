@@ -9,6 +9,7 @@ from tests.fakes import (
     FakeCompanyMembershipRepository,
     FakeUserRepository,
 )
+from tests.registration import register_payload
 
 VALID_COMPANY_PAYLOAD = {
     "name": "Barbearia do Zé",
@@ -27,7 +28,7 @@ VALID_COMPANY_PAYLOAD = {
 def _auth_header(client: TestClient, email: str, password: str = "s3cr3t!!") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Usuário Teste"},
+        json=register_payload(email, password, "Usuário Teste"),
     )
     login = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     return {"Authorization": f"Bearer {login.json()['access_token']}"}

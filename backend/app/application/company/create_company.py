@@ -1,6 +1,6 @@
 from app.core.exceptions import NotFoundError, ValidationError
 from app.domain.company.cnpj import format_cnpj, is_valid_cnpj, normalize_cnpj
-from app.domain.company.cnpj_lookup import CnpjLookup
+from app.domain.company.cnpj_lookup import CnpjInfo, CnpjLookup
 from app.domain.company.entities import Company
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
@@ -27,7 +27,7 @@ class CreateCompanyUseCase:
         # Quando presente, o CNPJ é confrontado com a fonte externa.
         self._cnpj_lookup = cnpj_lookup
 
-    async def _validate_cnpj(self, raw: str) -> str:
+    async def validate_cnpj(self, raw: str) -> CnpjInfo | None:
         """Normaliza, valida os dígitos e confere se o CNPJ existe de verdade.
 
         Dígito verificador só prova que o número é bem formado — "11.222.333/
@@ -54,7 +54,8 @@ class CreateCompanyUseCase:
                 raise ValidationError(
                     f"O CNPJ {format_cnpj(normalized)} consta como {situacao} na Receita."
                 )
-        return normalized
+            return info
+        return None
 
     async def execute(
         self,
@@ -83,10 +84,17 @@ class CreateCompanyUseCase:
         email: str | None = None,
         website: str | None = None,
         social_links: dict[str, str] | None = None,
+        skip_cnpj_lookup: bool = False,
     ) -> Company:
         normalized_cnpj: str | None = None
         if cnpj and cnpj.strip():
-            normalized_cnpj = await self._validate_cnpj(cnpj)
+            if skip_cnpj_lookup:
+                # Quem chamou já validou (ex.: o cadastro). Repetir seria uma
+                # segunda ida à Receita para a mesma resposta.
+                normalized_cnpj = normalize_cnpj(cnpj)
+            else:
+                await self.validate_cnpj(cnpj)
+                normalized_cnpj = normalize_cnpj(cnpj)
 
         company = await self._company_repository.create(
             name=name.strip(),

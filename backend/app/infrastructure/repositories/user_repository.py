@@ -59,6 +59,15 @@ class BeanieUserRepository:
             raise ConflictError("Já existe uma conta com este e-mail.") from exc
         return _to_entity(document)
 
+    async def delete(self, user_id: str) -> bool:
+        if not PydanticObjectId.is_valid(user_id):
+            return False
+        document = await UserDocument.get(PydanticObjectId(user_id))
+        if document is None:
+            return False
+        await document.delete()
+        return True
+
     async def update(self, user_id: str, **fields: object) -> User | None:
         if not PydanticObjectId.is_valid(user_id):
             return None

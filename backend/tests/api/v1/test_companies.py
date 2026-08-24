@@ -5,6 +5,7 @@ from app.core.exceptions import ConnectorError, NotFoundError
 from app.domain.company.cnpj_lookup import CnpjInfo
 from app.domain.company.roles import CompanyRole
 from tests.fakes import FakeCnpjLookup, FakeCompanyMembershipRepository, FakeUserRepository
+from tests.registration import register_payload
 
 COMPANIES_URL = "/api/v1/companies"
 
@@ -25,7 +26,7 @@ VALID_COMPANY_PAYLOAD = {
 def _auth_header(client: TestClient, email: str, password: str = "s3cr3t!!") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Usuário Teste"},
+        json=register_payload(email, password, "Usuário Teste"),
     )
     login_response = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     access_token = login_response.json()["access_token"]
@@ -45,9 +46,11 @@ def test_create_company_makes_the_creator_the_owner(client: TestClient) -> None:
     list_response = client.get(COMPANIES_URL, headers=headers)
     assert list_response.status_code == 200
     companies = list_response.json()
-    assert len(companies) == 1
-    assert companies[0]["role"] == "owner"
-    assert companies[0]["company"]["id"] == body["id"]
+    # Duas: a criada no cadastro e a criada por este teste.
+    assert len(companies) == 2
+    assert {c["company"]["id"] for c in companies} >= {body["id"]}
+    criada = next(c for c in companies if c["company"]["id"] == body["id"])
+    assert criada["role"] == "owner"
 
 
 def test_create_company_rejects_invalid_payload(client: TestClient) -> None:
@@ -309,8 +312,10 @@ def test_create_company_rejects_cnpj_that_does_not_exist(
     async def nao_encontrado(cnpj: str) -> CnpjInfo:
         raise NotFoundError("CNPJ não encontrado na base da Receita.")
 
-    fake_cnpj_lookup.fetch = nao_encontrado  # type: ignore[method-assign]
+    # Autentica antes de trocar o dublê: o cadastro também consulta a
+    # Receita, e o stub de falha derrubaria o próprio cadastro.
     headers = _auth_header(client, "dono@example.com")
+    fake_cnpj_lookup.fetch = nao_encontrado  # type: ignore[method-assign]
 
     response = client.post(
         COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "cnpj": _CNPJ_VALIDO}, headers=headers
@@ -339,8 +344,10 @@ def test_create_company_rejects_inactive_cnpj(
             main_activity=None,
         )
 
-    fake_cnpj_lookup.fetch = baixada  # type: ignore[method-assign]
+    # Autentica antes de trocar o dublê: o cadastro também consulta a
+    # Receita, e o stub de falha derrubaria o próprio cadastro.
     headers = _auth_header(client, "dono@example.com")
+    fake_cnpj_lookup.fetch = baixada  # type: ignore[method-assign]
 
     response = client.post(
         COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "cnpj": _CNPJ_VALIDO}, headers=headers
@@ -359,8 +366,10 @@ def test_outage_of_the_source_is_not_reported_as_invalid_cnpj(
     async def fora_do_ar(cnpj: str) -> CnpjInfo:
         raise ConnectorError("Não foi possível consultar a Receita agora.")
 
-    fake_cnpj_lookup.fetch = fora_do_ar  # type: ignore[method-assign]
+    # Autentica antes de trocar o dublê: o cadastro também consulta a
+    # Receita, e o stub de falha derrubaria o próprio cadastro.
     headers = _auth_header(client, "dono@example.com")
+    fake_cnpj_lookup.fetch = fora_do_ar  # type: ignore[method-assign]
 
     response = client.post(
         COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "cnpj": _CNPJ_VALIDO}, headers=headers

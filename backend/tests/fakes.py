@@ -60,6 +60,9 @@ class FakeUserRepository:
     async def get_by_id(self, user_id: str) -> User | None:
         return self._users_by_id.get(user_id)
 
+    async def delete(self, user_id: str) -> bool:
+        return self._users_by_id.pop(user_id, None) is not None
+
     async def create(
         self,
         *,
@@ -163,6 +166,9 @@ class FakeCompanyRepository:
     def __init__(self) -> None:
         self._companies: dict[str, Company] = {}
         self._next_id = 1
+
+    async def get_by_cnpj(self, cnpj: str) -> Company | None:
+        return next((c for c in self._companies.values() if c.cnpj == cnpj), None)
 
     async def create(
         self,
@@ -415,17 +421,40 @@ class FakeFinancialCategoryRepository:
         self._categories: dict[str, FinancialCategory] = {}
         self._next_id = 1
 
+    @staticmethod
+    def _company() -> str:
+        """Empresa do contexto. O repositório real filtra TODA leitura e escrita
+        por ela; um dublê que ignora isso vaza dados entre inquilinos e deixa
+        passar teste que a produção reprovaria.
+
+        Testes de unidade exercitam o repositório sem passar por uma rota, e
+        portanto sem contexto — um valor estável mantém a regra válida dentro do
+        teste sem exigir cerimônia dele.
+        """
+        try:
+            return get_current_company_id()
+        except RuntimeError:
+            return "company-1"
+
     async def create(self, *, name: str, type: FinancialCategoryType) -> FinancialCategory:
-        # O Mongo garante unicidade de (empresa, nome, tipo) por índice, e a
+        # O Mongo garante unicidade de (EMPRESA, nome, tipo) por índice, e a
         # implementação real converte a violação em ConflictError. O fake precisa
         # do mesmo comportamento, senão testes de idempotência passam por engano.
-        if any(c.name == name and c.type == type for c in self._categories.values()):
+        #
+        # A empresa faz parte da chave: sem ela o dublê fica mais estrito que a
+        # produção, e duas empresas distintas não poderiam ter uma categoria de
+        # mesmo nome — o que a produção permite e o produto depende.
+        company_id = self._company()
+        if any(
+            c.name == name and c.type == type and c.company_id == company_id
+            for c in self._categories.values()
+        ):
             raise ConflictError("Já existe uma categoria com este nome e tipo.")
         category_id = str(self._next_id)
         self._next_id += 1
         category = FinancialCategory(
             id=category_id,
-            company_id="company-1",
+            company_id=company_id,
             name=name,
             type=type,
             is_active=True,
@@ -440,12 +469,23 @@ class FakeFinancialCategoryRepository:
     async def get_by_name_and_type(
         self, name: str, type: FinancialCategoryType
     ) -> FinancialCategory | None:
+        company_id = self._company()
         return next(
-            (c for c in self._categories.values() if c.name == name and c.type == type), None
+            (
+                c
+                for c in self._categories.values()
+                if c.name == name and c.type == type and c.company_id == company_id
+            ),
+            None,
         )
 
     async def list_all(self, *, only_active: bool = True) -> list[FinancialCategory]:
-        return [c for c in self._categories.values() if not only_active or c.is_active]
+        company_id = self._company()
+        return [
+            c
+            for c in self._categories.values()
+            if c.company_id == company_id and (not only_active or c.is_active)
+        ]
 
     async def update(self, category_id: str, **fields: object) -> FinancialCategory | None:
         category = self._categories.get(category_id)
