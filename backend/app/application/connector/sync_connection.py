@@ -2,6 +2,7 @@ import json
 
 from app.application.connector.refresh_tokens import RefreshConnectionTokensUseCase
 from app.core.exceptions import ConnectorError, NotFoundError
+from app.core.logging import get_logger
 from app.domain.connector.entities import ConnectionStatus, NormalizedSale, SyncResult
 from app.domain.connector.oauth import OAuthProvider
 from app.domain.connector.ports import Connector, SecretCipher
@@ -17,6 +18,8 @@ from app.domain.financial.repository import (
     FinancialTransactionRepository,
 )
 from app.domain.platform_sales.repository import PlatformSaleRepository
+
+logger = get_logger(__name__)
 
 
 class SyncConnectionUseCase:
@@ -67,9 +70,13 @@ class SyncConnectionUseCase:
 
         credentials = {**secrets, **connection.config}
 
+        logger.info("connector_sync_started", provider=provider, since=connection.last_synced_at)
         try:
             sales = await self._connector.fetch_sales(credentials, since=connection.last_synced_at)
         except ConnectorError as exc:
+            # O motivo vai para o log com o provedor junto: sem isso, investigar
+            # uma sincronização quebrada exige reproduzir o erro em produção.
+            logger.warning("connector_sync_failed", provider=provider, reason=exc.message)
             await self._connection_repository.mark_status(
                 provider, status=ConnectionStatus.ERROR, error=exc.message
             )
@@ -77,6 +84,13 @@ class SyncConnectionUseCase:
 
         result = await self._import_sales(provider, sales, created_by)
         await self._connection_repository.mark_synced(provider)
+        logger.info(
+            "connector_sync_finished",
+            provider=provider,
+            fetched=len(sales),
+            imported=result.imported,
+            skipped=result.skipped,
+        )
         return result
 
     async def _import_sales(
