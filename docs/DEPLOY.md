@@ -196,3 +196,16 @@ repositório — a base já está pronta.
 - [ ] Backup automático do MongoDB
 - [ ] `PLATFORM_ADMIN_EMAILS` com o seu e-mail (para o painel admin)
 - [ ] Credenciais das integrações OAuth (quando for ligá-las)
+
+## Rastreamento de erro (opcional, recomendado)
+
+Sem `SENTRY_DSN`, exceções ficam apenas no log da Render — e log que ninguém lê
+não avisa ninguém. Com a variável definida, cada erro 500 vira alerta.
+
+- `SENTRY_DSN` — DSN do projeto no Sentry. Vazio desliga o envio.
+
+Erros de negócio (404, 409, 422) **não** são reportados de propósito: são
+respostas esperadas, e alertar sobre elas treina a equipe a ignorar o alerta.
+
+Dado pessoal e segredo (Authorization, senhas, client_secret, tokens) são
+removidos antes do envio — ver `app/core/observability.py`.

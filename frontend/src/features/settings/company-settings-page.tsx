@@ -109,6 +109,7 @@ function CompanyProfileCard({ company }: { company: CompanyResponse }) {
   const lookupCnpj = useLookupCnpj();
 
   const [form, setForm] = useState({
+    segment: company.segment ?? "",
     legal_name: company.legal_name ?? "",
     trade_name: company.trade_name ?? "",
     cnpj: company.cnpj ?? "",
@@ -159,6 +160,9 @@ function CompanyProfileCard({ company }: { company: CompanyResponse }) {
       }
     }
     const payload: UpdateCompanyInput = {
+      // Omitido quando vazio: o backend exige `min_length=1` e a entidade não
+      // aceita segmento nulo — mandar "" seria erro de validação, não limpeza.
+      ...(form.segment.trim() ? { segment: form.segment.trim() } : {}),
       legal_name: form.legal_name.trim() || null,
       trade_name: form.trade_name.trim() || null,
       cnpj: form.cnpj.replace(/\D/g, "") || null,
@@ -223,6 +227,18 @@ function CompanyProfileCard({ company }: { company: CompanyResponse }) {
               value={form.trade_name}
               onChange={(event) => set("trade_name", event.target.value)}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="company-segment">Ramo do negócio</Label>
+            <Input
+              id="company-segment"
+              placeholder="Ex.: Barbearia, Clínica, Loja de bebidas"
+              value={form.segment}
+              onChange={(event) => set("segment", event.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Define os indicadores, as categorias financeiras e os termos que o painel usa.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="company-subsegment">Subsegmento</Label>

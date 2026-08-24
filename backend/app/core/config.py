@@ -58,6 +58,10 @@ class Settings(BaseSettings):
     ifood_client_id: str | None = None
     ifood_client_secret: str | None = None
 
+    # Rastreamento de erro. Vazio = desligado: desenvolvimento e testes não
+    # devem falar com serviço externo, e o projeto precisa subir sem conta.
+    sentry_dsn: str | None = None
+
     cors_allowed_origins: str = "http://localhost:5173"
 
     # E-mails com acesso ao painel administrativo do SaaS (super-admin), separados
