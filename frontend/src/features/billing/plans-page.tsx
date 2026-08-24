@@ -1,4 +1,4 @@
-import { Check, Crown, Sparkles } from "lucide-react";
+import { AlertTriangle, Check, Crown, ExternalLink, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import {
   useCancelSubscription,
   useChangePlan,
   usePlans,
+  useStartCheckout,
   useSubscription,
 } from "@/features/billing/use-plans";
 import { extractErrorMessage } from "@/lib/api";
@@ -31,6 +32,10 @@ const STATUS_LABEL: Record<string, string> = {
   past_due: "Pagamento pendente",
   canceled: "Cancelado",
 };
+
+// Enterprise é negociado, não contratado por botão. Sem endereço configurado,
+// o botão some em vez de abrir um e-mail para lugar nenhum.
+const SALES_EMAIL = import.meta.env.VITE_SALES_EMAIL as string | undefined;
 
 function priceLabel(plan: PlanResponse, cycle: BillingCycle): string {
   if (plan.is_contact_sales) {
@@ -54,24 +59,44 @@ export function PlansPage() {
   const plansQuery = usePlans();
   const subscriptionQuery = useSubscription(companyId);
   const changePlan = useChangePlan(companyId);
+  const startCheckout = useStartCheckout(companyId);
   const cancelSubscription = useCancelSubscription(companyId);
   const [cycle, setCycle] = useState<BillingCycle>("monthly");
 
   const current = subscriptionQuery.data;
   const currentTier = current?.tier ?? "starter";
+  const isPending = changePlan.isPending || startCheckout.isPending;
 
-  const handleSelect = (tier: PlanTier, startTrial: boolean) => {
+  // Contratar não é trocar de plano: a chamada cria a cobrança e devolve a
+  // página de pagamento. O plano só é liberado quando o dinheiro entra.
+  const handleCheckout = (tier: PlanTier) => {
+    startCheckout.mutate(
+      { tier, billing_cycle: cycle },
+      {
+        onSuccess: (data) => window.location.assign(data.payment_url),
+        onError: (error) => toast.error(extractErrorMessage(error)),
+      },
+    );
+  };
+
+  const handleTrial = (tier: PlanTier) => {
     changePlan.mutate(
-      { tier, billing_cycle: cycle, start_trial: startTrial },
+      { tier, billing_cycle: cycle, start_trial: true },
       {
         onSuccess: (data) => {
           const name = plansQuery.data?.find((p) => p.tier === data.tier)?.name ?? data.tier;
-          toast.success(
-            data.status === "trialing"
-              ? `Teste do plano ${name} iniciado! Aproveite os 14 dias.`
-              : `Plano alterado para ${name}.`,
-          );
+          toast.success(`Teste do plano ${name} iniciado! Aproveite os 14 dias.`);
         },
+        onError: (error) => toast.error(extractErrorMessage(error)),
+      },
+    );
+  };
+
+  const handleDowngradeToStarter = () => {
+    changePlan.mutate(
+      { tier: "starter", billing_cycle: cycle },
+      {
+        onSuccess: () => toast.success("Você voltou ao plano Starter."),
         onError: (error) => toast.error(extractErrorMessage(error)),
       },
     );
@@ -79,7 +104,8 @@ export function PlansPage() {
 
   const handleCancel = () => {
     cancelSubscription.mutate(undefined, {
-      onSuccess: () => toast.success("Assinatura cancelada. Você voltou ao plano Starter."),
+      onSuccess: () =>
+        toast.success("Assinatura cancelada. A cobrança foi encerrada e você voltou ao Starter."),
       onError: (error) => toast.error(extractErrorMessage(error)),
     });
   };
@@ -90,6 +116,17 @@ export function PlansPage() {
         title="Planos e assinatura"
         description="Escolha o plano ideal para o momento do seu negócio. Faça upgrade a qualquer momento."
       />
+
+      {current?.payment_pending && current.pending_tier && (
+        <PendingPaymentNotice
+          planName={
+            plansQuery.data?.find((p) => p.tier === current.pending_tier)?.name ??
+            current.pending_tier
+          }
+          isPending={isPending}
+          onResume={() => handleCheckout(current.pending_tier as PlanTier)}
+        />
+      )}
 
       {current && (
         <Card className="mb-6">
@@ -125,9 +162,12 @@ export function PlansPage() {
         </Card>
       )}
 
-      <div className="mb-6 flex items-center justify-center gap-2">
+      <div className="mb-2 flex items-center justify-center gap-2">
         <CycleToggle cycle={cycle} onChange={setCycle} />
       </div>
+      <p className="mb-6 text-center text-xs text-muted-foreground">
+        Pagamento por Pix, boleto ou cartão. Cancele quando quiser.
+      </p>
 
       {plansQuery.isLoading ? (
         <div className="grid gap-4 lg:grid-cols-4">
@@ -143,8 +183,11 @@ export function PlansPage() {
               plan={plan}
               cycle={cycle}
               currentTier={currentTier}
-              isPending={changePlan.isPending}
-              onSelect={handleSelect}
+              trialUsed={current?.trial_used ?? false}
+              isPending={isPending}
+              onCheckout={handleCheckout}
+              onTrial={handleTrial}
+              onDowngradeToStarter={handleDowngradeToStarter}
             />
           ))}
         </div>
@@ -228,24 +271,59 @@ function UsageBar({ label, current, limit }: { label: string; current: number; l
   );
 }
 
+function PendingPaymentNotice({
+  planName,
+  isPending,
+  onResume,
+}: {
+  planName: string;
+  isPending: boolean;
+  onResume: () => void;
+}) {
+  return (
+    <Card className="mb-6 border-warning bg-warning/5">
+      <CardContent className="flex flex-wrap items-center gap-3 py-4">
+        <AlertTriangle className="size-5 shrink-0 text-warning" />
+        <div className="flex-1 text-sm">
+          <p className="font-medium">Pagamento pendente do plano {planName}</p>
+          <p className="text-muted-foreground">
+            A contratação foi criada, mas o pagamento ainda não foi confirmado. O plano é liberado
+            assim que ele cair.
+          </p>
+        </div>
+        <Button size="sm" onClick={onResume} disabled={isPending}>
+          {isPending ? "Abrindo…" : "Concluir pagamento"}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 function PlanCard({
   plan,
   cycle,
   currentTier,
+  trialUsed,
   isPending,
-  onSelect,
+  onCheckout,
+  onTrial,
+  onDowngradeToStarter,
 }: {
   plan: PlanResponse;
   cycle: BillingCycle;
   currentTier: PlanTier;
+  trialUsed: boolean;
   isPending: boolean;
-  onSelect: (tier: PlanTier, startTrial: boolean) => void;
+  onCheckout: (tier: PlanTier) => void;
+  onTrial: (tier: PlanTier) => void;
+  onDowngradeToStarter: () => void;
 }) {
   const isCurrent = plan.tier === currentTier;
   const isUpgrade = TIER_ORDER[plan.tier] > TIER_ORDER[currentTier];
-  const isDowngrade = TIER_ORDER[plan.tier] < TIER_ORDER[currentTier];
   const isPaid = plan.price_cents_monthly > 0;
-  const canTrial = isPaid && !plan.is_contact_sales && currentTier === "starter";
+  // O teste é uma vez por empresa: oferecer de novo a quem já usou só produz
+  // um erro depois do clique.
+  const canTrial = isPaid && !plan.is_contact_sales && currentTier === "starter" && !trialUsed;
 
   return (
     <Card
@@ -305,13 +383,24 @@ function PlanCard({
               Plano atual
             </Button>
           ) : plan.is_contact_sales ? (
+            // Enterprise é negociado. Antes este botão trocava o plano e dava
+            // acesso ilimitado a quem clicasse em "Falar com vendas".
+            SALES_EMAIL ? (
+              <Button asChild variant={isUpgrade ? "default" : "outline"} className="w-full">
+                <a href={`mailto:${SALES_EMAIL}?subject=Plano ${plan.name}`}>
+                  Falar com vendas
+                  <ExternalLink className="size-4" />
+                </a>
+              </Button>
+            ) : null
+          ) : !isPaid ? (
             <Button
-              variant={isUpgrade ? "default" : "outline"}
+              variant="outline"
               className="w-full"
               disabled={isPending}
-              onClick={() => onSelect(plan.tier, false)}
+              onClick={onDowngradeToStarter}
             >
-              Falar com vendas
+              Voltar ao gratuito
             </Button>
           ) : (
             <>
@@ -319,9 +408,9 @@ function PlanCard({
                 variant={isUpgrade ? "default" : "outline"}
                 className="w-full"
                 disabled={isPending}
-                onClick={() => onSelect(plan.tier, false)}
+                onClick={() => onCheckout(plan.tier)}
               >
-                {isDowngrade ? "Fazer downgrade" : isPaid ? "Assinar" : "Selecionar"}
+                {isPending ? "Abrindo pagamento…" : "Assinar"}
               </Button>
               {canTrial && (
                 <Button
@@ -329,7 +418,7 @@ function PlanCard({
                   size="sm"
                   className="w-full text-primary"
                   disabled={isPending}
-                  onClick={() => onSelect(plan.tier, true)}
+                  onClick={() => onTrial(plan.tier)}
                 >
                   Testar 14 dias grátis
                 </Button>

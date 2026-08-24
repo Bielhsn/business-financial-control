@@ -40,6 +40,8 @@ Duas formas de colocar o Aurum OS em produção:
 - Opcional: `VITE_GOOGLE_CLIENT_ID` nas variáveis de ambiente do projeto Vercel
   (habilita o botão "Entrar com Google"; exige também `GOOGLE_CLIENT_ID` no
   backend).
+- Opcional: `VITE_SALES_EMAIL` — destino do "Falar com vendas" do plano
+  Enterprise. Sem ela o botão não aparece.
 - Cada merge na `main` redeploya o frontend automaticamente.
 
 > **Plano grátis da Render:** o serviço "dorme" após inatividade — a primeira
@@ -213,6 +215,19 @@ No painel do Asaas, aponte o webhook para
 
 Quem decide o status da assinatura é o webhook, não o checkout: a assinatura
 nasce como `past_due` e só vira `active` quando o pagamento é confirmado.
+
+**Não existe caminho alternativo para um plano pago.** Trocar de plano pela API
+serve para voltar ao Starter e para iniciar o teste gratuito — que é uma vez
+por empresa e sobrevive a cancelamento e downgrade. Tudo que custa dinheiro
+passa pelo checkout.
+
+Cancelar encerra a cobrança no Asaas antes de mudar qualquer coisa aqui. Se o
+Asaas recusar, o erro aparece na tela e o cancelamento não acontece: melhor uma
+falha visível do que um selo dizendo "cancelado" com a fatura chegando todo mês.
+
+`VITE_SALES_EMAIL` (Vercel) é o endereço do botão "Falar com vendas" do plano
+Enterprise. Sem ele o botão não aparece — Enterprise é negociado, e um botão
+que concede o plano ao ser clicado seria pior do que botão nenhum.
 
 ## Sincronização automática das integrações
 

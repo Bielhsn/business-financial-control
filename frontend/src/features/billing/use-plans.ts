@@ -3,6 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import type {
   ChangePlanRequest,
+  CheckoutRequest,
+  CheckoutResponse,
   PlanCatalogResponse,
   PlanResponse,
   SubscriptionResponse,
@@ -42,6 +44,27 @@ export function useChangePlan(companyId: string) {
     mutationFn: async (input: ChangePlanRequest) => {
       const { data } = await api.put<SubscriptionResponse>(
         `/companies/${companyId}/subscription`,
+        input,
+      );
+      return data;
+    },
+    onSuccess: () => invalidateSubscription(queryClient, companyId),
+  });
+}
+
+/**
+ * Contratação de plano pago.
+ *
+ * Não muda o plano: cria a cobrança no provedor e devolve o link de pagamento.
+ * Quem libera o plano é o webhook, quando o dinheiro entra — por isso a
+ * assinatura continua pendente até lá, mesmo depois desta chamada dar certo.
+ */
+export function useStartCheckout(companyId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CheckoutRequest) => {
+      const { data } = await api.post<CheckoutResponse>(
+        `/companies/${companyId}/billing/checkout`,
         input,
       );
       return data;

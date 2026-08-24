@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
 
+from app.domain.subscription.plans import PlanTier
+from tests.fakes import FakeSubscriptionRepository
 from tests.registration import register_payload
+from tests.subscriptions import activate_paid_plan_sync
 
 COMPANY = {
     "name": "Empresa X",
@@ -64,7 +67,9 @@ def test_new_company_defaults_to_starter(client: TestClient) -> None:
     assert body["usage"]["members"] == 1
 
 
-def test_owner_can_change_plan(client: TestClient) -> None:
+def test_paid_plan_is_not_granted_by_changing_the_plan(client: TestClient) -> None:
+    """O buraco que existia: um PUT devolvia o Business ativo por 30 dias sem
+    ninguém pagar nada, e era exatamente isto que o botão "Assinar" chamava."""
     owner = _headers(_register(client, "dono@example.com"))
     company_id = _create_company(client, owner)
 
@@ -73,9 +78,30 @@ def test_owner_can_change_plan(client: TestClient) -> None:
         json={"tier": "business", "billing_cycle": "monthly"},
         headers=owner,
     )
+    assert response.status_code == 422
+
+    depois = client.get(f"/api/v1/companies/{company_id}/subscription", headers=owner)
+    assert depois.json()["tier"] == "starter"
+    assert "white_label" not in depois.json()["features"]
+
+
+def test_owner_can_go_back_to_starter(
+    client: TestClient, fake_subscription_repository: FakeSubscriptionRepository
+) -> None:
+    owner = _headers(_register(client, "dono@example.com"))
+    company_id = _create_company(client, owner)
+    activate_paid_plan_sync(
+        fake_subscription_repository, company_id=company_id, tier=PlanTier.BUSINESS
+    )
+
+    response = client.put(
+        f"/api/v1/companies/{company_id}/subscription",
+        json={"tier": "starter"},
+        headers=owner,
+    )
     assert response.status_code == 200
-    assert response.json()["tier"] == "business"
-    assert "white_label" in response.json()["features"]
+    assert response.json()["tier"] == "starter"
+    assert "white_label" not in response.json()["features"]
 
 
 def test_non_owner_cannot_change_plan(client: TestClient) -> None:
@@ -112,13 +138,13 @@ def test_start_trial_sets_trialing(client: TestClient) -> None:
     assert body["trial_ends_at"] is not None
 
 
-def test_cancel_falls_back_to_starter_entitlements(client: TestClient) -> None:
+def test_cancel_falls_back_to_starter_entitlements(
+    client: TestClient, fake_subscription_repository: FakeSubscriptionRepository
+) -> None:
     owner = _headers(_register(client, "dono@example.com"))
     company_id = _create_company(client, owner)
-    client.put(
-        f"/api/v1/companies/{company_id}/subscription",
-        json={"tier": "business"},
-        headers=owner,
+    activate_paid_plan_sync(
+        fake_subscription_repository, company_id=company_id, tier=PlanTier.BUSINESS
     )
 
     canceled = client.delete(f"/api/v1/companies/{company_id}/subscription", headers=owner)
@@ -151,15 +177,15 @@ def test_member_limit_blocks_invite_on_starter(client: TestClient) -> None:
     assert second.json()["details"]["upgrade_required"] is True
 
 
-def test_upgrade_unblocks_invite(client: TestClient) -> None:
+def test_upgrade_unblocks_invite(
+    client: TestClient, fake_subscription_repository: FakeSubscriptionRepository
+) -> None:
     owner = _headers(_register(client, "dono@example.com"))
     _register(client, "maria@example.com")
     _register(client, "joao@example.com")
     company_id = _create_company(client, owner)
-    client.put(
-        f"/api/v1/companies/{company_id}/subscription",
-        json={"tier": "professional"},
-        headers=owner,
+    activate_paid_plan_sync(
+        fake_subscription_repository, company_id=company_id, tier=PlanTier.PROFESSIONAL
     )
 
     client.post(

@@ -19,6 +19,7 @@ class SubscriptionRepository(Protocol):
         current_period_end: datetime | None,
         cancel_at_period_end: bool,
         external_id: str | None = None,
+        trial_used: bool = False,
     ) -> Subscription: ...
 
     async def get_by_external_id(self, external_id: str) -> Subscription | None:

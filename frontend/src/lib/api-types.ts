@@ -685,12 +685,29 @@ export interface SubscriptionResponse {
   features: string[];
   limits: PlanLimitsResponse;
   usage: UsageResponse;
+  /** O teste gratuito desta empresa já foi consumido. */
+  trial_used: boolean;
+  /** Há uma contratação criada no provedor aguardando pagamento. */
+  payment_pending: boolean;
+  /** Plano contratado e ainda não pago — diferente de `tier`, que é o que já
+   *  pode ser usado agora. */
+  pending_tier: PlanTier | null;
 }
 
 export interface ChangePlanRequest {
   tier: PlanTier;
   billing_cycle?: BillingCycle;
   start_trial?: boolean;
+}
+
+export interface CheckoutRequest {
+  tier: PlanTier;
+  billing_cycle?: BillingCycle;
+}
+
+export interface CheckoutResponse {
+  /** Página de pagamento do provedor: Pix, boleto ou cartão. */
+  payment_url: string;
 }
 
 // Painel administrativo do SaaS (Etapa 30)
