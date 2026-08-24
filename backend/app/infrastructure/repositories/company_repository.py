@@ -1,7 +1,10 @@
 from datetime import UTC, datetime
 
 from beanie import PydanticObjectId
+from pymongo.errors import DuplicateKeyError
 
+from app.core.exceptions import ConflictError
+from app.domain.company.cnpj import format_cnpj
 from app.domain.company.entities import Company
 from app.infrastructure.database.models.company import CompanyDocument
 
@@ -98,7 +101,17 @@ class BeanieCompanyRepository:
             created_at=now,
             updated_at=now,
         )
-        await document.insert()
+        try:
+            await document.insert()
+        except DuplicateKeyError as exc:
+            # O índice único do CNPJ é a única defesa que sobrevive a duas
+            # requisições simultâneas. Aqui a violação vira mensagem de negócio
+            # em vez de erro 500.
+            if cnpj:
+                raise ConflictError(
+                    f"O CNPJ {format_cnpj(cnpj)} já está cadastrado em outra conta."
+                ) from exc
+            raise
         return _to_entity(document)
 
     async def get_by_id(self, company_id: str) -> Company | None:

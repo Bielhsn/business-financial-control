@@ -1,8 +1,10 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.exceptions import ConnectorError, NotFoundError
+from app.domain.company.cnpj_lookup import CnpjInfo
 from app.domain.company.roles import CompanyRole
-from tests.fakes import FakeCompanyMembershipRepository, FakeUserRepository
+from tests.fakes import FakeCnpjLookup, FakeCompanyMembershipRepository, FakeUserRepository
 
 COMPANIES_URL = "/api/v1/companies"
 
@@ -290,3 +292,112 @@ def test_seeded_categories_match_the_segment(client: TestClient) -> None:
 
     assert "Compra de mercadorias" in names
     assert "Comissões" not in names  # categoria de barbearia não vaza para cá
+
+
+# --- Integridade do CNPJ -------------------------------------------------
+#
+# Dígito verificador prova só que o número é bem formado. Sem consultar a fonte
+# externa, o cadastro aceita CNPJ inventado; sem restrição no banco, duas contas
+# reivindicam a mesma empresa.
+
+_CNPJ_VALIDO = "19131243000197"  # dígitos verificadores corretos
+
+
+def test_create_company_rejects_cnpj_that_does_not_exist(
+    client: TestClient, fake_cnpj_lookup: FakeCnpjLookup
+) -> None:
+    async def nao_encontrado(cnpj: str) -> CnpjInfo:
+        raise NotFoundError("CNPJ não encontrado na base da Receita.")
+
+    fake_cnpj_lookup.fetch = nao_encontrado  # type: ignore[method-assign]
+    headers = _auth_header(client, "dono@example.com")
+
+    response = client.post(
+        COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "cnpj": _CNPJ_VALIDO}, headers=headers
+    )
+
+    assert response.status_code == 422
+    assert "não foi encontrado" in response.json()["message"]
+
+
+def test_create_company_rejects_inactive_cnpj(
+    client: TestClient, fake_cnpj_lookup: FakeCnpjLookup
+) -> None:
+    """Empresa baixada não deve virar conta nova."""
+
+    async def baixada(cnpj: str) -> CnpjInfo:
+        return CnpjInfo(
+            cnpj=cnpj,
+            legal_name="Empresa Baixada LTDA",
+            trade_name=None,
+            status="BAIXADA",
+            is_active=False,
+            city="São Paulo",
+            state="SP",
+            email=None,
+            phone=None,
+            main_activity=None,
+        )
+
+    fake_cnpj_lookup.fetch = baixada  # type: ignore[method-assign]
+    headers = _auth_header(client, "dono@example.com")
+
+    response = client.post(
+        COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "cnpj": _CNPJ_VALIDO}, headers=headers
+    )
+
+    assert response.status_code == 422
+    assert "BAIXADA" in response.json()["message"]
+
+
+def test_outage_of_the_source_is_not_reported_as_invalid_cnpj(
+    client: TestClient, fake_cnpj_lookup: FakeCnpjLookup
+) -> None:
+    """Indisponibilidade da Receita é problema temporário. Dizer "CNPJ inválido"
+    faria a pessoa conferir números que estão certos."""
+
+    async def fora_do_ar(cnpj: str) -> CnpjInfo:
+        raise ConnectorError("Não foi possível consultar a Receita agora.")
+
+    fake_cnpj_lookup.fetch = fora_do_ar  # type: ignore[method-assign]
+    headers = _auth_header(client, "dono@example.com")
+
+    response = client.post(
+        COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "cnpj": _CNPJ_VALIDO}, headers=headers
+    )
+
+    assert response.status_code != 422
+    assert "inválido" not in response.text.lower()
+
+
+def test_same_cnpj_cannot_belong_to_two_companies(client: TestClient) -> None:
+    primeiro = _auth_header(client, "primeiro@example.com")
+    criada = client.post(
+        COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "cnpj": _CNPJ_VALIDO}, headers=primeiro
+    )
+    assert criada.status_code == 201
+
+    # Outra conta, mesmo CNPJ.
+    segundo = _auth_header(client, "segundo@example.com")
+    duplicada = client.post(
+        COMPANIES_URL,
+        json={**VALID_COMPANY_PAYLOAD, "name": "Outra", "cnpj": _CNPJ_VALIDO},
+        headers=segundo,
+    )
+
+    assert duplicada.status_code == 409
+    assert "já está cadastrado" in duplicada.json()["message"]
+
+
+def test_companies_without_cnpj_do_not_collide(client: TestClient) -> None:
+    """O índice é parcial de propósito: sem o filtro, todas as empresas sem CNPJ
+    colidiriam entre si no valor nulo."""
+    headers = _auth_header(client, "dono@example.com")
+
+    primeira = client.post(COMPANIES_URL, json=VALID_COMPANY_PAYLOAD, headers=headers)
+    segunda = client.post(
+        COMPANIES_URL, json={**VALID_COMPANY_PAYLOAD, "name": "Segunda"}, headers=headers
+    )
+
+    assert primeira.status_code == 201
+    assert segunda.status_code == 201
