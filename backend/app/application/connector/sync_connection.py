@@ -1,7 +1,9 @@
 import json
 
+from app.application.connector.refresh_tokens import RefreshConnectionTokensUseCase
 from app.core.exceptions import ConnectorError, NotFoundError
 from app.domain.connector.entities import ConnectionStatus, NormalizedSale, SyncResult
+from app.domain.connector.oauth import OAuthProvider
 from app.domain.connector.ports import Connector, SecretCipher
 from app.domain.connector.registry import get_connector_definition
 from app.domain.connector.repository import ConnectionRepository
@@ -30,6 +32,7 @@ class SyncConnectionUseCase:
         cipher: SecretCipher,
         connector: Connector,
         platform_sale_repository: PlatformSaleRepository,
+        oauth_provider: OAuthProvider | None = None,
     ) -> None:
         self._connection_repository = connection_repository
         self._category_repository = category_repository
@@ -37,6 +40,10 @@ class SyncConnectionUseCase:
         self._cipher = cipher
         self._connector = connector
         self._platform_sale_repository = platform_sale_repository
+        # Presente só para provedores OAuth. Sem ele o token vence e a
+        # sincronização passa a falhar silenciosamente com 401.
+        self._oauth_provider = oauth_provider
+        self._refresh = RefreshConnectionTokensUseCase(connection_repository, cipher)
 
     async def execute(self, *, provider: str, created_by: str) -> SyncResult:
         connection = await self._connection_repository.get_by_provider(provider)
@@ -45,6 +52,19 @@ class SyncConnectionUseCase:
 
         encrypted = await self._connection_repository.get_encrypted_secrets(provider)
         secrets = json.loads(self._cipher.decrypt(encrypted)) if encrypted else {}
+
+        # Renova antes de usar. A falha aqui é tratada como qualquer outra do
+        # provedor: marca a conexão com erro, em vez de estourar silenciosa.
+        try:
+            secrets = await self._refresh.ensure_fresh(
+                provider=provider, secrets=secrets, oauth_provider=self._oauth_provider
+            )
+        except ConnectorError as exc:
+            await self._connection_repository.mark_status(
+                provider, status=ConnectionStatus.ERROR, error=exc.message
+            )
+            raise
+
         credentials = {**secrets, **connection.config}
 
         try:
