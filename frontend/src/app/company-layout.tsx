@@ -19,10 +19,12 @@ import { useTheme } from "@/components/theme/theme-provider";
 import { useCurrentUser, useLogout } from "@/features/auth/use-auth";
 import { useBlueprint } from "@/features/blueprint/use-blueprint";
 import { useCompany } from "@/features/companies/use-companies";
+import { CompleteProfileBanner } from "@/components/complete-profile-banner";
 import { NotificationsBell } from "@/features/notifications/notifications-bell";
 import { useSegmentProfileOrDefault } from "@/features/segment/use-segment-profile";
 import type { CompanyResponse } from "@/lib/api-types";
 import { BRAND } from "@/lib/brand";
+import { isProfileIncomplete } from "@/lib/company-profile";
 import { visibleNavItems, type NavItem } from "@/lib/navigation";
 import { cn, readableForeground } from "@/lib/utils";
 
@@ -269,6 +271,7 @@ export function CompanyLayout() {
             </DropdownMenu>
           </div>
         </header>
+        {isProfileIncomplete(company) && <CompleteProfileBanner companyId={companyId} />}
         <main className="min-w-0 flex-1 bg-background">
           <Outlet />
         </main>

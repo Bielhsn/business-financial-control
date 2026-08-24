@@ -9,20 +9,33 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
+from app.core.observability import configure_error_tracking
 from app.core.rate_limit import limiter
 from app.core.security_headers import SecurityHeadersMiddleware
 from app.infrastructure.database.mongodb import close_mongo_connection, connect_to_mongo
+from app.infrastructure.scheduler import PeriodicSyncScheduler
+from app.infrastructure.sync_runner import run_scheduled_sync
 
 settings = get_settings()
 configure_logging(log_level=settings.log_level, environment=settings.environment)
+# Antes de criar o app: falha de inicialização também precisa ser reportada.
+configure_error_tracking(settings)
 logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     await connect_to_mongo()
+    # A sincronização periódica sobe junto com a aplicação e é derrubada no
+    # encerramento — deixar a tarefa órfã seguraria o processo no shutdown.
+    scheduler = PeriodicSyncScheduler(
+        lambda: run_scheduled_sync(settings),
+        interval_seconds=settings.sync_interval_minutes * 60,
+    )
+    scheduler.start()
     logger.info("application_startup")
     yield
+    await scheduler.stop()
     await close_mongo_connection()
     logger.info("application_shutdown")
 

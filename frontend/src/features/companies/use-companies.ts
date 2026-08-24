@@ -30,6 +30,9 @@ export function useCompany(companyId: string) {
 
 export interface UpdateCompanyInput {
   name?: string;
+  // O ramo do negócio: é ele que destrava módulos, KPIs, categorias e termos.
+  // O backend sempre aceitou; faltava a tela oferecer.
+  segment?: string;
   brand_logo?: string | null;
   brand_primary_color?: string | null;
   brand_theme?: "light" | "dark" | null;

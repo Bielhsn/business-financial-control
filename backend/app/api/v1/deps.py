@@ -20,6 +20,7 @@ from app.domain.auth.google import GoogleTokenVerifier
 from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
 from app.domain.auth.verification import VerificationCodeRepository
+from app.domain.billing.ports import BillingProvider
 from app.domain.blueprint.ports import AIProviderPort
 from app.domain.blueprint.repository import CompanyBlueprintRepository
 from app.domain.catalog.repository import CatalogItemRepository, StockMovementRepository
@@ -47,6 +48,11 @@ from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
 from app.infrastructure.ai.anthropic_provider import AnthropicAIProvider
 from app.infrastructure.auth.google import GoogleTokenInfoVerifier
+from app.infrastructure.billing.asaas import (
+    PRODUCTION_BASE_URL,
+    SANDBOX_BASE_URL,
+    AsaasBillingProvider,
+)
 from app.infrastructure.connectors.factory import build_connector
 from app.infrastructure.email.console import ConsoleEmailSender
 from app.infrastructure.email.resend import ResendEmailSender
@@ -187,6 +193,20 @@ def get_secret_cipher(settings: Annotated[Settings, Depends(get_settings)]) -> S
 def get_connector_factory() -> Callable[[str], Connector]:
     # Injetável para que os testes substituam por um conector fake (sem rede).
     return build_connector
+
+
+def get_billing_provider(
+    settings: Annotated[Settings, Depends(get_settings)],
+) -> BillingProvider:
+    if not settings.asaas_api_key:
+        # Sem chave, contratar plano pago responde 503 de forma limpa em vez de
+        # falhar no meio da chamada ao provedor.
+        raise AIProviderNotConfiguredError("Cobrança indisponível: configure ASAAS_API_KEY.")
+    return AsaasBillingProvider(
+        api_key=settings.asaas_api_key,
+        webhook_token=settings.asaas_webhook_token,
+        base_url=SANDBOX_BASE_URL if settings.asaas_sandbox else PRODUCTION_BASE_URL,
+    )
 
 
 def get_cnpj_lookup() -> CnpjLookup:

@@ -58,6 +58,26 @@ class Settings(BaseSettings):
     ifood_client_id: str | None = None
     ifood_client_secret: str | None = None
 
+    # Cobrança recorrente (Asaas). Vazio = cobrança desligada: o produto
+    # funciona, mas ninguém é cobrado — é o estado de quem ainda não abriu
+    # conta no provedor.
+    asaas_api_key: str | None = None
+    # Token que o Asaas envia no cabeçalho do webhook. Sem ele, o webhook
+    # recusa tudo: aceitar aviso não verificado deixaria qualquer um marcar a
+    # própria assinatura como paga.
+    asaas_webhook_token: str | None = None
+    # Sandbox para testar sem cobrar de ninguém de verdade.
+    asaas_sandbox: bool = True
+
+    # Intervalo da sincronização automática das integrações, em minutos.
+    # 0 = desligada: teste e desenvolvimento não devem sair chamando provedor
+    # externo sozinhos. Em produção, 60 é um ponto de partida razoável.
+    sync_interval_minutes: int = 0
+
+    # Rastreamento de erro. Vazio = desligado: desenvolvimento e testes não
+    # devem falar com serviço externo, e o projeto precisa subir sem conta.
+    sentry_dsn: str | None = None
+
     cors_allowed_origins: str = "http://localhost:5173"
 
     # E-mails com acesso ao painel administrativo do SaaS (super-admin), separados

@@ -196,3 +196,51 @@ repositório — a base já está pronta.
 - [ ] Backup automático do MongoDB
 - [ ] `PLATFORM_ADMIN_EMAILS` com o seu e-mail (para o painel admin)
 - [ ] Credenciais das integrações OAuth (quando for ligá-las)
+
+## Cobrança recorrente (Asaas)
+
+Sem `ASAAS_API_KEY`, contratar plano pago responde 503 de forma limpa — o
+produto funciona, mas ninguém é cobrado.
+
+- `ASAAS_API_KEY` — chave da conta.
+- `ASAAS_WEBHOOK_TOKEN` — token combinado no painel do Asaas. **Sem ele o
+  webhook recusa tudo**, de propósito: aceitar aviso não verificado deixaria
+  qualquer um que descubra a URL marcar a própria assinatura como paga.
+- `ASAAS_SANDBOX` — `true` (padrão) usa o ambiente de teste.
+
+No painel do Asaas, aponte o webhook para
+`https://SEU-BACKEND/api/v1/billing/webhook` e use o mesmo token.
+
+Quem decide o status da assinatura é o webhook, não o checkout: a assinatura
+nasce como `past_due` e só vira `active` quando o pagamento é confirmado.
+
+## Sincronização automática das integrações
+
+Sem `SYNC_INTERVAL_MINUTES`, as vendas só entram quando alguém clica em
+"Sincronizar" — e um painel que atualiza quando o dono lembra de clicar não é
+automático.
+
+- `SYNC_INTERVAL_MINUTES` — intervalo em minutos. `0` desliga (padrão). Em
+  produção, `60` é um ponto de partida razoável.
+
+Duas ressalvas sobre a implementação atual, que roda dentro do processo da API:
+
+1. **Mais de uma instância** significa todas rodando o loop e sincronizando a
+   mesma conexão. Não corrompe dado — a importação é idempotente por
+   `external_ref`, com índice único — mas desperdiça chamada contra o provedor.
+   Nessa escala, migrar para um cron externo chamando um endpoint dedicado.
+2. **Planos que hibernam por inatividade** derrubam o processo e o loop junto. O
+   agendamento só é confiável em serviço que fica de pé.
+
+## Rastreamento de erro (opcional, recomendado)
+
+Sem `SENTRY_DSN`, exceções ficam apenas no log da Render — e log que ninguém lê
+não avisa ninguém. Com a variável definida, cada erro 500 vira alerta.
+
+- `SENTRY_DSN` — DSN do projeto no Sentry. Vazio desliga o envio.
+
+Erros de negócio (404, 409, 422) **não** são reportados de propósito: são
+respostas esperadas, e alertar sobre elas treina a equipe a ignorar o alerta.
+
+Dado pessoal e segredo (Authorization, senhas, client_secret, tokens) são
+removidos antes do envio — ver `app/core/observability.py`.

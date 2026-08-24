@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.logging import get_logger
+from app.core.observability import report_exception
 from app.schemas.error import ErrorResponse
 
 logger = get_logger(__name__)
@@ -161,6 +162,11 @@ def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(Exception)
     async def handle_unhandled_exception(request: Request, exc: Exception) -> JSONResponse:
         logger.error("unhandled_exception", error=str(exc), path=request.url.path)
+        # Sem isto o 500 sumiria do radar assim que a resposta fosse escrita.
+        # Erros de negócio (`AppError`) não vêm para cá de propósito: 404 e 409
+        # são respostas esperadas, e alertar sobre elas treinaria a equipe a
+        # ignorar o alerta.
+        report_exception(exc, path=request.url.path, method=request.method)
         return JSONResponse(
             status_code=500,
             content=ErrorResponse(

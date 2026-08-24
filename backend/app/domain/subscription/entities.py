@@ -29,3 +29,7 @@ class Subscription:
     trial_ends_at: datetime | None = None
     current_period_end: datetime | None = None
     cancel_at_period_end: bool = False
+    # Identificador da assinatura no provedor de pagamento. É por ele que o
+    # webhook reencontra a empresa — sem isso, um aviso de pagamento chega sem
+    # dono e não há como aplicar o efeito.
+    external_id: str | None = None
