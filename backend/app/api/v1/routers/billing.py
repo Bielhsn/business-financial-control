@@ -69,6 +69,13 @@ async def start_checkout(
         else plan.price_cents_monthly
     )
 
+    anterior = await subscription_repository.get_by_company(company.id)
+    if anterior is not None and anterior.external_id:
+        # Trocar de plano cria uma assinatura nova no Asaas. Sem encerrar a
+        # antiga, quem faz upgrade passa a ser cobrado duas vezes por mês — e
+        # descobre pela fatura, não pelo sistema.
+        await billing.cancel_subscription(anterior.external_id)
+
     sessao = await billing.create_subscription(
         company_id=company.id,
         company_name=company.name,
@@ -91,6 +98,7 @@ async def start_checkout(
         current_period_end=None,
         cancel_at_period_end=False,
         external_id=sessao.external_id,
+        trial_used=anterior.trial_used if anterior else False,
     )
     return CheckoutResponse(payment_url=sessao.payment_url)
 

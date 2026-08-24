@@ -54,6 +54,7 @@ class ApplyBillingEventUseCase:
             current_period_end=period_end,
             cancel_at_period_end=assinatura.cancel_at_period_end,
             external_id=assinatura.external_id,
+            trial_used=assinatura.trial_used,
         )
 
 

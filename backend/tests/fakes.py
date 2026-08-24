@@ -11,6 +11,7 @@ from app.domain.audit.entities import AuditEntry
 from app.domain.auth.entities import RefreshToken
 from app.domain.auth.google import GoogleIdentity
 from app.domain.auth.verification import VerificationCode, VerificationPurpose
+from app.domain.billing.ports import BillingEvent, BillingEventType, CheckoutSession
 from app.domain.blueprint.entities import (
     CompanyBlueprint,
     CustomFieldDefinition,
@@ -1218,39 +1219,37 @@ class FakeSubscriptionRepository:
         trial_ends_at: datetime | None,
         current_period_end: datetime | None,
         cancel_at_period_end: bool,
+        external_id: str | None = None,
+        trial_used: bool = False,
     ) -> Subscription:
         now = datetime.now(UTC)
         existing = self._subscriptions.get(company_id)
+        # Espelha a produção: só sobrescreve o vínculo de cobrança quando veio
+        # um novo, e o teste usado nunca volta a ficar disponível.
+        vinculo = (
+            external_id if external_id is not None else (existing.external_id if existing else None)
+        )
+        subscription = Subscription(
+            id=existing.id if existing else str(self._next_id),
+            company_id=company_id,
+            tier=tier,
+            status=status,
+            billing_cycle=billing_cycle,
+            started_at=existing.started_at if existing else now,
+            updated_at=now,
+            trial_ends_at=trial_ends_at,
+            current_period_end=current_period_end,
+            cancel_at_period_end=cancel_at_period_end,
+            external_id=vinculo,
+            trial_used=trial_used or (existing.trial_used if existing else False),
+        )
         if existing is None:
-            subscription_id = str(self._next_id)
             self._next_id += 1
-            subscription = Subscription(
-                id=subscription_id,
-                company_id=company_id,
-                tier=tier,
-                status=status,
-                billing_cycle=billing_cycle,
-                started_at=now,
-                updated_at=now,
-                trial_ends_at=trial_ends_at,
-                current_period_end=current_period_end,
-                cancel_at_period_end=cancel_at_period_end,
-            )
-        else:
-            subscription = Subscription(
-                id=existing.id,
-                company_id=company_id,
-                tier=tier,
-                status=status,
-                billing_cycle=billing_cycle,
-                started_at=existing.started_at,
-                updated_at=now,
-                trial_ends_at=trial_ends_at,
-                current_period_end=current_period_end,
-                cancel_at_period_end=cancel_at_period_end,
-            )
         self._subscriptions[company_id] = subscription
         return subscription
+
+    async def get_by_external_id(self, external_id: str) -> Subscription | None:
+        return next((s for s in self._subscriptions.values() if s.external_id == external_id), None)
 
     async def list_all(self) -> list[Subscription]:
         return list(self._subscriptions.values())
@@ -1480,3 +1479,62 @@ class FakeRecurringTransactionRepository:
     async def list_due(self, as_of: datetime) -> list[RecurringTransaction]:
         due = [i for i in self._items.values() if i.active and i.next_run_date <= as_of]
         return self._scoped(due)
+
+
+class FakeBillingProvider:
+    """Provedor de cobrança sem rede.
+
+    Registra o que foi pedido para que o teste possa afirmar o que importa: que
+    a assinatura anterior foi cancelada antes de nascer outra, e que sair de um
+    plano pago realmente para a cobrança lá fora.
+    """
+
+    def __init__(self, *, webhook_token: str = "token-de-teste") -> None:
+        self.created: list[dict[str, object]] = []
+        self.canceled: list[str] = []
+        self._webhook_token = webhook_token
+        self._next_id = 1
+
+    async def create_subscription(
+        self,
+        *,
+        company_id: str,
+        company_name: str,
+        cnpj: str,
+        payer_email: str,
+        tier: PlanTier,
+        billing_cycle: BillingCycle,
+        price_cents: int,
+    ) -> CheckoutSession:
+        external_id = f"asaas_{self._next_id}"
+        self._next_id += 1
+        self.created.append(
+            {
+                "company_id": company_id,
+                "cnpj": cnpj,
+                "payer_email": payer_email,
+                "tier": tier,
+                "billing_cycle": billing_cycle,
+                "price_cents": price_cents,
+                "external_id": external_id,
+            }
+        )
+        return CheckoutSession(
+            external_id=external_id, payment_url=f"https://pagar.test/{external_id}"
+        )
+
+    async def cancel_subscription(self, external_id: str) -> None:
+        self.canceled.append(external_id)
+
+    def parse_webhook(self, payload: dict[str, object]) -> BillingEvent | None:
+        tipo = payload.get("event")
+        external_id = payload.get("subscription")
+        if not isinstance(tipo, str) or not isinstance(external_id, str):
+            return None
+        try:
+            return BillingEvent(type=BillingEventType(tipo), external_id=external_id)
+        except ValueError:
+            return None
+
+    def verify_webhook(self, *, token: str | None) -> bool:
+        return token == self._webhook_token

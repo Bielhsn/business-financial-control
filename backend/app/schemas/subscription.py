@@ -48,6 +48,16 @@ class SubscriptionResponse(BaseModel):
     features: list[str]
     limits: PlanLimitsResponse
     usage: UsageResponse
+    # O teste já foi consumido: a tela precisa parar de oferecer "14 dias
+    # grátis" para quem não pode mais aceitar.
+    trial_used: bool = False
+    # Há uma contratação aguardando pagamento. Sem isto, quem fechou a aba do
+    # boleto voltaria para uma tela que não menciona a cobrança pendente.
+    payment_pending: bool = False
+    # Plano contratado mas ainda não pago. Diferente de `tier`, que é o plano
+    # que a empresa realmente pode usar agora — quem deve não usa o que
+    # contratou, mas precisa saber o que estava contratando para concluir.
+    pending_tier: PlanTier | None = None
 
 
 class ChangePlanRequest(BaseModel):

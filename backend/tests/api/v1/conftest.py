@@ -13,6 +13,7 @@ from tests.fakes import (
     FakeApiKeyRepository,
     FakeAppointmentRepository,
     FakeAuditLogRepository,
+    FakeBillingProvider,
     FakeCatalogItemRepository,
     FakeClientRepository,
     FakeCnpjLookup,
@@ -173,6 +174,11 @@ def fake_subscription_repository() -> FakeSubscriptionRepository:
 
 
 @pytest.fixture
+def fake_billing_provider() -> FakeBillingProvider:
+    return FakeBillingProvider()
+
+
+@pytest.fixture
 def fake_admin_metrics_repository() -> FakeAdminMetricsRepository:
     return FakeAdminMetricsRepository()
 
@@ -226,6 +232,7 @@ def client(
     fake_company_data_service: FakeCompanyDataService,
     fake_subscription_repository: FakeSubscriptionRepository,
     fake_admin_metrics_repository: FakeAdminMetricsRepository,
+    fake_billing_provider: FakeBillingProvider,
     fake_platform_sale_repository: FakePlatformSaleRepository,
     fake_goal_repository: FakeGoalRepository,
     fake_recurring_repository: FakeRecurringTransactionRepository,
@@ -236,54 +243,56 @@ def client(
     app.dependency_overrides[get_settings] = lambda: Settings(_env_file=None)
     app.dependency_overrides[deps.get_audit_log_repository] = lambda: fake_audit_log_repository
     app.dependency_overrides[deps.get_user_repository] = lambda: fake_user_repository
-    app.dependency_overrides[deps.get_refresh_token_repository] = (
-        lambda: fake_refresh_token_repository
+    app.dependency_overrides[deps.get_refresh_token_repository] = lambda: (
+        fake_refresh_token_repository
     )
     app.dependency_overrides[deps.get_password_hasher] = lambda: fake_password_hasher
     app.dependency_overrides[deps.get_token_service] = lambda: fake_token_service
     app.dependency_overrides[deps.get_company_repository] = lambda: fake_company_repository
-    app.dependency_overrides[deps.get_company_membership_repository] = (
-        lambda: fake_company_membership_repository
+    app.dependency_overrides[deps.get_company_membership_repository] = lambda: (
+        fake_company_membership_repository
     )
-    app.dependency_overrides[deps.get_company_blueprint_repository] = (
-        lambda: fake_company_blueprint_repository
+    app.dependency_overrides[deps.get_company_blueprint_repository] = lambda: (
+        fake_company_blueprint_repository
     )
     app.dependency_overrides[deps.get_ai_provider] = lambda: fake_ai_provider
-    app.dependency_overrides[deps.get_financial_category_repository] = (
-        lambda: fake_financial_category_repository
+    app.dependency_overrides[deps.get_financial_category_repository] = lambda: (
+        fake_financial_category_repository
     )
-    app.dependency_overrides[deps.get_financial_transaction_repository] = (
-        lambda: fake_financial_transaction_repository
+    app.dependency_overrides[deps.get_financial_transaction_repository] = lambda: (
+        fake_financial_transaction_repository
     )
     app.dependency_overrides[deps.get_client_repository] = lambda: fake_client_repository
-    app.dependency_overrides[deps.get_catalog_item_repository] = (
-        lambda: fake_catalog_item_repository
+    app.dependency_overrides[deps.get_catalog_item_repository] = lambda: (
+        fake_catalog_item_repository
     )
-    app.dependency_overrides[deps.get_stock_movement_repository] = (
-        lambda: fake_stock_movement_repository
+    app.dependency_overrides[deps.get_stock_movement_repository] = lambda: (
+        fake_stock_movement_repository
     )
     app.dependency_overrides[deps.get_employee_repository] = lambda: fake_employee_repository
     app.dependency_overrides[deps.get_appointment_repository] = lambda: fake_appointment_repository
     app.dependency_overrides[deps.get_connection_repository] = lambda: fake_connection_repository
     app.dependency_overrides[deps.get_secret_cipher] = lambda: fake_secret_cipher
-    app.dependency_overrides[deps.get_connector_factory] = lambda: (lambda provider: fake_connector)
+    app.dependency_overrides[deps.get_connector_factory] = lambda: lambda provider: fake_connector
     app.dependency_overrides[deps.get_cnpj_lookup] = lambda: fake_cnpj_lookup
-    app.dependency_overrides[deps.get_verification_code_repository] = (
-        lambda: fake_verification_code_repository
+    app.dependency_overrides[deps.get_verification_code_repository] = lambda: (
+        fake_verification_code_repository
     )
     app.dependency_overrides[deps.get_email_sender] = lambda: fake_email_sender
     app.dependency_overrides[deps.get_google_verifier] = lambda: fake_google_verifier
     app.dependency_overrides[deps.get_invitation_repository] = lambda: fake_invitation_repository
     app.dependency_overrides[deps.get_company_data_exporter] = lambda: fake_company_data_service
     app.dependency_overrides[deps.get_company_data_eraser] = lambda: fake_company_data_service
-    app.dependency_overrides[deps.get_subscription_repository] = (
-        lambda: fake_subscription_repository
+    app.dependency_overrides[deps.get_subscription_repository] = lambda: (
+        fake_subscription_repository
     )
-    app.dependency_overrides[deps.get_admin_metrics_repository] = (
-        lambda: fake_admin_metrics_repository
+    app.dependency_overrides[deps.get_billing_provider] = lambda: fake_billing_provider
+    app.dependency_overrides[deps.get_optional_billing_provider] = lambda: fake_billing_provider
+    app.dependency_overrides[deps.get_admin_metrics_repository] = lambda: (
+        fake_admin_metrics_repository
     )
-    app.dependency_overrides[deps.get_platform_sale_repository] = (
-        lambda: fake_platform_sale_repository
+    app.dependency_overrides[deps.get_platform_sale_repository] = lambda: (
+        fake_platform_sale_repository
     )
     app.dependency_overrides[deps.get_goal_repository] = lambda: fake_goal_repository
     app.dependency_overrides[deps.get_recurring_repository] = lambda: fake_recurring_repository

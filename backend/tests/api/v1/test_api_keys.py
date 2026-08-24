@@ -1,6 +1,9 @@
 from fastapi.testclient import TestClient
 
+from app.domain.subscription.plans import PlanTier
+from tests.fakes import FakeSubscriptionRepository
 from tests.registration import register_payload
+from tests.subscriptions import activate_paid_plan_sync
 
 COMPANY = {
     "name": "Empresa X",
@@ -33,12 +36,10 @@ def _create_company(client: TestClient, headers: dict[str, str]) -> str:
     return client.post("/api/v1/companies", json=COMPANY, headers=headers).json()["id"]
 
 
-def _upgrade_enterprise(client: TestClient, company_id: str, headers: dict[str, str]) -> None:
-    client.put(
-        f"/api/v1/companies/{company_id}/subscription",
-        json={"tier": "enterprise"},
-        headers=headers,
-    )
+def _upgrade_enterprise(subscriptions: FakeSubscriptionRepository, company_id: str) -> None:
+    """Estado de quem já paga o Enterprise. Escreve no repositório em vez de
+    chamar o endpoint: contratar plano pago por HTTP passa pelo checkout."""
+    activate_paid_plan_sync(subscriptions, company_id=company_id, tier=PlanTier.ENTERPRISE)
 
 
 def test_create_requires_api_access_feature(client: TestClient) -> None:
@@ -53,10 +54,12 @@ def test_create_requires_api_access_feature(client: TestClient) -> None:
     assert response.status_code == 402
 
 
-def test_create_list_and_revoke_on_enterprise(client: TestClient) -> None:
+def test_create_list_and_revoke_on_enterprise(
+    client: TestClient, fake_subscription_repository: FakeSubscriptionRepository
+) -> None:
     owner = _headers(_register(client, "dono@example.com"))
     company_id = _create_company(client, owner)
-    _upgrade_enterprise(client, company_id, owner)
+    _upgrade_enterprise(fake_subscription_repository, company_id)
 
     created = client.post(
         f"/api/v1/companies/{company_id}/api-keys",
@@ -77,10 +80,12 @@ def test_create_list_and_revoke_on_enterprise(client: TestClient) -> None:
     assert revoked.status_code == 204
 
 
-def test_public_summary_authenticated_by_key(client: TestClient) -> None:
+def test_public_summary_authenticated_by_key(
+    client: TestClient, fake_subscription_repository: FakeSubscriptionRepository
+) -> None:
     owner = _headers(_register(client, "dono@example.com"))
     company_id = _create_company(client, owner)
-    _upgrade_enterprise(client, company_id, owner)
+    _upgrade_enterprise(fake_subscription_repository, company_id)
     raw_key = client.post(
         f"/api/v1/companies/{company_id}/api-keys",
         json={"name": "k"},
@@ -102,10 +107,12 @@ def test_public_summary_rejects_missing_or_bad_key(client: TestClient) -> None:
     )
 
 
-def test_revoked_key_stops_working(client: TestClient) -> None:
+def test_revoked_key_stops_working(
+    client: TestClient, fake_subscription_repository: FakeSubscriptionRepository
+) -> None:
     owner = _headers(_register(client, "dono@example.com"))
     company_id = _create_company(client, owner)
-    _upgrade_enterprise(client, company_id, owner)
+    _upgrade_enterprise(fake_subscription_repository, company_id)
     created = client.post(
         f"/api/v1/companies/{company_id}/api-keys", json={"name": "k"}, headers=owner
     ).json()

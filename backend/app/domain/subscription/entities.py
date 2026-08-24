@@ -33,3 +33,8 @@ class Subscription:
     # webhook reencontra a empresa — sem isso, um aviso de pagamento chega sem
     # dono e não há como aplicar o efeito.
     external_id: str | None = None
+    # O teste gratuito já foi usado por esta empresa. Não dá para deduzir isso
+    # do estado atual: quem testa, cancela e volta para o Starter zera todo o
+    # resto e poderia recomeçar o teste indefinidamente. Uma vez verdadeiro,
+    # nunca volta a ser falso.
+    trial_used: bool = False

@@ -18,6 +18,7 @@ def _to_entity(document: SubscriptionDocument) -> Subscription:
         current_period_end=document.current_period_end,
         cancel_at_period_end=document.cancel_at_period_end,
         external_id=document.external_id,
+        trial_used=document.trial_used,
     )
 
 
@@ -39,6 +40,7 @@ class BeanieSubscriptionRepository:
         current_period_end: datetime | None,
         cancel_at_period_end: bool,
         external_id: str | None = None,
+        trial_used: bool = False,
     ) -> Subscription:
         now = datetime.now(UTC)
         document = await SubscriptionDocument.find_one(
@@ -56,6 +58,7 @@ class BeanieSubscriptionRepository:
                 current_period_end=current_period_end,
                 cancel_at_period_end=cancel_at_period_end,
                 external_id=external_id,
+                trial_used=trial_used,
             )
             await document.insert()
         else:
@@ -70,6 +73,9 @@ class BeanieSubscriptionRepository:
             # apagar o vínculo com a cobrança já criada no provedor.
             if external_id is not None:
                 document.external_id = external_id
+            # Só liga, nunca desliga: quem já usou o teste continua tendo usado
+            # depois de cancelar e voltar para o Starter.
+            document.trial_used = document.trial_used or trial_used
             await document.save()
         return _to_entity(document)
 

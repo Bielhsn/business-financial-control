@@ -195,18 +195,31 @@ def get_connector_factory() -> Callable[[str], Connector]:
     return build_connector
 
 
-def get_billing_provider(
+def get_optional_billing_provider(
     settings: Annotated[Settings, Depends(get_settings)],
-) -> BillingProvider:
+) -> BillingProvider | None:
+    """O provedor quando há chave configurada, `None` quando não há.
+
+    Existe para o cancelamento: exigir cobrança configurada para *sair* de um
+    plano prenderia o cliente por um detalhe de infraestrutura.
+    """
     if not settings.asaas_api_key:
-        # Sem chave, contratar plano pago responde 503 de forma limpa em vez de
-        # falhar no meio da chamada ao provedor.
-        raise AIProviderNotConfiguredError("Cobrança indisponível: configure ASAAS_API_KEY.")
+        return None
     return AsaasBillingProvider(
         api_key=settings.asaas_api_key,
         webhook_token=settings.asaas_webhook_token,
         base_url=SANDBOX_BASE_URL if settings.asaas_sandbox else PRODUCTION_BASE_URL,
     )
+
+
+def get_billing_provider(
+    provider: Annotated[BillingProvider | None, Depends(get_optional_billing_provider)],
+) -> BillingProvider:
+    if provider is None:
+        # Sem chave, contratar plano pago responde 503 de forma limpa em vez de
+        # falhar no meio da chamada ao provedor.
+        raise AIProviderNotConfiguredError("Cobrança indisponível: configure ASAAS_API_KEY.")
+    return provider
 
 
 def get_cnpj_lookup() -> CnpjLookup:

@@ -18,6 +18,9 @@ class SubscriptionDocument(Document):
     # ambiguidade. Índice parcial porque o campo é opcional (plano grátis não
     # tem cobrança).
     external_id: str | None = None
+    # Marca de que o teste gratuito já foi consumido. Fica fora do ciclo de
+    # vida da assinatura de propósito: é histórico da empresa, não estado.
+    trial_used: bool = False
 
     class Settings:
         name = "subscriptions"

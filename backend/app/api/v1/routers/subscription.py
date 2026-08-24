@@ -8,6 +8,7 @@ from app.api.v1.deps import (
     get_company_membership_repository,
     get_connection_repository,
     get_current_user,
+    get_optional_billing_provider,
     get_subscription_repository,
     require_role,
 )
@@ -19,6 +20,7 @@ from app.application.subscription.change_plan import (
 from app.core.audit import record_audit
 from app.core.tenant import CompanyContext
 from app.domain.audit.repository import AuditLogRepository
+from app.domain.billing.ports import BillingProvider
 from app.domain.company.repository import CompanyMembershipRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.connector.repository import ConnectionRepository
@@ -50,6 +52,13 @@ async def _build_response(
     plan = resolve_plan(subscription)
     members = await membership_repository.list_for_company(company_id)
     connections = await connection_repository.list_all()
+    # Contratou e ainda não pagou: a assinatura nasce PAST_DUE no checkout e só
+    # vira ACTIVE quando o webhook confirma o dinheiro.
+    payment_pending = (
+        subscription is not None
+        and subscription.status == SubscriptionStatus.PAST_DUE
+        and subscription.external_id is not None
+    )
     return SubscriptionResponse(
         tier=plan.tier,
         status=subscription.status if subscription else SubscriptionStatus.ACTIVE,
@@ -65,6 +74,9 @@ async def _build_response(
             max_catalog_items=plan.limits.max_catalog_items,
         ),
         usage=UsageResponse(members=len(members), integrations=len(connections)),
+        trial_used=subscription.trial_used if subscription else False,
+        payment_pending=payment_pending,
+        pending_tier=subscription.tier if payment_pending and subscription else None,
     )
 
 
@@ -148,7 +160,16 @@ async def cancel_subscription(
     ],
     connection_repository: Annotated[ConnectionRepository, Depends(get_connection_repository)],
     audit_repository: Annotated[AuditLogRepository, Depends(get_audit_log_repository)],
+    billing: Annotated[BillingProvider | None, Depends(get_optional_billing_provider)],
 ) -> SubscriptionResponse:
+    atual = await subscription_repository.get_by_company(company_context.company_id)
+    if atual is not None and atual.external_id and billing is not None:
+        # Para a cobrança no provedor ANTES de marcar como cancelada aqui. Se
+        # o Asaas recusar, o erro sobe e o cliente tenta de novo: melhor uma
+        # falha visível do que uma tela dizendo "cancelado" enquanto a fatura
+        # continua chegando todo mês.
+        await billing.cancel_subscription(atual.external_id)
+
     use_case = CancelSubscriptionUseCase(subscription_repository)
     subscription = await use_case.execute(company_id=company_context.company_id)
     await record_audit(
