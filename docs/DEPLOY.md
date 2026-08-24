@@ -197,6 +197,24 @@ repositório — a base já está pronta.
 - [ ] `PLATFORM_ADMIN_EMAILS` com o seu e-mail (para o painel admin)
 - [ ] Credenciais das integrações OAuth (quando for ligá-las)
 
+## Sincronização automática das integrações
+
+Sem `SYNC_INTERVAL_MINUTES`, as vendas só entram quando alguém clica em
+"Sincronizar" — e um painel que atualiza quando o dono lembra de clicar não é
+automático.
+
+- `SYNC_INTERVAL_MINUTES` — intervalo em minutos. `0` desliga (padrão). Em
+  produção, `60` é um ponto de partida razoável.
+
+Duas ressalvas sobre a implementação atual, que roda dentro do processo da API:
+
+1. **Mais de uma instância** significa todas rodando o loop e sincronizando a
+   mesma conexão. Não corrompe dado — a importação é idempotente por
+   `external_ref`, com índice único — mas desperdiça chamada contra o provedor.
+   Nessa escala, migrar para um cron externo chamando um endpoint dedicado.
+2. **Planos que hibernam por inatividade** derrubam o processo e o loop junto. O
+   agendamento só é confiável em serviço que fica de pé.
+
 ## Rastreamento de erro (opcional, recomendado)
 
 Sem `SENTRY_DSN`, exceções ficam apenas no log da Render — e log que ninguém lê

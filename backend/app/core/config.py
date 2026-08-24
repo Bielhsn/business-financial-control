@@ -58,6 +58,11 @@ class Settings(BaseSettings):
     ifood_client_id: str | None = None
     ifood_client_secret: str | None = None
 
+    # Intervalo da sincronização automática das integrações, em minutos.
+    # 0 = desligada: teste e desenvolvimento não devem sair chamando provedor
+    # externo sozinhos. Em produção, 60 é um ponto de partida razoável.
+    sync_interval_minutes: int = 0
+
     # Rastreamento de erro. Vazio = desligado: desenvolvimento e testes não
     # devem falar com serviço externo, e o projeto precisa subir sem conta.
     sentry_dsn: str | None = None

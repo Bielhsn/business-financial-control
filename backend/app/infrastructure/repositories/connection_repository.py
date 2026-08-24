@@ -65,6 +65,26 @@ class BeanieConnectionRepository:
         ).to_list()
         return [_to_entity(document) for document in documents]
 
+    async def list_due_for_sync(self, *, older_than: datetime, limit: int) -> list[Connection]:
+        # Sem filtro de empresa DE PROPÓSITO — ver o contrato no protocolo.
+        # `None` entra na busca: conexão recém-criada nunca sincronizou e é
+        # exatamente a que mais precisa da primeira carga.
+        documents = (
+            await ConnectionDocument.find(
+                {
+                    "status": {"$ne": "error"},
+                    "$or": [
+                        {"last_synced_at": None},
+                        {"last_synced_at": {"$lt": older_than}},
+                    ],
+                }
+            )
+            .sort("+last_synced_at")
+            .limit(limit)
+            .to_list()
+        )
+        return [_to_entity(document) for document in documents]
+
     async def mark_synced(self, provider: str) -> None:
         document = await self._get_document(provider)
         if document is None:
