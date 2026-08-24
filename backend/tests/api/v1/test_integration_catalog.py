@@ -1,12 +1,13 @@
 from fastapi.testclient import TestClient
 
 from app.domain.connector.registry import CONNECTOR_PROVIDERS
+from tests.registration import register_payload
 
 
 def _auth_header(client: TestClient, email: str = "dono@example.com") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "s3cr3t!!", "full_name": "Dono"},
+        json=register_payload(email, "s3cr3t!!", "Dono"),
     )
     token = client.post("/api/v1/auth/login", json={"email": email, "password": "s3cr3t!!"}).json()[
         "access_token"

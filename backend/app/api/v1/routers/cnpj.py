@@ -1,23 +1,26 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 
-from app.api.v1.deps import get_cnpj_lookup, get_current_user
+from app.api.v1.deps import get_cnpj_lookup
 from app.core.exceptions import ValidationError
+from app.core.rate_limit import limiter
 from app.domain.company.cnpj import is_valid_cnpj, normalize_cnpj
 from app.domain.company.cnpj_lookup import CnpjLookup
-from app.domain.user.entities import User
 from app.schemas.cnpj import CnpjLookupResponse
 
 router = APIRouter(prefix="/cnpj", tags=["cnpj"])
 
 
-# Não é company-scoped: usado durante a criação da empresa, antes de ela existir.
-# Exige apenas usuário autenticado.
+# Público de propósito: o formulário de cadastro precisa confirmar a empresa
+# ANTES de existir conta para autenticar. Os dados são públicos na Receita e a
+# BrasilAPI já os serve sem chave — o risco não é vazamento, é virar proxy de
+# raspagem. Daí o limite por minuto, mais apertado que o dos demais endpoints.
 @router.get("/{cnpj}", response_model=CnpjLookupResponse)
+@limiter.limit("10/minute")
 async def lookup_cnpj(
+    request: Request,
     cnpj: str,
-    current_user: Annotated[User, Depends(get_current_user)],
     cnpj_lookup: Annotated[CnpjLookup, Depends(get_cnpj_lookup)],
 ) -> CnpjLookupResponse:
     normalized = normalize_cnpj(cnpj)

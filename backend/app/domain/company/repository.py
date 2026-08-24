@@ -35,6 +35,15 @@ class CompanyRepository(Protocol):
 
     async def get_by_id(self, company_id: str) -> Company | None: ...
 
+    async def get_by_cnpj(self, cnpj: str) -> Company | None:
+        """Localiza a empresa pelo CNPJ normalizado (14 dígitos).
+
+        Serve para recusar o cadastro ANTES de criar o usuário — a garantia
+        final continua sendo o índice único, mas errar no fim do fluxo deixaria
+        uma conta órfã sem empresa.
+        """
+        ...
+
     async def update(self, company_id: str, **fields: object) -> Company | None: ...
 
     async def delete(self, company_id: str) -> None: ...

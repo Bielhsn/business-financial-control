@@ -120,6 +120,10 @@ class BeanieCompanyRepository:
         document = await CompanyDocument.get(PydanticObjectId(company_id))
         return _to_entity(document) if document else None
 
+    async def get_by_cnpj(self, cnpj: str) -> Company | None:
+        document = await CompanyDocument.find_one(CompanyDocument.cnpj == cnpj)
+        return _to_entity(document) if document else None
+
     async def update(self, company_id: str, **fields: object) -> Company | None:
         if not PydanticObjectId.is_valid(company_id):
             return None

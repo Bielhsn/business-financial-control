@@ -1,10 +1,12 @@
 from fastapi.testclient import TestClient
 
+from tests.registration import register_payload
+
 
 def _auth_header(client: TestClient, email: str = "dono@example.com") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "s3cr3t!!", "full_name": "Usuário Teste"},
+        json=register_payload(email, "s3cr3t!!", "Usuário Teste"),
     )
     login = client.post("/api/v1/auth/login", json={"email": email, "password": "s3cr3t!!"})
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
@@ -31,9 +33,14 @@ def test_lookup_invalid_cnpj_returns_422_without_calling_source(client: TestClie
     assert response.status_code == 422
 
 
-def test_lookup_requires_authentication(client: TestClient) -> None:
+def test_lookup_is_public_for_the_registration_form(client: TestClient) -> None:
+    """Deixou de exigir autenticação de propósito: o formulário de cadastro
+    precisa confirmar a empresa ANTES de existir conta para autenticar. Os dados
+    são públicos na Receita; o risco é virar proxy de raspagem, contido pelo
+    limite por minuto."""
     response = client.get("/api/v1/cnpj/11222333000181")
-    assert response.status_code == 401
+
+    assert response.status_code == 200
 
 
 def test_create_company_with_valid_cnpj(client: TestClient) -> None:

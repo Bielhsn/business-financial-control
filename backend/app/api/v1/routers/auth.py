@@ -3,8 +3,12 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request, status
 
 from app.api.v1.deps import (
+    get_cnpj_lookup,
+    get_company_membership_repository,
+    get_company_repository,
     get_current_user,
     get_email_sender,
+    get_financial_category_repository,
     get_google_verifier,
     get_password_hasher,
     get_refresh_token_repository,
@@ -26,7 +30,9 @@ from app.application.auth.password_recovery import (
     ResetPasswordUseCase,
 )
 from app.application.auth.refresh_access_token import RefreshAccessTokenUseCase
-from app.application.auth.register_user import RegisterUserUseCase
+from app.application.auth.register_account import RegisterAccountUseCase
+from app.application.company.create_company import CreateCompanyUseCase
+from app.application.company.seed_segment_categories import SeedSegmentCategoriesUseCase
 from app.core.audit import audit_event
 from app.core.config import Settings, get_settings
 from app.core.exceptions import UnauthorizedError
@@ -35,6 +41,9 @@ from app.domain.auth.google import GoogleTokenVerifier
 from app.domain.auth.ports import PasswordHasher, TokenService
 from app.domain.auth.repository import RefreshTokenRepository
 from app.domain.auth.verification import VerificationCodeRepository
+from app.domain.company.cnpj_lookup import CnpjLookup
+from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
+from app.domain.financial.repository import FinancialCategoryRepository
 from app.domain.notifications.email import EmailSender
 from app.domain.user.entities import User
 from app.domain.user.repository import UserRepository
@@ -69,16 +78,36 @@ async def register(
     ],
     email_sender: Annotated[EmailSender, Depends(get_email_sender)],
     settings: Annotated[Settings, Depends(get_settings)],
+    company_repository: Annotated[CompanyRepository, Depends(get_company_repository)],
+    membership_repository: Annotated[
+        CompanyMembershipRepository, Depends(get_company_membership_repository)
+    ],
+    category_repository: Annotated[
+        FinancialCategoryRepository, Depends(get_financial_category_repository)
+    ],
+    cnpj_lookup: Annotated[CnpjLookup, Depends(get_cnpj_lookup)],
 ) -> User:
-    use_case = RegisterUserUseCase(user_repository, password_hasher, settings)
-    user = await use_case.execute(
+    use_case = RegisterAccountUseCase(
+        user_repository,
+        company_repository,
+        CreateCompanyUseCase(company_repository, membership_repository, cnpj_lookup),
+        password_hasher,
+        cnpj_lookup,
+        settings,
+    )
+    user, company = await use_case.execute(
         email=payload.email,
         password=payload.password,
         full_name=payload.full_name,
+        company_name=payload.company_name,
+        cnpj=payload.cnpj,
         phone=payload.phone,
         job_role=payload.job_role,
     )
-    audit_event("user_registered", user_id=user.id)
+    # A empresa já nasce com o plano de contas do segmento (genérico enquanto o
+    # onboarding não define o ramo) — o dono não precisa inventar categorias.
+    await SeedSegmentCategoriesUseCase(category_repository).execute(company=company)
+    audit_event("user_registered", user_id=user.id, company_id=company.id)
     # Se a verificação por e-mail está ligada, já dispara o código de confirmação.
     if settings.require_email_verification:
         await RequestEmailVerificationUseCase(

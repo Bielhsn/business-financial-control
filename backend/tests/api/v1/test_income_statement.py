@@ -2,6 +2,8 @@ from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
 
+from tests.registration import register_payload
+
 COMPANY = {
     "name": "Empresa X",
     "segment": "Serviços",
@@ -19,7 +21,7 @@ COMPANY = {
 def _auth(client: TestClient, email: str) -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": "s3cr3t!!", "full_name": "Dono"},
+        json=register_payload(email, "s3cr3t!!", "Dono"),
     )
     token = client.post("/api/v1/auth/login", json={"email": email, "password": "s3cr3t!!"}).json()[
         "access_token"

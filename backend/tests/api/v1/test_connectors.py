@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from app.domain.connector.entities import NormalizedSale
 from tests.fakes import FakeConnector
+from tests.registration import register_payload
 
 VALID_COMPANY_PAYLOAD = {
     "name": "Cursos Online",
@@ -22,7 +23,7 @@ VALID_COMPANY_PAYLOAD = {
 def _auth_header(client: TestClient, email: str, password: str = "s3cr3t!!") -> dict[str, str]:
     client.post(
         "/api/v1/auth/register",
-        json={"email": email, "password": password, "full_name": "Usuário Teste"},
+        json=register_payload(email, password, "Usuário Teste"),
     )
     login = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
