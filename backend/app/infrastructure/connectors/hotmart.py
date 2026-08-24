@@ -5,6 +5,7 @@ import httpx
 
 from app.core.exceptions import ConnectorError
 from app.domain.connector.entities import NormalizedSale
+from app.infrastructure.http.retry import RetryTransport
 
 # URLs oficiais da Hotmart. Parametrizáveis no construtor para os testes usarem
 # um transporte mock (httpx.MockTransport) sem tocar a rede.
@@ -34,7 +35,9 @@ class HotmartConnector:
         self._transport = transport
 
     def _client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(timeout=30.0, transport=self._transport)
+        # Sem transporte injetado (produção), entra o que repete falhas
+        # temporárias. Os testes continuam injetando o próprio.
+        return httpx.AsyncClient(timeout=30.0, transport=self._transport or RetryTransport())
 
     async def _get_token(self, client: httpx.AsyncClient, credentials: dict[str, str]) -> str:
         client_id = credentials.get("client_id", "")

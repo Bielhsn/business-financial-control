@@ -24,6 +24,7 @@ import httpx
 
 from app.core.exceptions import ConnectorError
 from app.domain.connector.entities import NormalizedSale
+from app.infrastructure.http.retry import RetryTransport
 
 # Base da API do iFood. Parametrizável no construtor para os testes usarem um
 # transporte mock (httpx.MockTransport) sem tocar a rede.
@@ -63,7 +64,9 @@ class IFoodConnector:
         self._transport = transport
 
     def _client(self) -> httpx.AsyncClient:
-        return httpx.AsyncClient(timeout=30.0, transport=self._transport)
+        # Sem transporte injetado (produção), entra o que repete falhas
+        # temporárias. Os testes continuam injetando o próprio.
+        return httpx.AsyncClient(timeout=30.0, transport=self._transport or RetryTransport())
 
     async def _resolve_token(self, client: httpx.AsyncClient, credentials: dict[str, str]) -> str:
         """Obtém o token de acesso com as chaves do aplicativo da plataforma.
