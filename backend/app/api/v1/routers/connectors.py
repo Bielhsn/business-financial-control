@@ -28,7 +28,7 @@ from app.domain.audit.repository import AuditLogRepository
 from app.domain.company.roles import CompanyRole
 from app.domain.connector.entities import Connection
 from app.domain.connector.ports import Connector, SecretCipher
-from app.domain.connector.registry import CONNECTOR_REGISTRY
+from app.domain.connector.registry import CONNECTOR_REGISTRY, get_connector_definition
 from app.domain.connector.repository import ConnectionRepository
 from app.domain.financial.repository import (
     FinancialCategoryRepository,
@@ -194,8 +194,17 @@ async def sync(
     platform_sale_repository: Annotated[
         PlatformSaleRepository, Depends(get_platform_sale_repository)
     ],
+    settings: Annotated[Settings, Depends(get_settings)],
 ) -> SyncResultResponse:
     connector = connector_factory(provider)
+    # Provedores OAuth precisam poder renovar o token antes de sincronizar;
+    # os de credenciais (Hotmart, iFood) não têm o que renovar.
+    definition = get_connector_definition(provider)
+    oauth_provider = (
+        build_oauth_provider(provider, settings)
+        if definition is not None and definition.auth_type == "oauth"
+        else None
+    )
     use_case = SyncConnectionUseCase(
         connection_repository,
         category_repository,
@@ -203,6 +212,7 @@ async def sync(
         cipher,
         connector,
         platform_sale_repository,
+        oauth_provider,
     )
     result = await use_case.execute(provider=provider, created_by=current_user.id)
     await record_audit(
