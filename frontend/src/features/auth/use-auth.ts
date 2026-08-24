@@ -13,6 +13,10 @@ interface LoginInput {
 
 interface RegisterInput extends LoginInput {
   full_name: string;
+  // O cadastro cria a primeira empresa junto com a conta.
+  company_name: string;
+  cnpj: string;
+  password_confirmation: string;
   phone?: string | null;
   job_role?: string | null;
 }
