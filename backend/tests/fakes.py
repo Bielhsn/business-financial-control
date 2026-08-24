@@ -193,6 +193,14 @@ class FakeCompanyRepository:
     ) -> Company:
         company_id = str(self._next_id)
         self._next_id += 1
+        # Replica o índice único do CNPJ. Sem isto o teste de duplicidade
+        # passaria contra um fake mais permissivo que o banco real — e o defeito
+        # só apareceria em produção.
+        if cnpj and any(existing.cnpj == cnpj for existing in self._companies.values()):
+            from app.core.exceptions import ConflictError
+            from app.domain.company.cnpj import format_cnpj
+
+            raise ConflictError(f"O CNPJ {format_cnpj(cnpj)} já está cadastrado em outra conta.")
         now = datetime.now(UTC)
         company = Company(
             id=company_id,

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 
 from app.api.v1.deps import (
     get_audit_log_repository,
+    get_cnpj_lookup,
     get_company_context,
     get_company_data_eraser,
     get_company_data_exporter,
@@ -31,6 +32,7 @@ from app.core.audit import record_audit
 from app.core.exceptions import NotFoundError
 from app.core.tenant import CompanyContext
 from app.domain.audit.repository import AuditLogRepository
+from app.domain.company.cnpj_lookup import CnpjLookup
 from app.domain.company.data import CompanyDataEraser, CompanyDataExporter
 from app.domain.company.entities import Company
 from app.domain.company.invitation import InvitationRepository
@@ -70,8 +72,12 @@ async def create_company(
     category_repository: Annotated[
         FinancialCategoryRepository, Depends(get_financial_category_repository)
     ],
+    cnpj_lookup: Annotated[CnpjLookup, Depends(get_cnpj_lookup)],
 ) -> Company:
-    use_case = CreateCompanyUseCase(company_repository, membership_repository)
+    # O lookup entra aqui para o CNPJ ser confrontado com a Receita na criação,
+    # e não só ter os dígitos conferidos. Antes, um número bem formado porém
+    # inexistente era aceito.
+    use_case = CreateCompanyUseCase(company_repository, membership_repository, cnpj_lookup)
     company = await use_case.execute(owner_id=current_user.id, **payload.model_dump())
     # A empresa já nasce com o plano de contas do seu segmento — o dono não
     # precisa inventar categorias nem depender da IA para começar a lançar.

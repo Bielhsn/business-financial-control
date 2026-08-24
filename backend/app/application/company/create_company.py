@@ -1,5 +1,6 @@
-from app.core.exceptions import ValidationError
-from app.domain.company.cnpj import is_valid_cnpj, normalize_cnpj
+from app.core.exceptions import NotFoundError, ValidationError
+from app.domain.company.cnpj import format_cnpj, is_valid_cnpj, normalize_cnpj
+from app.domain.company.cnpj_lookup import CnpjLookup
 from app.domain.company.entities import Company
 from app.domain.company.repository import CompanyMembershipRepository, CompanyRepository
 from app.domain.company.roles import CompanyRole
@@ -18,9 +19,42 @@ class CreateCompanyUseCase:
         self,
         company_repository: CompanyRepository,
         membership_repository: CompanyMembershipRepository,
+        cnpj_lookup: CnpjLookup | None = None,
     ) -> None:
         self._company_repository = company_repository
         self._membership_repository = membership_repository
+        # Opcional para não quebrar chamadas internas que já validaram o CNPJ.
+        # Quando presente, o CNPJ é confrontado com a fonte externa.
+        self._cnpj_lookup = cnpj_lookup
+
+    async def _validate_cnpj(self, raw: str) -> str:
+        """Normaliza, valida os dígitos e confere se o CNPJ existe de verdade.
+
+        Dígito verificador só prova que o número é bem formado — "11.222.333/
+        0001-81" pode fechar a conta e não corresponder a empresa nenhuma. Sem a
+        consulta externa, o cadastro aceita CNPJ inventado.
+        """
+        normalized = normalize_cnpj(raw)
+        if not is_valid_cnpj(normalized):
+            raise ValidationError("CNPJ inválido — confira os números digitados.")
+
+        if self._cnpj_lookup is not None:
+            try:
+                info = await self._cnpj_lookup.fetch(normalized)
+            except NotFoundError:
+                raise ValidationError(
+                    f"O CNPJ {format_cnpj(normalized)} não foi encontrado na base da Receita."
+                ) from None
+            # Falha da fonte externa (ConnectorError) sobe como está: é
+            # indisponibilidade temporária, não CNPJ inválido, e a mensagem
+            # precisa dizer isso para a pessoa tentar de novo em vez de achar
+            # que digitou errado.
+            if not info.is_active:
+                situacao = info.status or "irregular"
+                raise ValidationError(
+                    f"O CNPJ {format_cnpj(normalized)} consta como {situacao} na Receita."
+                )
+        return normalized
 
     async def execute(
         self,
@@ -52,9 +86,7 @@ class CreateCompanyUseCase:
     ) -> Company:
         normalized_cnpj: str | None = None
         if cnpj and cnpj.strip():
-            normalized_cnpj = normalize_cnpj(cnpj)
-            if not is_valid_cnpj(normalized_cnpj):
-                raise ValidationError("CNPJ inválido.")
+            normalized_cnpj = await self._validate_cnpj(cnpj)
 
         company = await self._company_repository.create(
             name=name.strip(),

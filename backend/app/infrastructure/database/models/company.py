@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from beanie import Document
+from pymongo import IndexModel
 
 
 class CompanyDocument(Document):
@@ -38,3 +39,17 @@ class CompanyDocument(Document):
 
     class Settings:
         name = "companies"
+        indexes = [
+            # Um CNPJ pertence a uma empresa só. A verificação em código não
+            # basta: duas requisições simultâneas passam pelo "já existe?" antes
+            # de qualquer uma gravar, e as duas gravam. Só o banco resolve isso.
+            #
+            # Parcial porque o campo é opcional — sem o filtro, todas as
+            # empresas sem CNPJ colidiriam entre si no valor null.
+            IndexModel(
+                [("cnpj", 1)],
+                unique=True,
+                name="uniq_company_cnpj",
+                partialFilterExpression={"cnpj": {"$type": "string"}},
+            ),
+        ]
